@@ -914,17 +914,17 @@ body {
 
 .sentiment-breakdown {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
 }
 
 .sentiment-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
+    gap: 6px;
+    padding: 18px;
     background: var(--neutral-50);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -932,19 +932,19 @@ body {
 .sentiment-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 
 .sentiment-item span:first-child {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
     text-transform: uppercase;
     letter-spacing: 0.02em;
 }
 
 .sentiment-badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     text-align: center;
 }
 

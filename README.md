@@ -148,6 +148,23 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
+## Docker
+
+```bash
+# Build
+docker build -t sensemark .
+
+# Run
+docker run -d -p 8000:8000 -p 11434:11434 \
+  -e OLLAMA_HOST=http://localhost:11434 \
+  -e OLLAMA_API_KEY=your-key \
+  --name sensemark sensemark
+
+# Open http://localhost:8000
+```
+
+---
+
 ## Configuration
 
 ### Local Setup
