@@ -14,7 +14,41 @@ Field teams capture market intelligence through **three modes**:
 | **Quick Surveys** | Structured inputs (ratings, checkboxes, dropdowns) | Merged with conversational data for enriched analysis |
 | **Image Attachments** | Photos of shelves, displays, competitor setups | Context annotations attached to conversation transcripts |
 
-SenseMark ingests all three modes, runs them through an **LLM analysis engine with vector-backed retrieval**, and delivers a **6-tab interactive dashboard** with scores, trends, alerts, and natural language querying.
+SenseMark ingests all three modes, runs them through an **LLM analysis engine with vector-backed retrieval**, and delivers an **interactive dashboard** with scores, sentiment, business metrics, revenue strategy, insights, and natural language querying.
+
+---
+
+## Dashboard
+
+### Overview Tab
+- **Filter bar** — filter by retailer, sales rep, product, region, date range
+- **Business Metrics** — sentiment, demand index, margin stress, supply risk, retailer advocacy, price sensitivity, channel shift, brand loyalty (all scored 0-10 with reasoning)
+- **Sentiment Analysis** — overall score meter, nuance text, 4-axis breakdown
+- **Category Scores** — auto-discovered business themes with bar charts, severity badges, and descriptions
+
+### Revenue Tab
+- **Revenue Strategy Map** — must-sell, upsell, cross-sell, pain points, improve strategy, rethink approach (shown when confidence ≥ 30%)
+- **Risk Flags** — severity-tagged risks with conditional triggers
+
+### Insights Tab
+- **Product Insights** — per-product performance, demand level, substitution risk
+- **Cause & Effect Mapping** — root cause → business impact with evidence
+- **Decision Insights** — what's working / what's breaking / hidden signals
+- **Pain Points & Opportunities** — impact-rated with suggested actions
+- **Competitive Intelligence** — competitor threats with behavior shift detection
+- **Action Items** — urgency-tagged checklist
+
+### Key Phrases Tab
+- **Interactive Tag Cloud** — click tags to filter the phrase table
+- **Phrase Table** — scored, tagged, and contextual quotes from the conversation
+
+### Ask AI Tab
+- **Natural Language Query** — ask questions about the conversation (vector-backed via ChromaDB)
+- **Auto-Generated Q&A** — pre-built questions for quick exploration
+
+### Sidebar
+- **Session Management** — switch between analyses, clear sessions
+- **Persistent Cache** — sessions saved in localStorage (max 5, metadata only)
 
 ---
 
@@ -75,8 +109,8 @@ SenseMark ingests all three modes, runs them through an **LLM analysis engine wi
 │  └──────────────────────────────────────────────────────────────┘   │
 │                                                                      │
 │  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              Dashboard (6 Tabs)                               │   │
-│  │  Overview │ Scores │ Revenue │ Insights │ Key Phrases │ Ask AI │   │
+│  │              Dashboard                                        │   │
+│  │  Overview │ Revenue │ Insights │ Key Phrases │ Ask AI         │   │
 │  └──────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -114,6 +148,65 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
+## Configuration
+
+### Local Setup
+
+Create a `.env` file in the project root:
+
+```
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_API_KEY=your-api-key-here
+```
+
+| Variable | Description | Default |
+|---|---|---|
+| `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434` |
+| `OLLAMA_API_KEY` | API key for cloud/remote Ollama | (empty) |
+
+### Deploying to GitHub / Cloud Platforms
+
+**Never commit `.env` to version control.** It is gitignored. Here's how to configure secrets for deployment:
+
+#### GitHub (for GitHub Actions CI/CD)
+1. Go to your repository → **Settings → Secrets and variables → Actions**
+2. Click **New repository secret**
+3. Add each variable individually:
+   - Name: `OLLAMA_HOST`, Value: `http://localhost:11434`
+   - Name: `OLLAMA_API_KEY`, Value: your actual key
+4. Reference in your workflow: `${{ secrets.OLLAMA_HOST }}`
+
+#### GitHub Codespaces
+1. Go to repository → **Settings → Secrets and variables → Codespaces**
+2. Add secrets the same way as Actions
+3. They're auto-injected into `.env` when a codespace starts
+
+#### Render / Railway / Fly.io / Heroku
+Each platform has an "Environment Variables" section in the dashboard:
+- **Render**: Service Settings → Environment → Add Environment Variable
+- **Railway**: Variables tab → click "New Variable"
+- **Fly.io**: `fly secrets set OLLAMA_HOST=... OLLAMA_API_KEY=...`
+- **Heroku**: Settings → Config Vars → Reveal Config Vars → Add
+
+#### Docker
+```bash
+docker run -d \
+  -e OLLAMA_HOST=http://localhost:11434 \
+  -e OLLAMA_API_KEY=your-key \
+  -p 8000:8000 \
+  sensmark:latest
+```
+
+#### Using a `.env.example` Template
+This repo includes `.env.example` — copy it and fill in your values:
+```bash
+cp .env.example .env
+# Edit .env with your actual values
+```
+The `.env` file is in `.gitignore` and will never be pushed.
+
+---
+
 ## API Endpoints
 
 | Method | Endpoint | Description |
@@ -133,7 +226,7 @@ The LLM returns structured JSON with 20+ fields including:
 |---|---|
 | `summary` | One-line executive summary |
 | `retailer_profile` | Name, shop type, relationship tenure |
-| `sentiment` | Overall + 4-axis breakdown with scores and nuance |
+| `sentiment` | Overall score (0-10) + 4-axis breakdown with nuance |
 | `categories` | Auto-discovered business themes (0-10 score, severity) |
 | `metrics` | 7 business metrics: demand, margin, supply, advocacy, price, channel, loyalty |
 | `revenue_map` | Must-sell, upsell, cross-sell, pain points, strategy |
@@ -160,7 +253,7 @@ SenseMark/
 │   ├── analyzer.py                 # Ollama LLM analysis (async, JSON output)
 │   └── vector_db.py                # ChromaDB persistent vector store
 ├── templates/
-│   └── index.html                  # 6-tab dashboard (SenseMark branding)
+│   └── index.html                  # Dashboard (5 tabs + sidebar)
 ├── static/
 │   ├── css/style.css               # Dashboard styles
 │   └── js/app.js                   # Dashboard logic + session management
@@ -178,7 +271,7 @@ SenseMark/
 
 ### Phase 1 — Current (v4.0)
 - [x] LLM-powered analysis with structured JSON output
-- [x] 6-tab interactive dashboard with sidebar session management
+- [x] Interactive dashboard with sidebar session management (5 tabs)
 - [x] Multi-model support
 - [x] Revenue strategy categorization
 - [x] Interactive key phrase table with topic filtering

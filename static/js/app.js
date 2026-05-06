@@ -470,8 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Overview Tab (merged Overview + Scores)
         renderStoryBanner(data.summary);
         populateFilters(data);
-        renderKPIs(data.metrics, data.sentiment, data.categories);
-        renderBusinessMetrics(data.metrics);
+        renderBusinessMetrics(data.metrics, data.sentiment);
         renderSentiment(data.sentiment);
         renderCategoryScores(data.categories);
 
@@ -495,6 +494,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const qaList = Array.isArray(data.qa) ? data.qa : [];
         renderQueryPresets(qaList);
         renderSectionIfExists('autoQaList', qaList, renderAutoQAs);
+
+        // Initialize info panel for active tab
+        updateInfoPanel('overview');
 
         } catch (err) {
             console.error('displayDashboard error:', err);
@@ -535,35 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (subtitle && summary) {
             subtitle.textContent = summary;
         }
-    }
-
-    function renderKPIs(metrics, sentiment, categories) {
-        const row = document.getElementById('kpiRow');
-        row.innerHTML = '';
-
-        const kpis = [
-            { label: 'Demand', value: metrics?.demand_index?.value, colorFn: goodColor },
-            { label: 'Sentiment', value: (sentiment?.score || 0) * 10, colorFn: goodColor },
-            { label: 'Margin Stress', value: metrics?.margin_stress?.value, colorFn: riskColor },
-            { label: 'Supply Risk', value: metrics?.supply_risk?.value, colorFn: riskColor },
-            { label: 'Retailer Advocacy', value: metrics?.retailer_advocacy?.value, colorFn: goodColor },
-            { label: 'Price Sensitivity', value: metrics?.price_sensitivity?.value, colorFn: riskColor },
-            { label: 'Channel Shift', value: metrics?.channel_shift?.value, colorFn: riskColor },
-            { label: 'Brand Loyalty', value: metrics?.brand_loyalty?.value, colorFn: goodColor },
-        ];
-
-        kpis.forEach((kpi, i) => {
-            if (kpi.value == null) return;
-            const el = document.createElement('div');
-            el.className = `kpi-card stagger-${Math.min(i + 1, 7)}`;
-            const val = kpi.value;
-            const color = kpi.colorFn(val);
-            el.innerHTML = `
-                <div class="kpi-value" style="color: ${color}">${val.toFixed(1)}</div>
-                <div class="kpi-label">${kpi.label}</div>
-            `;
-            row.appendChild(el);
-        });
     }
 
     function goodColor(val) {
@@ -703,14 +676,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderBusinessMetrics(metrics) {
+    function renderBusinessMetrics(metrics, sentiment) {
         const container = document.getElementById('derivedMetrics');
         const card = document.getElementById('businessMetricsCard');
         container.innerHTML = '';
-        if (!metrics) { if (card) card.style.display = 'none'; return; }
+        if (!metrics && !sentiment) { if (card) card.style.display = 'none'; return; }
         if (card) card.style.display = '';
 
         const icons = {
+            sentiment: '&#128524;',
             demand_index: '&#128200;', margin_stress: '&#128176;',
             supply_risk: '&#128666;', retailer_advocacy: '&#129309;',
             price_sensitivity: '&#128178;', channel_shift: '&#128256;',
@@ -718,7 +692,25 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const invertMetrics = ['margin_stress', 'supply_risk', 'price_sensitivity', 'channel_shift'];
-        Object.entries(metrics).forEach(([key, data]) => {
+
+        if (sentiment && sentiment.score != null) {
+            const el = document.createElement('div');
+            el.className = 'derived-item';
+            const score = Math.round(sentiment.score * 10);
+            const color = goodColor(score);
+            const label = formatLabel(sentiment.overall || 'mixed');
+            el.innerHTML = `
+                <span class="derived-icon">${icons.sentiment}</span>
+                <div class="derived-content">
+                    <div class="derived-label">Sentiment</div>
+                    <span class="derived-level" style="background: ${color}22; color: ${color};">${score}/10 — ${label}</span>
+                    <div class="derived-logic">${sentiment.nuance || ''}</div>
+                </div>
+            `;
+            container.appendChild(el);
+        }
+
+        Object.entries(metrics || {}).forEach(([key, data]) => {
             if (!data || data.value == null) return;
             const el = document.createElement('div');
             el.className = 'derived-item';
