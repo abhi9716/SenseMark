@@ -7,35 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardSection = document.getElementById('dashboardSection');
     const uploadLanding = document.getElementById('uploadLanding');
     const appLayout = document.getElementById('appLayout');
+    const appHeader = document.getElementById('appHeader');
     const queryInput = document.getElementById('queryInput');
     const queryBtn = document.getElementById('queryBtn');
-    const queryResponse = document.getElementById('queryResponse');
-    const queryResponseContent = document.getElementById('queryResponseContent');
-    const sidebarSessions = document.getElementById('sidebarSessions');
-    const sidebarNewBtn = document.getElementById('sidebarNewBtn');
-    const sidebarClearBtn = document.getElementById('sidebarClearBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const queryPresets = document.getElementById('queryPresets');
 
     const STORAGE_KEY = 'sensemark_sessions';
     let sessions = [];
     let activeSessionId = null;
     let pendingFiles = [];
     let currentPhraseTag = 'all';
-
-    const tagColors = {
-        demand: { bg: '#d1fae5', color: '#059669' },
-        pricing: { bg: '#fee2e2', color: '#dc2626' },
-        margin: { bg: '#fee2e2', color: '#dc2626' },
-        supply: { bg: '#fef3c7', color: '#d97706' },
-        competition: { bg: '#fce7f3', color: '#db2777' },
-        sentiment_positive: { bg: '#d1fae5', color: '#059669' },
-        sentiment_negative: { bg: '#fee2e2', color: '#dc2626' },
-        quality: { bg: '#e0f2fe', color: '#0284c7' },
-        relationship: { bg: '#ede9fe', color: '#7c3aed' },
-        schemes: { bg: '#ffedd5', color: '#ea580c' },
-        customer_behavior: { bg: '#f1f5f9', color: '#475569' },
-        loyalty: { bg: '#ede9fe', color: '#7c3aed' },
-        general: { bg: '#f1f5f9', color: '#64748b' },
-    };
 
     // ---- Session Management ----
     function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -100,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSidebar();
         if (sessions.length === 0) {
             appLayout.classList.add('hidden');
+            appHeader.classList.add('hidden');
             uploadLanding.classList.remove('hidden');
         } else if (activeSessionId === id) {
             activateSession(sessions[sessions.length - 1].id);
@@ -107,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSidebar() {
+        const sidebarSessions = document.getElementById('sidebarSessions');
         sidebarSessions.innerHTML = '';
         sessions.forEach(s => {
             const el = document.createElement('div');
@@ -127,14 +111,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const sidebarSessions = document.getElementById('sidebarSessions');
+    const sidebarNewBtn = document.getElementById('sidebarNewBtn');
+    const sidebarClearBtn = document.getElementById('sidebarClearBtn');
+
     sidebarNewBtn.addEventListener('click', () => {
         pendingFiles = [];
         updateFileList();
         fileInput.value = '';
-        queryResponse.classList.add('hidden');
         queryInput.value = '';
         uploadLanding.classList.remove('hidden');
         appLayout.classList.add('hidden');
+        appHeader.classList.add('hidden');
+        if (chatMessages) chatMessages.innerHTML = '';
+        if (queryPresets) queryPresets.innerHTML = '';
     });
 
     sidebarClearBtn.addEventListener('click', () => {
@@ -142,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearAllSessions();
             uploadLanding.classList.remove('hidden');
             appLayout.classList.add('hidden');
+            appHeader.classList.add('hidden');
         }
     });
 
@@ -194,6 +185,109 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFileSelect(e.target.files); });
 
+    const tagColors = {
+        demand: { bg: '#d1fae5', color: '#059669' },
+        pricing: { bg: '#fee2e2', color: '#dc2626' },
+        margin: { bg: '#fee2e2', color: '#dc2626' },
+        supply: { bg: '#fef3c7', color: '#d97706' },
+        competition: { bg: '#fce7f3', color: '#db2777' },
+        sentiment_positive: { bg: '#d1fae5', color: '#059669' },
+        sentiment_negative: { bg: '#fee2e2', color: '#dc2626' },
+        quality: { bg: '#e0f2fe', color: '#0284c7' },
+        relationship: { bg: '#ede9fe', color: '#7c3aed' },
+        schemes: { bg: '#ffedd5', color: '#ea580c' },
+        customer_behavior: { bg: '#f1f5f9', color: '#475569' },
+        loyalty: { bg: '#ede9fe', color: '#7c3aed' },
+        general: { bg: '#f1f5f9', color: '#64748b' },
+    };
+
+    // ---- Chat Sidebar ----
+    queryBtn.addEventListener('click', async () => {
+        sendQuery();
+    });
+    queryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !queryBtn.disabled) sendQuery(); });
+
+    async function sendQuery() {
+        const query = queryInput.value.trim();
+        const session = getSession(activeSessionId);
+        if (!query || !session) return;
+
+        appendUserMessage(query);
+        queryInput.value = '';
+
+        const loadingId = appendLoadingMessage();
+        queryBtn.disabled = true;
+
+        try {
+            let response;
+            if (session.collectionId) {
+                response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collection_id: session.collectionId, query, model: document.getElementById('modelSelect').value }),
+                });
+            } else {
+                response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: (session.fileText || '').slice(0, 200000), query, model: document.getElementById('modelSelect').value }),
+                });
+            }
+            if (!response.ok) {
+                const ct = response.headers.get('content-type');
+                if (ct && ct.includes('application/json')) {
+                    const err = await response.json(); throw new Error(err.detail || 'Query failed');
+                }
+                throw new Error(`Server error: ${response.status}`);
+            }
+            const data = await response.json();
+            removeLoadingMessage(loadingId);
+            appendAIMessage(data.answer);
+        } catch (error) {
+            removeLoadingMessage(loadingId);
+            appendAIMessage(`Error: ${error.message}`);
+        } finally { queryBtn.disabled = false; }
+    }
+
+    function appendUserMessage(text) {
+        const el = document.createElement('div');
+        el.className = 'chat-message user';
+        el.innerHTML = `<div class="chat-avatar">You</div><div class="chat-bubble"><p>${escapeHtml(text)}</p></div>`;
+        chatMessages.appendChild(el);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendAIMessage(text) {
+        const el = document.createElement('div');
+        el.className = 'chat-message ai';
+        const content = typeof marked !== 'undefined' ? marked.parse(text) : `<p>${escapeHtml(text)}</p>`;
+        el.innerHTML = `<div class="chat-avatar">AI</div><div class="chat-bubble">${content}</div>`;
+        chatMessages.appendChild(el);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendLoadingMessage() {
+        const id = 'loading-' + Date.now();
+        const el = document.createElement('div');
+        el.className = 'chat-message ai';
+        el.id = id;
+        el.innerHTML = `<div class="chat-avatar">AI</div><div class="chat-loading"><span></span><span></span><span></span></div>`;
+        chatMessages.appendChild(el);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return id;
+    }
+
+    function removeLoadingMessage(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (pendingFiles.length === 0) return;
@@ -236,50 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
         activateSession(sessions[sessions.length - 1].id);
     });
 
-    // ---- Query ----
-    queryBtn.addEventListener('click', async () => {
-        const query = queryInput.value.trim();
-        const session = getSession(activeSessionId);
-        if (!query || !session) return;
-
-        const typingIndicator = document.getElementById('typingIndicator');
-        queryResponse.classList.remove('hidden');
-        typingIndicator.classList.remove('hidden');
-        queryResponseContent.innerHTML = '';
-
-        queryBtn.disabled = true; queryBtn.textContent = 'Asking...';
-        try {
-            let response;
-            if (session.collectionId) {
-                response = await fetch('/api/query', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ collection_id: session.collectionId, query, model: document.getElementById('modelSelect').value }),
-                });
-            } else {
-                response = await fetch('/api/query', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: (session.fileText || '').slice(0, 200000), query, model: document.getElementById('modelSelect').value }),
-                });
-            }
-            if (!response.ok) {
-                const ct = response.headers.get('content-type');
-                if (ct && ct.includes('application/json')) {
-                    const err = await response.json(); throw new Error(err.detail || 'Query failed');
-                }
-                throw new Error(`Server error: ${response.status}`);
-            }
-            const data = await response.json();
-            typingIndicator.classList.add('hidden');
-            queryResponseContent.innerHTML = typeof marked !== 'undefined' ? marked.parse(data.answer) : data.answer;
-        } catch (error) {
-            typingIndicator.classList.add('hidden');
-            queryResponseContent.textContent = error.message;
-        } finally { queryBtn.disabled = false; queryBtn.textContent = 'Ask'; }
-    });
-    queryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') queryBtn.click(); });
-
     // ---- Tab Switching ----
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -287,129 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-            updateInfoPanel(btn.dataset.tab);
         });
     });
-
-    function updateInfoPanel(tab) {
-        const body = document.getElementById('infoPanelBody');
-        const label = document.getElementById('infoPanelTabLabel');
-        if (!body) return;
-
-        const labels = { overview: 'Overview', revenue: 'Revenue', insights: 'Insights', wordcloud: 'Key Phrases', query: 'Ask AI' };
-        label.textContent = labels[tab] || '';
-
-        const positiveScale = (val, lbl) => `<span class="info-scale-item" style="background: ${scoreGradient(val)}; color: ${scoreTextColor(val)}">${lbl}</span>`;
-        const sentimentScale = (val, lbl) => `<span class="info-scale-item" style="background: ${sentimentGradient(val)}; color: ${scoreTextColor(val)}">${lbl}</span>`;
-
-        const panels = {
-            overview: `
-                <div class="info-section">
-                    <div class="info-section-title">Sentiment Scale</div>
-                    <div class="info-scale">
-                        ${sentimentScale(0, '0.0 Negative')}
-                        ${sentimentScale(0.3, '0.3 Mix-Neg')}
-                        ${sentimentScale(0.5, '0.5 Mixed')}
-                        ${sentimentScale(0.7, '0.7 Mix-Pos')}
-                        ${sentimentScale(1.0, '1.0 Positive')}
-                    </div>
-                    <div class="info-section-content">
-                        Sentiment is scored by analyzing emotional tone, positivity/negativity ratios, and contextual cues across the entire conversation.
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">Score Guide</div>
-                    <div class="info-scale">
-                        ${positiveScale(0.2, '0-2 Negligible')}
-                        ${positiveScale(0.35, '3-4 Weak')}
-                        ${positiveScale(0.55, '5-6 Moderate')}
-                        ${positiveScale(0.75, '7-8 Strong')}
-                        ${positiveScale(0.95, '9-10 Critical')}
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">KPI Definitions</div>
-                    <div class="info-section-content">
-                        <strong>Demand</strong> — Product pull + repeat orders + stock urgency<br>
-                        <strong>Margin Stress</strong> — Pricing complaints + discount pressure<br>
-                        <strong>Supply Risk</strong> — Delivery delays + stockouts + distributor gaps
-                    </div>
-                </div>
-            `,
-            revenue: `
-                <div class="info-section">
-                    <div class="info-section-title">Revenue Map Logic</div>
-                    <div class="info-section-content">
-                        <strong>Must Sell</strong> — Protect existing revenue<br>
-                        <strong>Upsell</strong> — Expand wallet share<br>
-                        <strong>Cross Sell</strong> — Introduce complementary products<br>
-                        <strong>Pain Points</strong> — Revenue blockers<br>
-                        <strong>Improve Strategy</strong> — Long-term growth<br>
-                        <strong>Rethink Approach</strong> — Structural shifts
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">Confidence Threshold</div>
-                    <div class="info-section-content">
-                        Revenue map only shows when confidence ≥ 30%. Below threshold, insufficient signals were detected.
-                    </div>
-                </div>
-            `,
-            insights: `
-                <div class="info-section">
-                    <div class="info-section-title">Insight Categories</div>
-                    <div class="info-section-content">
-                        <strong>What's Working</strong> — Positive signals with evidence<br>
-                        <strong>What's Breaking</strong> — Failing areas with evidence<br>
-                        <strong>Hidden Signals</strong> — Non-obvious patterns
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">Action Priority</div>
-                    <div class="info-section-content">
-                        <strong>Immediate</strong> — Address within 24-48hrs<br>
-                        <strong>Short Term</strong> — Address within 1-2 weeks<br>
-                        <strong>Long Term</strong> — Plan for 1-3 months
-                    </div>
-                </div>
-            `,
-            wordcloud: `
-                <div class="info-section">
-                    <div class="info-section-title">Key Phrase Scoring</div>
-                    <div class="info-section-content">
-                        Phrases are scored 0-10 based on business significance.<br>
-                        <strong>9-10</strong> Critical signal<br>
-                        <strong>7-8</strong> Strong indicator<br>
-                        <strong>5-6</strong> Notable mention<br>
-                        <strong>3-4</strong> Weak signal<br>
-                        <strong>0-2</strong> Background noise
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">Filtering</div>
-                    <div class="info-section-content">
-                        Click tags in the cloud to filter the phrase table. Click again to deselect.
-                    </div>
-                </div>
-            `,
-            query: `
-                <div class="info-section">
-                    <div class="info-section-title">Ask AI</div>
-                    <div class="info-section-content">
-                        Natural language querying over the analyzed conversation. AI answers based only on what was discussed.
-                    </div>
-                </div>
-                <div class="info-section">
-                    <div class="info-section-title">Tips</div>
-                    <div class="info-section-content">
-                        Ask about specific products, competitive analysis, pricing concerns, or relationship dynamics.
-                    </div>
-                </div>
-            `,
-        };
-
-        body.innerHTML = panels[tab] || '<p style="color:var(--text-tertiary);font-size:0.875rem;">No guide available for this tab.</p>';
-    }
 
     // ---- Tooltips ----
     const tooltipPopup = document.getElementById('tooltipPopup');
@@ -464,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hideLoading();
         uploadLanding.classList.add('hidden');
         appLayout.classList.remove('hidden');
+        appHeader.classList.remove('hidden');
 
         setStoredPhrases(data.key_phrases || []);
 
@@ -490,13 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Key Phrases Tab
         renderKeyPhrases(data.key_phrases);
 
-        // Query Tab
+        // Query Presets
         const qaList = Array.isArray(data.qa) ? data.qa : [];
         renderQueryPresets(qaList);
-        renderSectionIfExists('autoQaList', qaList, renderAutoQAs);
-
-        // Initialize info panel for active tab
-        updateInfoPanel('overview');
 
         } catch (err) {
             console.error('displayDashboard error:', err);
@@ -950,20 +876,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderQueryPresets(qaList) {
-        const container = document.getElementById('queryPresets');
-        if (!container) return;
-        container.innerHTML = '';
+        if (!queryPresets) return;
+        queryPresets.innerHTML = '';
         if (!Array.isArray(qaList) || qaList.length === 0) return;
 
-        qaList.slice(0, 3).forEach(item => {
+        qaList.slice(0, 4).forEach(item => {
             const btn = document.createElement('button');
-            btn.className = 'query-preset-btn';
+            btn.className = 'chat-preset-btn';
             btn.textContent = item.question;
             btn.addEventListener('click', () => {
                 queryInput.value = item.question;
-                queryBtn.click();
+                sendQuery();
             });
-            container.appendChild(btn);
+            queryPresets.appendChild(btn);
         });
     }
 

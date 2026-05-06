@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SenseMark — Market Intelligence</title>
-    <link rel="icon" type="image/png" href="https://iqlytics.in/IQ%20Logo%20PNG.png">
+    <title>SenseIQ — by IQlytics Solutions Pvt Ltd</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <header class="app-header">
+    <header class="app-header hidden" id="appHeader">
         <div class="header-content">
             <div class="logo">
-                <img src="https://iqlytics.in/IQ%20Logo%20PNG.png" alt="SenseMark" class="logo-img">
+                <div class="logo-text">
+                    <span class="logo-brand"><span class="logo-sense">Sense</span><span class="logo-iq">IQ</span></span>
+                    <span class="logo-byline">by IQlytics Solutions Pvt Ltd</span>
+                </div>
             </div>
-            <div class="header-right">
-                <span class="badge">SenseMark — Market Intelligence</span>
-            </div>
+            <div class="header-right"></div>
         </div>
     </header>
 
@@ -23,6 +23,12 @@
     <section class="upload-landing" id="uploadLanding">
         <div class="upload-hero-layout">
             <div class="upload-hero-card">
+                <div class="upload-hero-logo">
+                    <div class="logo-text">
+                        <span class="logo-brand"><span class="logo-sense">Sense</span><span class="logo-iq">IQ</span></span>
+                        <span class="logo-byline">by IQlytics Solutions Pvt Ltd</span>
+                    </div>
+                </div>
                 <div class="upload-hero-content">
                     <h1 class="upload-hero-title">Own the Narrative of Your Market</h1>
                     <p class="upload-hero-subtitle">Transform raw sales conversations into actionable intelligence with AI-powered text analytics.</p>
@@ -101,53 +107,49 @@
                     </button>
                     <button class="tab-btn" data-tab="revenue">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Revenue
+                        Revenue Recommendation
                     </button>
                     <button class="tab-btn" data-tab="insights">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        Insights
+                        Product Insights
                     </button>
                     <button class="tab-btn" data-tab="wordcloud">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                         Key Phrases
                     </button>
-                    <button class="tab-btn" data-tab="query">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                        Ask AI
-                    </button>
+                </div>
+
+                <!-- Filter Bar (shared across all tabs) -->
+                <div class="filter-bar" id="filterBar">
+                    <div class="filter-group">
+                        <label for="filterRetailer">Retailer</label>
+                        <select id="filterRetailer"><option value="all">All</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterRep">Sales Rep</label>
+                        <select id="filterRep"><option value="all">All</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterProduct">Product</label>
+                        <select id="filterProduct"><option value="all">All</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterRegion">Region</label>
+                        <select id="filterRegion"><option value="all">All</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterDateRange">Date Range</label>
+                        <select id="filterDateRange"><option value="all">All Time</option></select>
+                    </div>
                 </div>
 
                 <div class="dashboard-layout">
                     <div class="tab-content" id="tabContent">
-                        <!-- Overview Tab (merged Overview + Scores) -->
+                        <!-- Overview Tab -->
                         <div class="tab-pane active" id="tab-overview">
                             <div class="tab-title-bar">
                                 <h2>Overview</h2>
                                 <p id="overviewSubtitle">Key metrics, sentiment, and category scores</p>
-                            </div>
-
-                            <!-- Filter Bar -->
-                            <div class="filter-bar" id="filterBar">
-                                <div class="filter-group">
-                                    <label for="filterRetailer">Retailer</label>
-                                    <select id="filterRetailer"><option value="all">All</option></select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="filterRep">Sales Rep</label>
-                                    <select id="filterRep"><option value="all">All</option></select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="filterProduct">Product</label>
-                                    <select id="filterProduct"><option value="all">All</option></select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="filterRegion">Region</label>
-                                    <select id="filterRegion"><option value="all">All</option></select>
-                                </div>
-                                <div class="filter-group">
-                                    <label for="filterDateRange">Date Range</label>
-                                    <select id="filterDateRange"><option value="all">All Time</option></select>
-                                </div>
                             </div>
 
                             <div class="overview-section" id="businessMetricsCard">
@@ -176,10 +178,10 @@
                             </div>
                         </div>
 
-                        <!-- Revenue Tab -->
+                        <!-- Revenue Recommendation Tab -->
                         <div class="tab-pane" id="tab-revenue">
                             <div class="tab-title-bar">
-                                <h2>Revenue Strategy Map</h2>
+                                <h2>Revenue Recommendation</h2>
                                 <p id="revenueSubtitle">Actionable revenue insights from conversation</p>
                             </div>
 
@@ -191,10 +193,10 @@
                             </div>
                         </div>
 
-                        <!-- Insights Tab -->
+                        <!-- Product Insights Tab -->
                         <div class="tab-pane" id="tab-insights">
                             <div class="tab-title-bar">
-                                <h2>Deep Insights</h2>
+                                <h2>Product Insights</h2>
                                 <p>Product analysis, competitive intelligence, and action items</p>
                             </div>
 
@@ -270,60 +272,34 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Query Tab -->
-                        <div class="tab-pane" id="tab-query">
-                            <div class="tab-title-bar">
-                                <h2>Ask AI</h2>
-                                <p>Natural language querying for deeper exploration</p>
-                            </div>
-
-                            <div class="card query-card">
-                                <div class="query-presets" id="queryPresets"></div>
-                                <div class="query-input-group">
-                                    <div class="query-input-wrap">
-                                        <svg class="query-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                                        <input type="text" id="queryInput" placeholder="Ask a question about this conversation...">
-                                    </div>
-                                    <button class="btn btn-primary" id="queryBtn">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
-                                        Ask
-                                    </button>
-                                </div>
-                                <div class="query-response hidden" id="queryResponse">
-                                    <div class="query-response-header">
-                                        <span class="query-response-label">AI Response</span>
-                                        <span class="query-typing-indicator hidden" id="typingIndicator">
-                                            <span></span><span></span><span></span>
-                                        </span>
-                                    </div>
-                                    <div class="query-response-content" id="queryResponseContent"></div>
-                                </div>
-                            </div>
-
-                            <div class="card" id="autoQaCard">
-                                <h3>Auto-generated Q&A</h3>
-                                <div class="qa-list" id="autoQaList"></div>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Info Panel (right column) -->
-                    <aside class="info-panel" id="infoPanel">
-                        <div class="info-panel-header">
-                            <h3>Guide</h3>
-                            <span id="infoPanelTabLabel">Overview</span>
+                    <!-- Persistent Chat Sidebar -->
+                    <aside class="chat-sidebar" id="chatSidebar">
+                        <div class="chat-header">
+                            <h3>Ask AI</h3>
+                            <span>Explore deeper with AI</span>
                         </div>
-                        <div class="info-panel-body" id="infoPanelBody"></div>
+
+                        <div class="chat-presets" id="queryPresets"></div>
+
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="auto-qa-list" id="autoQaList"></div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <div class="chat-input-wrap">
+                                <input type="text" id="queryInput" placeholder="Type your question...">
+                                <button class="chat-send-btn" id="queryBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                                </button>
+                            </div>
+                        </div>
                     </aside>
                 </div>
             </section>
         </main>
     </div>
-
-    <footer class="app-footer">
-        <p>SenseMark &mdash; Market Intelligence Platform</p>
-    </footer>
 
     <div class="tooltip-popup" id="tooltipPopup"></div>
 
