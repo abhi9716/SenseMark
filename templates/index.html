@@ -95,9 +95,9 @@
         <main class="dashboard-container">
             <section class="dashboard-section" id="dashboardSection">
                 <div class="dashboard-tabs" id="dashboardTabs">
-                    <button class="tab-btn active" data-tab="analysis">
+                    <button class="tab-btn active" data-tab="overview">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        Analysis
+                        Overview
                     </button>
                     <button class="tab-btn" data-tab="revenue">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -117,15 +117,13 @@
                     </button>
                 </div>
 
-                <div class="dashboard-layout full-width">
+                <div class="dashboard-layout">
                     <div class="tab-content" id="tabContent">
-                        <!-- Analysis Tab (merged Overview + Scores) -->
-                        <div class="tab-pane active" id="tab-analysis">
-                            <div class="story-banner" id="storyBanner">
-                                <div class="story-content">
-                                    <h2 id="storyTitle"></h2>
-                                    <p id="storySubtitle"></p>
-                                </div>
+                        <!-- Overview Tab (merged Overview + Scores) -->
+                        <div class="tab-pane active" id="tab-overview">
+                            <div class="tab-title-bar">
+                                <h2>Overview</h2>
+                                <p id="overviewSubtitle">Key metrics, sentiment, and category scores</p>
                             </div>
 
                             <!-- Filter Bar -->
@@ -154,43 +152,37 @@
 
                             <div class="kpi-row" id="kpiRow"></div>
 
-                            <div class="analysis-grid">
-                                <div class="analysis-left" id="analysisLeft">
-                                    <div class="card" id="sentimentCard">
-                                        <h3>Sentiment Analysis</h3>
-                                        <div class="sentiment-overall">
-                                            <div class="sentiment-meter"><div class="sentiment-fill" id="sentimentFill"></div></div>
-                                            <span class="sentiment-label" id="sentimentLabel"></span>
-                                            <span class="sentiment-score" id="sentimentScore"></span>
-                                        </div>
-                                        <p class="sentiment-nuance" id="sentimentNuance"></p>
-                                        <div class="sentiment-breakdown" id="sentimentBreakdown"></div>
-                                    </div>
-                                </div>
-                                <div class="analysis-right" id="analysisRight">
-                                    <div class="card" id="metricsCard">
-                                        <h3>Key Metrics</h3>
-                                        <div class="metrics-grid" id="quickMetrics"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card" id="scoreBarsCard">
-                                <h3>LLM-Scored Categories</h3>
-                                <div class="score-bars" id="scoreBars"></div>
-                            </div>
-
-                            <div class="card" id="metricsDetailCard">
-                                <h3>Business Metrics Detail</h3>
+                            <div class="overview-section" id="businessMetricsCard">
+                                <h3>Business Metrics</h3>
                                 <div class="derived-metrics" id="derivedMetrics"></div>
+                            </div>
+
+                            <div class="overview-grid">
+                                <div class="card" id="sentimentCard">
+                                    <div class="sentiment-card-header">
+                                        <h3>Sentiment</h3>
+                                        <span class="sentiment-score" id="sentimentScore"></span>
+                                    </div>
+                                    <div class="sentiment-overall">
+                                        <div class="sentiment-meter"><div class="sentiment-fill" id="sentimentFill"></div></div>
+                                        <span class="sentiment-label" id="sentimentLabel"></span>
+                                    </div>
+                                    <p class="sentiment-nuance" id="sentimentNuance"></p>
+                                    <div class="sentiment-breakdown" id="sentimentBreakdown"></div>
+                                </div>
+
+                                <div class="card" id="scoreBarsCard">
+                                    <h3>Categories</h3>
+                                    <div class="score-bars" id="scoreBars"></div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Revenue Tab -->
                         <div class="tab-pane" id="tab-revenue">
-                            <div class="tab-header">
+                            <div class="tab-title-bar">
                                 <h2>Revenue Strategy Map</h2>
-                                <p class="tab-subtitle" id="revenueSubtitle">Actionable revenue insights from conversation</p>
+                                <p id="revenueSubtitle">Actionable revenue insights from conversation</p>
                             </div>
 
                             <div class="revenue-grid" id="revenueGrid"></div>
@@ -203,9 +195,9 @@
 
                         <!-- Insights Tab -->
                         <div class="tab-pane" id="tab-insights">
-                            <div class="tab-header">
+                            <div class="tab-title-bar">
                                 <h2>Deep Insights</h2>
-                                <p class="tab-subtitle">Product analysis, competitive intelligence, and action items</p>
+                                <p>Product analysis, competitive intelligence, and action items</p>
                             </div>
 
                             <div class="card" id="productsCard">
@@ -246,9 +238,9 @@
 
                         <!-- Key Phrases Tab -->
                         <div class="tab-pane" id="tab-wordcloud">
-                            <div class="tab-header">
+                            <div class="tab-title-bar">
                                 <h2>Key Phrases</h2>
-                                <p class="tab-subtitle">Click tags to filter the phrase table</p>
+                                <p>Click tags to filter the phrase table</p>
                             </div>
 
                             <!-- Interactive Phrase Cloud -->
@@ -283,9 +275,9 @@
 
                         <!-- Query Tab -->
                         <div class="tab-pane" id="tab-query">
-                            <div class="tab-header">
-                                <h2>Ask AI About This Transcript</h2>
-                                <p class="tab-subtitle">Natural language querying for deeper exploration</p>
+                            <div class="tab-title-bar">
+                                <h2>Ask AI</h2>
+                                <p>Natural language querying for deeper exploration</p>
                             </div>
 
                             <div class="card query-card">
@@ -317,6 +309,15 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Info Panel (right column) -->
+                    <aside class="info-panel" id="infoPanel">
+                        <div class="info-panel-header">
+                            <h3>Guide</h3>
+                            <span id="infoPanelTabLabel">Overview</span>
+                        </div>
+                        <div class="info-panel-body" id="infoPanelBody"></div>
+                    </aside>
                 </div>
             </section>
         </main>

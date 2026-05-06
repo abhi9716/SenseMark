@@ -287,8 +287,129 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            updateInfoPanel(btn.dataset.tab);
         });
     });
+
+    function updateInfoPanel(tab) {
+        const body = document.getElementById('infoPanelBody');
+        const label = document.getElementById('infoPanelTabLabel');
+        if (!body) return;
+
+        const labels = { overview: 'Overview', revenue: 'Revenue', insights: 'Insights', wordcloud: 'Key Phrases', query: 'Ask AI' };
+        label.textContent = labels[tab] || '';
+
+        const positiveScale = (val, lbl) => `<span class="info-scale-item" style="background: ${scoreGradient(val)}; color: ${scoreTextColor(val)}">${lbl}</span>`;
+        const sentimentScale = (val, lbl) => `<span class="info-scale-item" style="background: ${sentimentGradient(val)}; color: ${scoreTextColor(val)}">${lbl}</span>`;
+
+        const panels = {
+            overview: `
+                <div class="info-section">
+                    <div class="info-section-title">Sentiment Scale</div>
+                    <div class="info-scale">
+                        ${sentimentScale(0, '0.0 Negative')}
+                        ${sentimentScale(0.3, '0.3 Mix-Neg')}
+                        ${sentimentScale(0.5, '0.5 Mixed')}
+                        ${sentimentScale(0.7, '0.7 Mix-Pos')}
+                        ${sentimentScale(1.0, '1.0 Positive')}
+                    </div>
+                    <div class="info-section-content">
+                        Sentiment is scored by analyzing emotional tone, positivity/negativity ratios, and contextual cues across the entire conversation.
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">Score Guide</div>
+                    <div class="info-scale">
+                        ${positiveScale(0.2, '0-2 Negligible')}
+                        ${positiveScale(0.35, '3-4 Weak')}
+                        ${positiveScale(0.55, '5-6 Moderate')}
+                        ${positiveScale(0.75, '7-8 Strong')}
+                        ${positiveScale(0.95, '9-10 Critical')}
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">KPI Definitions</div>
+                    <div class="info-section-content">
+                        <strong>Demand</strong> — Product pull + repeat orders + stock urgency<br>
+                        <strong>Margin Stress</strong> — Pricing complaints + discount pressure<br>
+                        <strong>Supply Risk</strong> — Delivery delays + stockouts + distributor gaps
+                    </div>
+                </div>
+            `,
+            revenue: `
+                <div class="info-section">
+                    <div class="info-section-title">Revenue Map Logic</div>
+                    <div class="info-section-content">
+                        <strong>Must Sell</strong> — Protect existing revenue<br>
+                        <strong>Upsell</strong> — Expand wallet share<br>
+                        <strong>Cross Sell</strong> — Introduce complementary products<br>
+                        <strong>Pain Points</strong> — Revenue blockers<br>
+                        <strong>Improve Strategy</strong> — Long-term growth<br>
+                        <strong>Rethink Approach</strong> — Structural shifts
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">Confidence Threshold</div>
+                    <div class="info-section-content">
+                        Revenue map only shows when confidence ≥ 30%. Below threshold, insufficient signals were detected.
+                    </div>
+                </div>
+            `,
+            insights: `
+                <div class="info-section">
+                    <div class="info-section-title">Insight Categories</div>
+                    <div class="info-section-content">
+                        <strong>What's Working</strong> — Positive signals with evidence<br>
+                        <strong>What's Breaking</strong> — Failing areas with evidence<br>
+                        <strong>Hidden Signals</strong> — Non-obvious patterns
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">Action Priority</div>
+                    <div class="info-section-content">
+                        <strong>Immediate</strong> — Address within 24-48hrs<br>
+                        <strong>Short Term</strong> — Address within 1-2 weeks<br>
+                        <strong>Long Term</strong> — Plan for 1-3 months
+                    </div>
+                </div>
+            `,
+            wordcloud: `
+                <div class="info-section">
+                    <div class="info-section-title">Key Phrase Scoring</div>
+                    <div class="info-section-content">
+                        Phrases are scored 0-10 based on business significance.<br>
+                        <strong>9-10</strong> Critical signal<br>
+                        <strong>7-8</strong> Strong indicator<br>
+                        <strong>5-6</strong> Notable mention<br>
+                        <strong>3-4</strong> Weak signal<br>
+                        <strong>0-2</strong> Background noise
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">Filtering</div>
+                    <div class="info-section-content">
+                        Click tags in the cloud to filter the phrase table. Click again to deselect.
+                    </div>
+                </div>
+            `,
+            query: `
+                <div class="info-section">
+                    <div class="info-section-title">Ask AI</div>
+                    <div class="info-section-content">
+                        Natural language querying over the analyzed conversation. AI answers based only on what was discussed.
+                    </div>
+                </div>
+                <div class="info-section">
+                    <div class="info-section-title">Tips</div>
+                    <div class="info-section-content">
+                        Ask about specific products, competitive analysis, pricing concerns, or relationship dynamics.
+                    </div>
+                </div>
+            `,
+        };
+
+        body.innerHTML = panels[tab] || '<p style="color:var(--text-tertiary);font-size:0.875rem;">No guide available for this tab.</p>';
+    }
 
     // ---- Tooltips ----
     const tooltipPopup = document.getElementById('tooltipPopup');
@@ -346,14 +467,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setStoredPhrases(data.key_phrases || []);
 
-        // Analysis Tab (merged Overview + Scores)
+        // Overview Tab (merged Overview + Scores)
         renderStoryBanner(data.summary);
         populateFilters(data);
         renderKPIs(data.metrics, data.sentiment, data.categories);
-        renderSentiment(data.sentiment);
-        renderMetrics(data.metrics);
-        renderCategoryScores(data.categories);
         renderBusinessMetrics(data.metrics);
+        renderSentiment(data.sentiment);
+        renderCategoryScores(data.categories);
 
         // Revenue Tab
         renderRevenueMap(data.revenue_map);
@@ -411,15 +531,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderStoryBanner(summary) {
-        const storyBanner = document.getElementById('storyBanner');
-        const storyTitle = document.getElementById('storyTitle');
-        const storySubtitle = document.getElementById('storySubtitle');
-        if (summary) {
-            storyTitle.textContent = 'Market Intelligence Report';
-            storySubtitle.textContent = summary;
-            storyBanner.style.display = 'block';
-        } else {
-            storyBanner.style.display = 'none';
+        const subtitle = document.getElementById('overviewSubtitle');
+        if (subtitle && summary) {
+            subtitle.textContent = summary;
         }
     }
 
@@ -428,20 +542,24 @@ document.addEventListener('DOMContentLoaded', () => {
         row.innerHTML = '';
 
         const kpis = [
-            { label: 'Demand Index', value: metrics?.demand_index?.value, colorFn: goodColor },
+            { label: 'Demand', value: metrics?.demand_index?.value, colorFn: goodColor },
             { label: 'Sentiment', value: (sentiment?.score || 0) * 10, colorFn: goodColor },
             { label: 'Margin Stress', value: metrics?.margin_stress?.value, colorFn: riskColor },
             { label: 'Supply Risk', value: metrics?.supply_risk?.value, colorFn: riskColor },
             { label: 'Retailer Advocacy', value: metrics?.retailer_advocacy?.value, colorFn: goodColor },
+            { label: 'Price Sensitivity', value: metrics?.price_sensitivity?.value, colorFn: riskColor },
+            { label: 'Channel Shift', value: metrics?.channel_shift?.value, colorFn: riskColor },
+            { label: 'Brand Loyalty', value: metrics?.brand_loyalty?.value, colorFn: goodColor },
         ];
 
         kpis.forEach((kpi, i) => {
+            if (kpi.value == null) return;
             const el = document.createElement('div');
-            el.className = `kpi-card stagger-${Math.min(i + 1, 5)}`;
-            const val = kpi.value ?? 0;
+            el.className = `kpi-card stagger-${Math.min(i + 1, 7)}`;
+            const val = kpi.value;
             const color = kpi.colorFn(val);
             el.innerHTML = `
-                <div class="kpi-value" style="color: ${color}">${val.toFixed(1)}/10</div>
+                <div class="kpi-value" style="color: ${color}">${val.toFixed(1)}</div>
                 <div class="kpi-label">${kpi.label}</div>
             `;
             row.appendChild(el);
@@ -587,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderBusinessMetrics(metrics) {
         const container = document.getElementById('derivedMetrics');
-        const card = document.getElementById('metricsDetailCard');
+        const card = document.getElementById('businessMetricsCard');
         container.innerHTML = '';
         if (!metrics) { if (card) card.style.display = 'none'; return; }
         if (card) card.style.display = '';
