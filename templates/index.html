@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SenseMark — Market Intelligence</title>
+    <link rel="icon" type="image/png" href="https://iqlytics.in/IQ%20Logo%20PNG.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="https://iqlytics.in/IQ%20Logo%20PNG.png" alt="SenseMark" class="logo-img">
+            </div>
+            <div class="header-right">
+                <span class="badge">SenseMark — Market Intelligence</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Upload Landing Page -->
+    <section class="upload-landing" id="uploadLanding">
+        <div class="upload-hero-layout">
+            <div class="upload-hero-card">
+                <div class="upload-hero-content">
+                    <h1 class="upload-hero-title">Own the Narrative of Your Market</h1>
+                    <p class="upload-hero-subtitle">Transform raw sales conversations into actionable intelligence with AI-powered text analytics.</p>
+                </div>
+
+                <form id="uploadForm" enctype="multipart/form-data" class="upload-form">
+                    <div class="file-drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" name="files" accept=".txt,.csv,.md,.log,.tsv,.doc,.docx" multiple>
+                        <div class="drop-content">
+                            <svg class="upload-file-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17,8 12,3 7,8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p class="drop-text">Drop files here or click to upload</p>
+                            <p class="drop-hint">Supports .txt, .csv, .md, .log, .tsv, .doc, .docx</p>
+                        </div>
+                        <div class="file-list hidden" id="fileList"></div>
+                    </div>
+
+                    <div class="upload-controls">
+                        <div class="model-select-inline">
+                            <label for="modelSelect">Model</label>
+                            <select id="modelSelect" name="model">
+                                <option value="gemma4:31b-cloud">Gemma 4 31B Cloud</option>
+                                <option value="gemma3:27b-cloud">Gemma 3 27B Cloud</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" id="analyzeBtn" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/>
+                            </svg>
+                            Analyze Transcript
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="upload-hero-image">
+                <img src="https://haleonhuddle.com/assets/PRODUCT_SHOT_GREENBAR_MAY_2024_1920X1080-CXGM4t3-.png" alt="Market Intelligence Visualization">
+            </div>
+        </div>
+    </section>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <h3>Processing Conversation...</h3>
+            <div class="loading-steps">
+                <div class="step" id="step1"><span class="step-dot"></span> Parsing transcript</div>
+                <div class="step" id="step2"><span class="step-dot"></span> AI analysis &amp; categorization</div>
+                <div class="step" id="step3"><span class="step-dot"></span> Revenue mapping</div>
+                <div class="step" id="step4"><span class="step-dot"></span> Building dashboard</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="app-layout hidden" id="appLayout">
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-new-btn" id="sidebarNewBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Analysis
+            </button>
+            <div class="sidebar-sessions" id="sidebarSessions"></div>
+            <button class="sidebar-clear-btn" id="sidebarClearBtn">Clear All</button>
+        </aside>
+
+        <main class="dashboard-container">
+            <section class="dashboard-section" id="dashboardSection">
+                <div class="dashboard-tabs" id="dashboardTabs">
+                    <button class="tab-btn active" data-tab="analysis">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Analysis
+                    </button>
+                    <button class="tab-btn" data-tab="revenue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Revenue
+                    </button>
+                    <button class="tab-btn" data-tab="insights">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Insights
+                    </button>
+                    <button class="tab-btn" data-tab="wordcloud">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                        Key Phrases
+                    </button>
+                    <button class="tab-btn" data-tab="query">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Ask AI
+                    </button>
+                </div>
+
+                <div class="dashboard-layout full-width">
+                    <div class="tab-content" id="tabContent">
+                        <!-- Analysis Tab (merged Overview + Scores) -->
+                        <div class="tab-pane active" id="tab-analysis">
+                            <div class="story-banner" id="storyBanner">
+                                <div class="story-content">
+                                    <h2 id="storyTitle"></h2>
+                                    <p id="storySubtitle"></p>
+                                </div>
+                            </div>
+
+                            <!-- Filter Bar -->
+                            <div class="filter-bar" id="filterBar">
+                                <div class="filter-group">
+                                    <label for="filterRetailer">Retailer</label>
+                                    <select id="filterRetailer"><option value="all">All</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="filterRep">Sales Rep</label>
+                                    <select id="filterRep"><option value="all">All</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="filterProduct">Product</label>
+                                    <select id="filterProduct"><option value="all">All</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="filterRegion">Region</label>
+                                    <select id="filterRegion"><option value="all">All</option></select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="filterDateRange">Date Range</label>
+                                    <select id="filterDateRange"><option value="all">All Time</option></select>
+                                </div>
+                            </div>
+
+                            <div class="kpi-row" id="kpiRow"></div>
+
+                            <div class="analysis-grid">
+                                <div class="analysis-left" id="analysisLeft">
+                                    <div class="card" id="sentimentCard">
+                                        <h3>Sentiment Analysis</h3>
+                                        <div class="sentiment-overall">
+                                            <div class="sentiment-meter"><div class="sentiment-fill" id="sentimentFill"></div></div>
+                                            <span class="sentiment-label" id="sentimentLabel"></span>
+                                            <span class="sentiment-score" id="sentimentScore"></span>
+                                        </div>
+                                        <p class="sentiment-nuance" id="sentimentNuance"></p>
+                                        <div class="sentiment-breakdown" id="sentimentBreakdown"></div>
+                                    </div>
+                                </div>
+                                <div class="analysis-right" id="analysisRight">
+                                    <div class="card" id="metricsCard">
+                                        <h3>Key Metrics</h3>
+                                        <div class="metrics-grid" id="quickMetrics"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" id="scoreBarsCard">
+                                <h3>LLM-Scored Categories</h3>
+                                <div class="score-bars" id="scoreBars"></div>
+                            </div>
+
+                            <div class="card" id="metricsDetailCard">
+                                <h3>Business Metrics Detail</h3>
+                                <div class="derived-metrics" id="derivedMetrics"></div>
+                            </div>
+                        </div>
+
+                        <!-- Revenue Tab -->
+                        <div class="tab-pane" id="tab-revenue">
+                            <div class="tab-header">
+                                <h2>Revenue Strategy Map</h2>
+                                <p class="tab-subtitle" id="revenueSubtitle">Actionable revenue insights from conversation</p>
+                            </div>
+
+                            <div class="revenue-grid" id="revenueGrid"></div>
+
+                            <div class="card" id="risksCard">
+                                <h3>Risk Flags</h3>
+                                <div class="risks-list" id="risksList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Insights Tab -->
+                        <div class="tab-pane" id="tab-insights">
+                            <div class="tab-header">
+                                <h2>Deep Insights</h2>
+                                <p class="tab-subtitle">Product analysis, competitive intelligence, and action items</p>
+                            </div>
+
+                            <div class="card" id="productsCard">
+                                <h3>Product Insights</h3>
+                                <div class="products-list" id="productsList"></div>
+                            </div>
+
+                            <div class="card" id="causeEffectCard">
+                                <h3>Cause &amp; Effect Mapping</h3>
+                                <div class="cause-effect-list" id="causeEffectList"></div>
+                            </div>
+
+                            <div class="card" id="decisionsCard">
+                                <h3>Decision Insights</h3>
+                                <div class="decisions-grid" id="decisionsGrid"></div>
+                            </div>
+
+                            <div class="card" id="painpointsCard">
+                                <h3>Pain Points</h3>
+                                <div class="painpoints-list" id="painpointsList"></div>
+                            </div>
+
+                            <div class="card" id="opportunitiesCard">
+                                <h3>Opportunities</h3>
+                                <div class="opportunities-list" id="opportunitiesList"></div>
+                            </div>
+
+                            <div class="card" id="competitiveCard">
+                                <h3>Competitive Intelligence</h3>
+                                <div class="competitive-list" id="competitiveList"></div>
+                            </div>
+
+                            <div class="card" id="actionsCard">
+                                <h3>Action Items</h3>
+                                <div class="actions-list" id="actionsList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Key Phrases Tab -->
+                        <div class="tab-pane" id="tab-wordcloud">
+                            <div class="tab-header">
+                                <h2>Key Phrases</h2>
+                                <p class="tab-subtitle">Click tags to filter the phrase table</p>
+                            </div>
+
+                            <!-- Interactive Phrase Cloud -->
+                            <div class="phrase-cloud-card" id="phraseCloudCard">
+                                <h3>Tag Cloud</h3>
+                                <div class="phrase-cloud" id="phraseCloud"></div>
+                            </div>
+
+                            <div class="active-filters" id="activeFilters"></div>
+
+                            <div class="card">
+                                <div class="phrase-table-wrap">
+                                    <table class="phrase-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Phrase</th>
+                                                <th>Score</th>
+                                                <th>Tags</th>
+                                                <th>Context</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="phraseTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="phrase-table-empty hidden" id="phraseTableEmpty">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                    <p>No phrases match the selected tags</p>
+                                    <button class="btn btn-sm btn-ghost" id="clearFilterBtn">Clear Filter</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Query Tab -->
+                        <div class="tab-pane" id="tab-query">
+                            <div class="tab-header">
+                                <h2>Ask AI About This Transcript</h2>
+                                <p class="tab-subtitle">Natural language querying for deeper exploration</p>
+                            </div>
+
+                            <div class="card query-card">
+                                <div class="query-presets" id="queryPresets"></div>
+                                <div class="query-input-group">
+                                    <div class="query-input-wrap">
+                                        <svg class="query-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                        <input type="text" id="queryInput" placeholder="Ask a question about this conversation...">
+                                    </div>
+                                    <button class="btn btn-primary" id="queryBtn">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                                        Ask
+                                    </button>
+                                </div>
+                                <div class="query-response hidden" id="queryResponse">
+                                    <div class="query-response-header">
+                                        <span class="query-response-label">AI Response</span>
+                                        <span class="query-typing-indicator hidden" id="typingIndicator">
+                                            <span></span><span></span><span></span>
+                                        </span>
+                                    </div>
+                                    <div class="query-response-content" id="queryResponseContent"></div>
+                                </div>
+                            </div>
+
+                            <div class="card" id="autoQaCard">
+                                <h3>Auto-generated Q&A</h3>
+                                <div class="qa-list" id="autoQaList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="app-footer">
+        <p>SenseMark &mdash; Market Intelligence Platform</p>
+    </footer>
+
+    <div class="tooltip-popup" id="tooltipPopup"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
