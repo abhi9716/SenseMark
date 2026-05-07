@@ -1,10 +1,8 @@
-FROM ubuntu:22.04
+FROM python:3.11-slim
 
 # Install system deps
 RUN apt-get update && apt-get install -y \
     curl \
-    python3 \
-    python3-pip \
     zstd \
     && rm -rf /var/lib/apt/lists/*
 
@@ -14,7 +12,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

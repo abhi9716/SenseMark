@@ -847,6 +847,7 @@ body {
 .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ===== TAB CONTENT ===== */
+.tab-pane {
     display: none;
     animation: fadeInUp 0.3s ease;
 }
@@ -934,8 +935,7 @@ body {
 
 .tab-pane.active { display: block; }
 
-/* ===== CHAT SIDEBAR ===== */
-.tab-pane {
+/* ===== TAB TITLE BAR ===== */
 .tab-title-bar {
     background: var(--primary);
     color: white;

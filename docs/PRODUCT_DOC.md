@@ -1,8 +1,8 @@
-# SenseMark — Business Product Document
+# SenseIQ — Business Product Document
 
 ## 1. Product Overview
 
-**SenseMark** is a market intelligence platform that transforms raw field conversations between sales representatives and retail partners into structured, actionable business insights. It uses LLM-powered analysis to convert unstructured text (transcripts, survey responses, voice notes) into a 6-tab interactive dashboard with scores, revenue strategies, risk flags, and natural language querying.
+**SenseIQ** is a market intelligence platform by IQlytics Solutions Pvt Ltd that transforms raw field conversations between sales representatives and retail partners into structured, actionable business insights. It uses LLM-powered analysis to convert unstructured text (transcripts, survey responses, voice notes) into an interactive dashboard with 4 tabs, scores, revenue strategies, risk flags, and a persistent AI chat sidebar for natural language querying.
 
 **Tagline:** *Own the Narrative of Your Market*
 
@@ -12,7 +12,7 @@
 - Revenue operations leaders
 - Market research analysts
 
-**Core Problem:** Field teams capture rich market intelligence through daily conversations with retailers, but this data is trapped in unstructured text/audio. SenseMark extracts, categorizes, and scores this intelligence automatically, turning raw dialogue into a competitive advantage.
+**Core Problem:** Field teams capture rich market intelligence through daily conversations with retailers, but this data is trapped in unstructured text/audio. SenseIQ extracts, categorizes, and scores this intelligence automatically, turning raw dialogue into a competitive advantage.
 
 ---
 
@@ -54,7 +54,7 @@ One-line narrative capturing the core market story from the conversation.
 - Relationship tenure (long-term, new, unknown)
 
 ### 4.3 Sentiment Analysis
-- **Overall sentiment:** 0-1 normalized score with positive/mixed/negative label
+- **Overall sentiment:** 0-10 score with positive/mixed/negative label
 - **4-axis breakdown:** Towards products, company support, market conditions, competition
 - **Nuance explanation:** Why this sentiment was assigned
 
@@ -66,9 +66,10 @@ AI categorizes the conversation into business themes, each with:
 - Severity rating (critical/high/medium/low)
 - Evidence quote from the conversation
 
-### 4.5 Business Metrics (7 KPIs)
+### 4.5 Business Metrics (8 KPIs)
 | Metric | Measures | Scale |
 |---|---|---|
+| Sentiment | Overall conversation tone | 0-10 |
 | Demand Index | Product pull, repeat orders, stock urgency | 0-10 |
 | Margin Stress | Pricing complaints, discount pressure | 0-10 |
 | Supply Risk | Delivery delays, stockouts, distributor gaps | 0-10 |
@@ -120,35 +121,50 @@ Per-product analysis:
 Root issue → business impact with supporting evidence from the conversation.
 
 ### 4.14 Auto-Generated Q&A
-Three pre-generated question-answer pairs for quick exploration.
+Pre-generated question-answer pairs displayed in the chat sidebar for quick exploration.
 
 ---
 
 ## 5. Dashboard Experience
 
-### 5.1 Six Tabs
+### 5.1 Layout
+
+The dashboard uses a two-column layout:
+- **Left side:** Tabbed content area with shared filter bar
+- **Right side:** Persistent "Ask AI" chat sidebar (always visible)
+
+### 5.2 Shared Filter Bar
+
+Visible above all tabs for filtering by:
+- Retailer
+- Sales Rep
+- Product
+- Region
+- Date Range
+
+### 5.3 Four Tabs
 
 | Tab | Content |
 |---|---|
-| **Overview** | Executive summary, 5 KPI cards, retailer profile, sentiment meter, key metrics grid |
-| **Scores** | Auto-discovered themes with score bars, severity badges, business metrics detail |
-| **Revenue** | 6-category revenue strategy map, risk flags with severity color-coding |
-| **Insights** | Product analysis, cause-effect mapping, decision insights (working/breaking/hidden), pain points, opportunities, competitive intel, action items |
-| **Key Phrases** | Tagged phrase table with topic filtering, significance scores, context |
-| **Ask AI** | Natural language query with preset questions, Markdown-formatted answers, auto-generated Q&A |
+| **Overview** | Business Metrics (8 KPIs including Sentiment), sentiment meter with 4-axis breakdown, category scores |
+| **Revenue Recommendation** | 6-category revenue strategy map, risk flags with severity color-coding |
+| **Product Insights** | Product analysis, cause-effect mapping, decision insights, pain points, opportunities, competitive intel, action items |
+| **Key Phrases** | Tag cloud with interactive filtering, phrase table with significance scores and context |
 
-### 5.2 Session Management
+### 5.4 Persistent Chat Sidebar (Ask AI)
+
+A fixed right-side chat panel (520px wide) that persists across all tabs:
+- **Preset questions** — clickable suggestion buttons from auto-generated Q&A
+- **Chat messages** — scrollable conversation history with user/AI bubbles
+- **Auto-generated Q&A** — pre-built Q&A pairs shown on load
+- **Text input** — ask any question about the analyzed conversation
+- Responses are rendered in Markdown format
+
+### 5.5 Session Management
 - Sidebar with session history (persisted in localStorage)
 - Click to switch between past analyses
 - "New Analysis" button returns to upload page
 - "Clear All" removes cached sessions
-
-### 5.3 Contextual Help Panel
-A sticky right-side panel that changes content per tab, explaining:
-- Scoring scales and interpretation
-- Metric definitions
-- Revenue map logic and confidence thresholds
-- Action item urgency definitions
 
 ---
 
@@ -163,7 +179,7 @@ A sticky right-side panel that changes content per tab, explaining:
 | 7-8 | Strong — recurring theme with clear impact |
 | 9-10 | Critical — dominant theme, major business factor |
 
-### Sentiment Scale (0-1)
+### Sentiment Scale
 | Value | Label |
 |---|---|
 | 0.0 | Negative |
@@ -200,12 +216,13 @@ Any Ollama-compatible model that supports JSON structured output can be used by 
 
 ### Phase 1 — Current (v4.0)
 - LLM-powered analysis with structured JSON output
-- 6-tab interactive dashboard with sidebar session management
+- 4-tab dashboard with persistent AI chat sidebar
 - Multi-model support
 - Revenue strategy categorization
-- Key phrase table with topic filtering
+- Key phrase table with interactive tag cloud filtering
 - Natural language Q&A with vector-backed retrieval
 - Multi-file upload support
+- Shared filter bar across all tabs
 - Voice transcript ready, survey data integration ready
 
 ### Phase 2 — Next
