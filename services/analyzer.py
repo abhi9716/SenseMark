@@ -1,18 +1,28 @@
-import ollama
+import httpx
 import os
 import json
 import re
 from typing import Optional
 
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.com")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 
 
-def get_client():
-    kwargs = {"host": OLLAMA_HOST}
+async def ollama_chat(messages, model="gemma4:31b-cloud", options=None, format=None):
+    headers = {"Content-Type": "application/json"}
     if OLLAMA_API_KEY:
-        kwargs["headers"] = {"Authorization": f"Bearer {OLLAMA_API_KEY}"}
-    return ollama.AsyncClient(**kwargs)
+        headers["Authorization"] = f"Bearer {OLLAMA_API_KEY}"
+
+    payload = {"model": model, "messages": messages, "stream": False}
+    if options:
+        payload["options"] = options
+    if format:
+        payload["format"] = format
+
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        response = await client.post(f"{OLLAMA_HOST}/api/chat", headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()
 
 
 SYSTEM_PROMPT = """You are an expert market research analyst specializing in FMCG field intelligence. Analyze conversations between sales reps and retail partners to extract structured, decision-grade insights.
@@ -186,7 +196,7 @@ async def analyze_text(text: str, model: str = "gemma4:31b-cloud") -> dict:
 Provide your analysis as valid JSON matching the specified structure."""
 
     try:
-        response = await get_client().chat(
+        response = await ollama_chat(
             model=model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -235,7 +245,7 @@ Question: {query}
 Provide a detailed, insightful answer based only on the information in the conversation. If the answer cannot be determined from the conversation, say so clearly."""
 
     try:
-        response = await get_client().chat(
+        response = await ollama_chat(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a market research analyst. Answer questions based only on the provided conversation transcript."},

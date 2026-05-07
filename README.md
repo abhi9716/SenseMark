@@ -137,8 +137,8 @@ cd SenseMark
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# Configure Ollama (local or cloud)
-cp .env.example .env  # edit with your settings
+# Configure Ollama Cloud (required)
+export OLLAMA_API_KEY=your-api-key-here
 
 # Run
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -154,11 +154,11 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 # Build
 docker build -t sensemark .
 
-# Run
-docker run -d -p 8000:8000 -p 11434:11434 \
-  -e OLLAMA_HOST=http://localhost:11434 \
-  -e OLLAMA_API_KEY=your-key \
-  --name sensemark sensemark
+# Run (auto-detects OLLAMA_API_KEY from host environment)
+docker run -p 8000:8000 -e OLLAMA_API_KEY sensemark
+
+# Or pass directly
+docker run -p 8000:8000 -e OLLAMA_API_KEY=your-key sensemark
 
 # Open http://localhost:8000
 ```
@@ -167,19 +167,28 @@ docker run -d -p 8000:8000 -p 11434:11434 \
 
 ## Configuration
 
-### Local Setup
+### Cloud Setup
 
-Create a `.env` file in the project root:
+Set these environment variables on the host:
 
-```
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_API_KEY=your-api-key-here
+```bash
+export OLLAMA_HOST=https://ollama.com
+export OLLAMA_API_KEY=your-secret-api-key
 ```
 
 | Variable | Description | Default |
 |---|---|---|
-| `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434` |
-| `OLLAMA_API_KEY` | API key for cloud/remote Ollama | (empty) |
+| `OLLAMA_HOST` | Ollama server URL | `https://ollama.com` |
+| `OLLAMA_API_KEY` | Secret API key from [ollama.com](https://ollama.com) (required) | (empty) |
+
+### Local Ollama Setup
+
+To use a local Ollama instance instead of the cloud:
+
+```bash
+export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_API_KEY=
+```
 
 ### Deploying to GitHub / Cloud Platforms
 
@@ -189,38 +198,28 @@ OLLAMA_API_KEY=your-api-key-here
 1. Go to your repository → **Settings → Secrets and variables → Actions**
 2. Click **New repository secret**
 3. Add each variable individually:
-   - Name: `OLLAMA_HOST`, Value: `http://localhost:11434`
    - Name: `OLLAMA_API_KEY`, Value: your actual key
-4. Reference in your workflow: `${{ secrets.OLLAMA_HOST }}`
+4. Reference in your workflow: `${{ secrets.OLLAMA_API_KEY }}`
 
 #### GitHub Codespaces
 1. Go to repository → **Settings → Secrets and variables → Codespaces**
 2. Add secrets the same way as Actions
-3. They're auto-injected into `.env` when a codespace starts
+3. They're auto-injected when a codespace starts
 
 #### Render / Railway / Fly.io / Heroku
 Each platform has an "Environment Variables" section in the dashboard:
 - **Render**: Service Settings → Environment → Add Environment Variable
 - **Railway**: Variables tab → click "New Variable"
-- **Fly.io**: `fly secrets set OLLAMA_HOST=... OLLAMA_API_KEY=...`
+- **Fly.io**: `fly secrets set OLLAMA_API_KEY=...`
 - **Heroku**: Settings → Config Vars → Reveal Config Vars → Add
 
 #### Docker
 ```bash
 docker run -d \
-  -e OLLAMA_HOST=http://localhost:11434 \
   -e OLLAMA_API_KEY=your-key \
   -p 8000:8000 \
-  sensmark:latest
+  sensemark:latest
 ```
-
-#### Using a `.env.example` Template
-This repo includes `.env.example` — copy it and fill in your values:
-```bash
-cp .env.example .env
-# Edit .env with your actual values
-```
-The `.env` file is in `.gitignore` and will never be pushed.
 
 ---
 
