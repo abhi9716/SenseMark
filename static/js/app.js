@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let sessions = [];
     let activeSessionId = null;
     let pendingFiles = [];
-    let currentPhraseTag = 'all';
 
     // ---- Session Management ----
     function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -537,39 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderMetrics(metrics) {
-        const grid = document.getElementById('quickMetrics');
-        const card = document.getElementById('metricsCard');
-        grid.innerHTML = '';
-        if (!metrics) { if (card) card.style.display = 'none'; return; }
-
-        const invertMetrics = ['margin_stress', 'supply_risk', 'price_sensitivity', 'channel_shift'];
-        const labels = {
-            demand_index: 'Demand', margin_stress: 'Margin Stress',
-            supply_risk: 'Supply Risk', retailer_advocacy: 'Retailer Advocacy',
-            price_sensitivity: 'Price Sensitivity', channel_shift: 'Channel Shift',
-            brand_loyalty: 'Brand Loyalty',
-        };
-        let hasContent = false;
-        Object.entries(labels).forEach(([key, label]) => {
-            const m = metrics[key];
-            if (!m || m.value == null) return;
-            hasContent = true;
-            const el = document.createElement('div');
-            el.className = 'metric-card';
-            const val = m.value;
-            const isInverted = invertMetrics.includes(key);
-            const color = isInverted ? riskColor(val) : goodColor(val);
-            el.innerHTML = `
-                <div class="metric-label">${label}</div>
-                <div class="metric-value" style="color: ${color}">${val.toFixed(1)}/10</div>
-                <div class="metric-reasoning" title="${m.reasoning || ''}">${m.reasoning ? m.reasoning.slice(0, 80) + (m.reasoning.length > 80 ? '...' : '') : ''}</div>
-            `;
-            grid.appendChild(el);
-        });
-        if (card) card.style.display = hasContent ? '' : 'none';
-    }
-
     function renderCategoryScores(categories) {
         const container = document.getElementById('scoreBars');
         container.innerHTML = '';
@@ -606,8 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('derivedMetrics');
         const card = document.getElementById('businessMetricsCard');
         container.innerHTML = '';
-        if (!metrics && !sentiment) { if (card) card.style.display = 'none'; return; }
-        if (card) card.style.display = '';
+        if (!metrics && !sentiment) { return; }
 
         const icons = {
             sentiment: '&#128524;',
@@ -638,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         Object.entries(metrics || {}).forEach(([key, data]) => {
             if (!data || data.value == null) return;
+            if (!data.reasoning || data.reasoning.trim().split(/\s+/).length < 8) return;
             const el = document.createElement('div');
             el.className = 'derived-item';
             const val = data.value;
@@ -861,20 +827,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderAutoQAs(items) {
-        const container = document.getElementById('autoQaList');
-        container.innerHTML = '';
-        items.forEach(item => {
-            const el = document.createElement('div');
-            el.className = 'qa-item';
-            el.innerHTML = `
-                <div class="qa-question">${item.question}</div>
-                <div class="qa-answer">${item.answer}</div>
-            `;
-            container.appendChild(el);
-        });
-    }
-
     function renderQueryPresets(qaList) {
         if (!queryPresets) return;
         queryPresets.innerHTML = '';
@@ -1043,6 +995,370 @@ document.addEventListener('DOMContentLoaded', () => {
     let _storedPhrases = [];
     function getStoredPhrases() { return _storedPhrases; }
     function setStoredPhrases(phrases) { _storedPhrases = phrases || []; }
+
+    // ---- Feedback Insights Dashboard ----
+    const FEEDBACK_SAMPLE_DATA = [
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-03-05', q1:4, q2:3, q3:4, working_well:'Strong Sensodyne brand presence at eye level; pharmacist actively recommending Panadol', opportunities:'Digital interactive displays missing; limited Voltaren visibility vs Ibuprofen' },
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-03-12', q1:3, q2:2, q3:3, working_well:'Good secondary placement for Otrivin; loyalty program awareness growing', opportunities:'Tech integration for reorder tracking weak; assortment gaps in rural SKUs' },
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-03-20', q1:5, q2:3, q3:5, working_well:'Best-in-class planogram execution; Sensodyne dominates toothpaste fixture', opportunities:'Need digital shelf labels and tech-enabled stock alerts' },
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-04-01', q1:4, q2:4, q3:4, working_well:'In-store health advisor proactively recommending Centrum and Sensodyne', opportunities:'Competitor Colgate gaining shelf space in mid-tier pharmacies' },
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-04-10', q1:3, q2:2, q3:3, working_well:'Panadol brand equity strong; fast-moving SKUs well-stocked', opportunities:'Self-checkout integration missing; no loyalty QR code at point of sale' },
+        { channel:'pharmacy', channelLabel:'Pharmacy Store', date:'2026-04-18', q1:4, q2:3, q3:4, working_well:'Sensodyne clinical claim displays driving pharmacist confidence', opportunities:'Limited presence of newer Haleon products like Advil extended range' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-03-06', q1:3, q2:2, q3:4, working_well:'Secondary placements in health aisle working well for Panadol', opportunities:'Store staff not trained on Haleon product differentiation vs private label' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-03-14', q1:4, q2:3, q3:3, working_well:'Good gondola end utilization during promotional period', opportunities:'Tech tools for staff product recommendation absent' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-03-22', q1:2, q2:2, q3:3, working_well:'Voltaren gel on pain management endcap visible', opportunities:'Very limited staff advocacy; private label dominating mid-shelf' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-04-02', q1:4, q2:3, q3:4, working_well:'Strong Sensodyne multi-buy promotion driving basket size', opportunities:'Need digital training modules for store staff on Haleon product benefits' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-04-11', q1:3, q2:2, q3:3, working_well:'Health zone concept well received; Centrum visible', opportunities:'Staff turnover high; training retention poor for new SKUs' },
+        { channel:'grocery', channelLabel:'Grocery Store', date:'2026-04-19', q1:3, q2:3, q3:4, working_well:'Panadol flu range driving good seasonal sales', opportunities:'Need interactive digital demos for Otrivin at point of sale' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-03-07', q1:5, q2:4, q3:5, working_well:'Premium shelf block for Sensodyne; eye-level primary position secured', opportunities:'Cross-category health zone could drive incremental Centrum sales' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-03-15', q1:4, q2:4, q3:4, working_well:'Digital price tags and QR code integration working well', opportunities:'Shelf share slipping vs Colgate in toothpaste segment' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-03-23', q1:4, q2:3, q3:4, working_well:'Good implementation of Haleon planogram; facing count maintained', opportunities:'Out-of-stock rate higher than target for Panadol Extra' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-04-03', q1:5, q2:5, q3:5, working_well:'Best-in-class MT execution; all cycle KPIs met for Q1', opportunities:'Expand Voltaren display into sports nutrition adjacent section' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-04-12', q1:3, q2:3, q3:3, working_well:'Health category growing; Haleon benefiting from wellness consumer trend', opportunities:'Need stronger secondary placement strategy in large-format MT' },
+        { channel:'mt',       channelLabel:'MT Store',      date:'2026-04-20', q1:4, q2:4, q3:4, working_well:'Mobile app promotions tracking now operational', opportunities:'Centrum visibility weak vs Blackmores in vitamins section' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-03-08', q1:4, q2:3, q3:4, working_well:'High-footfall activation near pharmacy entrance; sampling driving trial for Sensodyne', opportunities:'Digital engagement tools missing from activation booth' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-03-16', q1:5, q2:4, q3:5, working_well:'Promoter team very knowledgeable; conversion rate strong for Voltaren gel', opportunities:'Need tablet-based product selector tool for field promoters' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-03-24', q1:3, q2:2, q3:3, working_well:'Branded vehicle wrap attracting strong consumer attention', opportunities:'Promoter scripts outdated; not reflecting latest clinical data' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-04-04', q1:4, q2:4, q3:4, working_well:'Strong consumer engagement at weekend market activation', opportunities:'Gamification would boost dwell time; no data capture post-activation' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-04-13', q1:4, q2:3, q3:4, working_well:'Sensodyne sensitivity testing live demo very effective for conversion', opportunities:'Need CRM integration for post-activation consumer follow-up' },
+        { channel:'activation', channelLabel:'In-Market Activation', date:'2026-04-21', q1:3, q2:3, q3:3, working_well:'Brand messaging consistent with TV campaign; consumer recall high', opportunities:'Need WhatsApp/SMS follow-up flow post-activation' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-03-09', q1:4, q2:3, q3:4, working_well:'GPs showing strong conviction for Sensodyne; clinical data well received', opportunities:'Digital detailing tool not available for tablet-based presentations' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-03-17', q1:5, q2:4, q3:5, working_well:'Dentist prescriptions for Sensodyne Repair & Protect at all-time high', opportunities:'Panadol extended release less known among junior doctors' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-03-25', q1:3, q2:2, q3:3, working_well:'Panadol in-clinic posters maintaining consistent brand presence', opportunities:'HCP-facing app needed for real-time clinical evidence access' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-04-05', q1:4, q2:3, q3:4, working_well:'Voltaren physio partnership driving recommendations in sports clinics', opportunities:'Webinar attendance dropping; need interactive digital CME format' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-04-14', q1:4, q2:4, q3:4, working_well:'Centrum conviction strong among nutritionists and dietitians', opportunities:'Otrivin recommendation rate low among ENT specialists' },
+        { channel:'hcp',     channelLabel:'HCP',     date:'2026-04-22', q1:3, q2:3, q3:3, working_well:'Panadol brand trust highest among pain relief options', opportunities:'Need stronger evidence for Voltaren vs NSAIDs in HCP conversations' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-03-10', q1:4, q2:4, q3:3, working_well:'Strong Sensodyne awareness; most consumers using it daily', opportunities:'Low awareness of Centrum Complete range among younger consumers' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-03-18', q1:5, q2:4, q3:4, working_well:'Panadol trusted for family use across all age groups', opportunities:'Voltaren perceived as prescription-only by many household consumers' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-03-26', q1:3, q2:3, q3:2, working_well:'Sensodyne loyalty strong; consumers highly resistant to switching', opportunities:'Need stronger social content to educate on Otrivin differentiation' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-04-06', q1:4, q2:5, q3:3, working_well:'Good consumer interaction at health event; sampling well received', opportunities:'Bundle opportunity: Panadol + Centrum family health pack' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-04-15', q1:4, q2:4, q3:4, working_well:'High trust in Haleon brands vs generics post-COVID', opportunities:'Price sensitivity a barrier for Centrum premium range' },
+        { channel:'consumer', channelLabel:'Consumer', date:'2026-04-23', q1:3, q2:3, q3:3, working_well:'Strong word-of-mouth for Sensodyne from dentist referrals', opportunities:'Need loyalty program to capture and incentivize repeat buyers' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-03-11', q1:3, q2:3, q3:3, working_well:'Good product imagery and ingredient callouts on Sensodyne listings', opportunities:'A+ content missing for Voltaren and Otrivin range' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-03-19', q1:4, q2:4, q3:4, working_well:'Panadol and Centrum sponsored placement delivering strong ROAS', opportunities:'Review volume low for newer SKUs; hurting algorithm ranking' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-03-27', q1:2, q2:3, q3:2, working_well:'Sensodyne holds top organic position on key toothpaste searches', opportunities:'Out-of-stock alerts hurting seller ratings on Shopee and Lazada' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-04-07', q1:4, q2:4, q3:4, working_well:'Enhanced A+ content for Sensodyne driving 18% conversion uplift', opportunities:'Competitor DTC subscription model gaining traction; need response strategy' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-04-16', q1:3, q2:3, q3:3, working_well:'Live commerce sessions for Panadol building authentic brand trust', opportunities:'Centrum SKU count on e-commerce platforms needs expansion' },
+        { channel:'dcommerce', channelLabel:'Dcommerce', date:'2026-04-24', q1:4, q2:4, q3:4, working_well:'Strong search rank for Haleon brands on health category pages', opportunities:'Auto-replenishment subscription service needed for Sensodyne repeat buyers' },
+    ];
+
+    const FBI_WORKING = [
+        { theme:'Sensodyne brand equity & shelf leadership',         count:18 },
+        { theme:'Panadol family trust & HCP recommendation rate',    count:15 },
+        { theme:'HCP conviction for clinical product range',         count:12 },
+        { theme:'MT planogram compliance & in-store execution',      count:10 },
+        { theme:'Activation sampling driving first-time trial',      count:8  },
+        { theme:'E-commerce sponsored placement & search ranking',   count:7  },
+    ];
+    const FBI_OPP = [
+        { theme:'Digital engagement tools for field & HCP teams',   count:16 },
+        { theme:'In-store staff training & advocacy programs',       count:13 },
+        { theme:'Voltaren OTC perception & awareness gap',           count:11 },
+        { theme:'Centrum range visibility & consumer education',     count:10 },
+        { theme:'E-commerce A+ content & assortment gaps',           count:9  },
+        { theme:'Consumer loyalty & repeat purchase capture',        count:8  },
+    ];
+
+    const FBI_BRANDS = ['Sensodyne', 'Panadol', 'Voltaren', 'Centrum', 'Otrivin', 'Advil'];
+
+    function analyzeBrandMentions(dataset) {
+        return FBI_BRANDS.map(brand => {
+            const re = new RegExp(`\\b${brand}\\b`, 'gi');
+            let pos = 0, opp = 0;
+            dataset.forEach(r => {
+                if (re.test(r.working_well)) pos++;
+                if (re.test(r.opportunities)) opp++;
+            });
+            return { brand, pos, opp, total: pos + opp };
+        }).filter(b => b.total > 0).sort((a, b) => b.total - a.total);
+    }
+
+    function analyzeMonthlyTrend(dataset) {
+        const channels = {};
+        dataset.forEach(r => {
+            const m = r.date.startsWith('2026-03') ? 'mar' : r.date.startsWith('2026-04') ? 'apr' : null;
+            if (!m) return;
+            if (!channels[r.channel]) channels[r.channel] = { label: r.channelLabel, mar: [], apr: [] };
+            const scores = r.channel === 'consumer' ? [r.q1, r.q2] : [r.q1, r.q2, r.q3];
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            channels[r.channel][m].push(avg);
+        });
+        return Object.values(channels).map(c => ({
+            label: c.label,
+            mar: c.mar.length ? c.mar.reduce((a, b) => a + b, 0) / c.mar.length : null,
+            apr: c.apr.length ? c.apr.reduce((a, b) => a + b, 0) / c.apr.length : null,
+        }));
+    }
+
+    function initFeedbackInsights(dataset) {
+        const data = dataset || FEEDBACK_SAMPLE_DATA;
+        const total = data.length;
+        if (total === 0) {
+            renderFbEmpty();
+            return;
+        }
+
+        const cmap = {};
+        data.forEach(r => {
+            if (!cmap[r.channel]) cmap[r.channel] = { label: r.channelLabel, q1s: [], q2s: [], q3s: [] };
+            cmap[r.channel].q1s.push(r.q1);
+            cmap[r.channel].q2s.push(r.q2);
+            if (r.channel !== 'consumer') cmap[r.channel].q3s.push(r.q3);
+        });
+        const channelStats = Object.entries(cmap).map(([ch, d]) => {
+            const all = [...d.q1s, ...d.q2s, ...d.q3s];
+            return { channel: ch, label: d.label, avg: all.reduce((a, b) => a + b, 0) / all.length, count: d.q1s.length };
+        }).sort((a, b) => b.avg - a.avg);
+
+        const allScores = data.flatMap(r => r.channel === 'consumer' ? [r.q1, r.q2] : [r.q1, r.q2, r.q3]);
+        const overallAvg = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+        const q1Avg = data.reduce((s, r) => s + r.q1, 0) / total;
+        const q2Avg = data.reduce((s, r) => s + r.q2, 0) / total;
+        const nc = data.filter(r => r.channel !== 'consumer');
+        const q3Avg = nc.length ? nc.reduce((s, r) => s + r.q3, 0) / nc.length : 0;
+
+        const isFiltered = data.length < FEEDBACK_SAMPLE_DATA.length;
+        renderFbKpis(overallAvg, total, channelStats[0], channelStats[channelStats.length - 1], isFiltered);
+        renderFbChannelBars(channelStats);
+        renderFbDimensionBars(q1Avg, q2Avg, q3Avg);
+        renderFbBrandPerf(analyzeBrandMentions(data));
+        renderFbTrend(analyzeMonthlyTrend(data));
+        renderFbThemes();
+        renderFbHighlights(data);
+    }
+
+    function renderFbEmpty() {
+        ['fbKpiRow', 'fbChannelBars', 'fbDimensionBars', 'fbBrandPerf', 'fbTrend', 'fbWorkingWell', 'fbOpportunities', 'fbHighlights']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="fbi-empty">No data for this filter</div>';
+            });
+    }
+
+    function renderFbKpis(overallAvg, total, best, worst, isFiltered) {
+        const el = document.getElementById('fbKpiRow');
+        if (!el) return;
+        const svgStar = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`;
+        const svgUsers = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+        const svgUp = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>`;
+        const svgAlert = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+        const kpis = isFiltered ? [
+            { label: 'Average Score', value: overallAvg.toFixed(1), unit: '/5', sub: `${total} response${total === 1 ? '' : 's'} in selection`, icon: svgStar, cls: 'fbi-kpi-green' },
+            { label: 'Responses', value: total, unit: '', sub: 'Filtered selection · Mar–Apr 2026', icon: svgUsers, cls: 'fbi-kpi-blue' },
+            { label: 'Best Single Visit', value: best.avg.toFixed(1) + '/5', unit: '', sub: best.label, icon: svgUp, cls: 'fbi-kpi-green' },
+            { label: 'Lowest Single Visit', value: worst.avg.toFixed(1) + '/5', unit: '', sub: worst.label, icon: svgAlert, cls: 'fbi-kpi-amber' },
+        ] : [
+            { label: 'Overall Satisfaction', value: overallAvg.toFixed(1), unit: '/5', sub: `${total} market visit responses`, icon: svgStar, cls: 'fbi-kpi-green' },
+            { label: 'Total Responses', value: total, unit: '', sub: '7 channels · Mar–Apr 2026', icon: svgUsers, cls: 'fbi-kpi-blue' },
+            { label: 'Top Performing Channel', value: best.label, unit: '', sub: `Avg ${best.avg.toFixed(1)}/5 · ${best.count} visits`, icon: svgUp, cls: 'fbi-kpi-green' },
+            { label: 'Needs Focus', value: worst.label, unit: '', sub: `Avg ${worst.avg.toFixed(1)}/5 · improve priority`, icon: svgAlert, cls: 'fbi-kpi-amber' },
+        ];
+
+        el.innerHTML = kpis.map((k, i) => `
+            <div class="fbi-kpi-card ${k.cls}" style="animation-delay:${i*0.1}s">
+                <div class="fbi-kpi-icon-wrap">${k.icon}</div>
+                <div class="fbi-kpi-value">${k.value}<span class="fbi-kpi-unit">${k.unit}</span></div>
+                <div class="fbi-kpi-label">${k.label}</div>
+                <div class="fbi-kpi-sub">${k.sub}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderFbBrandPerf(brands) {
+        const el = document.getElementById('fbBrandPerf');
+        if (!el) return;
+        if (!brands.length) {
+            el.innerHTML = '<div class="fbi-empty">No brand mentions in this view</div>';
+            return;
+        }
+        const max = Math.max(...brands.map(b => b.total));
+        el.innerHTML = brands.map((b, i) => {
+            const posPct = b.total ? (b.pos / b.total) * 100 : 0;
+            const oppPct = 100 - posPct;
+            const widthPct = Math.max(35, Math.round((b.total / max) * 100));
+            return `<div class="fbi-brand-row" style="animation-delay:${i*0.07}s">
+                <div class="fbi-brand-name">${b.brand}</div>
+                <div class="fbi-brand-bar-outer" style="width:${widthPct}%">
+                    <div class="fbi-brand-bar-stack">
+                        ${b.pos > 0 ? `<div class="fbi-brand-bar-pos" style="width:${posPct}%">${b.pos}</div>` : ''}
+                        ${b.opp > 0 ? `<div class="fbi-brand-bar-opp" style="width:${oppPct}%">${b.opp}</div>` : ''}
+                    </div>
+                </div>
+                <div class="fbi-brand-total">${b.total}</div>
+            </div>`;
+        }).join('') + `
+            <div class="fbi-brand-legend">
+                <span class="fbi-legend-item"><span class="fbi-legend-dot pos"></span>Positive mention</span>
+                <span class="fbi-legend-item"><span class="fbi-legend-dot opp"></span>Opportunity mention</span>
+            </div>`;
+    }
+
+    function renderFbTrend(trends) {
+        const el = document.getElementById('fbTrend');
+        if (!el) return;
+        if (!trends.length) {
+            el.innerHTML = '<div class="fbi-empty">Not enough data to show a trend</div>';
+            return;
+        }
+        el.innerHTML = trends.map((t, i) => {
+            const delta = (t.apr != null && t.mar != null) ? t.apr - t.mar : null;
+            let dCls = 'flat', dSym = '—', dCol = 'var(--text-tertiary)';
+            if (delta != null) {
+                if (delta > 0.15) { dCls = 'up'; dSym = '▲'; dCol = '#007a28'; }
+                else if (delta < -0.15) { dCls = 'down'; dSym = '▼'; dCol = '#dc2626'; }
+            }
+            const marPct = t.mar != null ? (t.mar / 5) * 100 : 0;
+            const aprPct = t.apr != null ? (t.apr / 5) * 100 : 0;
+            return `<div class="fbi-trend-row" style="animation-delay:${i*0.06}s">
+                <div class="fbi-trend-label">${t.label}</div>
+                <div class="fbi-trend-bar-pair">
+                    <span class="fbi-trend-month">Mar</span>
+                    <div class="fbi-trend-track"><div class="fbi-trend-fill mar" style="width:${marPct}%"></div></div>
+                    <span class="fbi-trend-val">${t.mar != null ? t.mar.toFixed(1) : '–'}</span>
+                </div>
+                <div class="fbi-trend-bar-pair">
+                    <span class="fbi-trend-month">Apr</span>
+                    <div class="fbi-trend-track"><div class="fbi-trend-fill apr" style="width:${aprPct}%"></div></div>
+                    <span class="fbi-trend-val">${t.apr != null ? t.apr.toFixed(1) : '–'}</span>
+                </div>
+                <div class="fbi-trend-delta fbi-delta-${dCls}" style="color:${dCol}">${dSym} ${delta != null ? (delta > 0 ? '+' : '') + delta.toFixed(2) : 'n/a'}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderFbChannelBars(stats) {
+        const el = document.getElementById('fbChannelBars');
+        if (!el) return;
+        el.innerHTML = stats.map(c => {
+            const pct = Math.round((c.avg/5)*100);
+            const col = c.avg>=4?'#007a28':c.avg>=3?'#d97706':'#dc2626';
+            return `<div class="fbi-bar-row">
+                <div class="fbi-bar-label">${c.label}</div>
+                <div class="fbi-bar-track"><div class="fbi-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+                <div class="fbi-bar-val" style="color:${col}">${c.avg.toFixed(1)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderFbDimensionBars(q1, q2, q3) {
+        const el = document.getElementById('fbDimensionBars');
+        if (!el) return;
+        const dims = [
+            { label:'Presence & Visibility (Q1)', val:q1, desc:'In-store display, shelf share, content quality' },
+            { label:'Technology Adoption (Q2)',    val:q2, desc:'Digital tools, tech integration, retail experience' },
+            { label:'Assortment & Execution (Q3)', val:q3, desc:'Product availability, promoter quality, range depth' },
+        ];
+        el.innerHTML = dims.map(d => {
+            const pct = Math.round((d.val/5)*100);
+            const col = d.val>=4?'#007a28':d.val>=3?'#d97706':'#dc2626';
+            return `<div class="fbi-dim-row">
+                <div class="fbi-dim-header">
+                    <span class="fbi-dim-label">${d.label}</span>
+                    <span class="fbi-dim-score" style="color:${col}">${d.val.toFixed(1)}/5</span>
+                </div>
+                <div class="fbi-dim-track"><div class="fbi-dim-fill" style="width:${pct}%;background:${col}"></div></div>
+                <div class="fbi-dim-desc">${d.desc}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderFbThemes() {
+        const ww = document.getElementById('fbWorkingWell');
+        const op = document.getElementById('fbOpportunities');
+        const maxW = Math.max(...FBI_WORKING.map(t=>t.count));
+        const maxO = Math.max(...FBI_OPP.map(t=>t.count));
+        if (ww) ww.innerHTML = FBI_WORKING.map((t,i) => `
+            <div class="fbi-theme-item" style="animation-delay:${i*0.07}s">
+                <div class="fbi-theme-bar-wrap"><div class="fbi-theme-bar" style="width:${Math.round((t.count/maxW)*100)}%;background:linear-gradient(90deg,#005c1e,#00C853)"></div></div>
+                <div class="fbi-theme-info">
+                    <span class="fbi-theme-text">${t.theme}</span>
+                    <span class="fbi-theme-count">${t.count} mentions</span>
+                </div>
+            </div>`).join('');
+        if (op) op.innerHTML = FBI_OPP.map((t,i) => `
+            <div class="fbi-theme-item" style="animation-delay:${i*0.07}s">
+                <div class="fbi-theme-bar-wrap"><div class="fbi-theme-bar" style="width:${Math.round((t.count/maxO)*100)}%;background:linear-gradient(90deg,#b45309,#f59e0b)"></div></div>
+                <div class="fbi-theme-info">
+                    <span class="fbi-theme-text">${t.theme}</span>
+                    <span class="fbi-theme-count fbi-count-opp">${t.count} mentions</span>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderFbHighlights(dataset) {
+        const el = document.getElementById('fbHighlights');
+        if (!el) return;
+        const data = dataset || FEEDBACK_SAMPLE_DATA;
+        let picks;
+        if (data.length <= 6) {
+            picks = data;
+        } else if (data.length < FEEDBACK_SAMPLE_DATA.length) {
+            picks = data.slice(0, 6);
+        } else {
+            picks = [2, 12, 19, 25, 31, 37].map(i => FEEDBACK_SAMPLE_DATA[i]);
+        }
+        if (!picks.length) {
+            el.innerHTML = '<div class="fbi-empty">No highlights for this filter</div>';
+            return;
+        }
+        el.innerHTML = `<div class="fbi-highlights-grid">${picks.map((r,i) => {
+            const scores = r.channel==='consumer' ? [r.q1,r.q2] : [r.q1,r.q2,r.q3];
+            const avgS = scores.reduce((a,b)=>a+b,0)/scores.length;
+            const cls = avgS>=4?'good':avgS>=3?'mid':'low';
+            return `<div class="fbi-highlight-card" style="animation-delay:${i*0.08}s">
+                <div class="fbi-highlight-header">
+                    <span class="fbi-highlight-channel">${r.channelLabel}</span>
+                    <span class="fbi-highlight-date">${r.date}</span>
+                </div>
+                <div class="fbi-highlight-section">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007a28" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                    <span>${escapeHtml(r.working_well)}</span>
+                </div>
+                <div class="fbi-highlight-section fbi-opp-section">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>${escapeHtml(r.opportunities)}</span>
+                </div>
+                <div class="fbi-highlight-score">
+                    ${scores.map(s=>`<span class="fbi-score-pip ${s>=4?'good':s>=3?'mid':'low'}">${s}/5</span>`).join('')}
+                </div>
+            </div>`;
+        }).join('')}</div>`;
+    }
+
+    const CHANNEL_LABEL_MAP = {
+        pharmacy: 'Pharmacy Store', grocery: 'Grocery Store', mt: 'MT Store',
+        activation: 'In-Market Activation', hcp: 'HCP', consumer: 'Consumer', dcommerce: 'Dcommerce',
+    };
+
+    function applyFeedbackFilter() {
+        const sel = document.getElementById('filterChannel');
+        const val = sel ? sel.value : 'all';
+        const badge = document.getElementById('fbFilterBadge');
+        const badgeText = document.getElementById('fbFilterBadgeText');
+        if (val && val !== 'all') {
+            const filtered = FEEDBACK_SAMPLE_DATA.filter(r => r.channel === val);
+            if (badge && badgeText) {
+                badgeText.textContent = `Showing: ${CHANNEL_LABEL_MAP[val] || val} · ${filtered.length} response${filtered.length === 1 ? '' : 's'}`;
+                badge.classList.remove('hidden');
+            }
+            initFeedbackInsights(filtered);
+        } else {
+            if (badge) badge.classList.add('hidden');
+            initFeedbackInsights();
+        }
+    }
+
+    const filterChannelSel = document.getElementById('filterChannel');
+    if (filterChannelSel) filterChannelSel.addEventListener('change', applyFeedbackFilter);
+
+    const fbFilterClearBtn = document.getElementById('fbFilterClearBtn');
+    if (fbFilterClearBtn) fbFilterClearBtn.addEventListener('click', () => {
+        if (filterChannelSel) filterChannelSel.value = 'all';
+        applyFeedbackFilter();
+    });
+
+    applyFeedbackFilter();
 
     // ---- Restore sessions on load ----
     renderSidebar();

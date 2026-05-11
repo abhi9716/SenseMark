@@ -1,8 +1,8 @@
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --primary-light: #bfdbfe;
-    --primary-50: #eff6ff;
+    --primary: #007a28;
+    --primary-dark: #005c1e;
+    --primary-light: #a8f0c6;
+    --primary-50: #ecfdf5;
     --success: #059669;
     --success-dark: #047857;
     --success-light: #a7f3d0;
@@ -46,9 +46,8 @@
     --transition-fast: 0.15s ease;
     --transition-base: 0.25s ease;
     --transition-slow: 0.4s ease;
-}
 
-:root {
+    /* Semantic tokens */
     --color-critical-bg: #FEE2E2;
     --color-critical-text: #991B1B;
     --color-critical-border: #FECACA;
@@ -58,12 +57,26 @@
     --color-good-bg: #D1FAE5;
     --color-good-text: #065F46;
     --color-good-border: #A7F3D0;
+
+    /* Haleon brand tokens */
+    --haleon-green: #00C853;
+    --haleon-green-dark: #00952e;
+    --haleon-green-mid: #00a844;
+    --haleon-green-light: #e6fff1;
+    --haleon-green-muted: #b3f0d1;
+    --haleon-charcoal: #111111;
+    --haleon-gray: #F5F7F9;
+    --haleon-gray-mid: #e8ecf0;
+    --haleon-text-muted: #7A7A7A;
+    --haleon-star-on: #00C853;
+    --haleon-star-off: #D1D5DB;
+    --haleon-star-hover: #00a844;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
     font-size: 1rem;
@@ -597,10 +610,11 @@ body {
 .tab-btn svg { transition: transform var(--transition-base); flex-shrink: 0; }
 
 .tab-btn.active {
-    color: var(--text);
+    color: var(--primary);
     background: var(--surface);
-    font-weight: 600;
+    font-weight: 700;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    border-bottom: 2px solid var(--primary);
 }
 
 .tab-btn:hover:not(.active) {
@@ -926,14 +940,6 @@ body {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-light);
 }
-
-/* ===== TAB CONTENT ===== */
-.tab-pane {
-    display: none;
-    animation: fadeInUp 0.3s ease;
-}
-
-.tab-pane.active { display: block; }
 
 /* ===== TAB TITLE BAR ===== */
 .tab-title-bar {
@@ -1879,4 +1885,542 @@ body {
     width: 16px; height: 16px; border-radius: 50%; background: var(--primary-50);
     color: var(--primary); font-size: 0.7rem; font-weight: 700; cursor: help;
     margin-left: 6px;
+}
+
+/* ===== STORY NARRATIVE — TAB TITLE BARS ===== */
+.tab-title-story {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.tab-story-step {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 6px;
+}
+
+.tab-story-icon {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* ===== HALEON DESIGN SYSTEM — FEEDBACK TAB ===== */
+/* Title bar override for Haleon */
+.haleon-title-bar {
+    background: linear-gradient(135deg, #00952e 0%, #00C853 60%, #00e676 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.haleon-title-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* (Orphan feedback-form CSS removed during cleanup — see git history) */
+
+/* ===== FEEDBACK INSIGHTS DASHBOARD (FBI) ===== */
+.fbi-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1100px) { .fbi-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+.fbi-kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 18px 18px;
+    box-shadow: var(--shadow-sm);
+    animation: bounceIn 0.5s ease both;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+}
+
+.fbi-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+}
+
+.fbi-kpi-green::before { background: linear-gradient(90deg, #005c1e, #00C853); }
+.fbi-kpi-blue::before  { background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
+.fbi-kpi-amber::before { background: linear-gradient(90deg, #b45309, #f59e0b); }
+.fbi-kpi-red::before   { background: linear-gradient(90deg, #b91c1c, #f87171); }
+
+.fbi-kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.fbi-kpi-icon-wrap { color: var(--primary); margin-bottom: 6px; }
+.fbi-kpi-blue  .fbi-kpi-icon-wrap { color: #2563eb; }
+.fbi-kpi-amber .fbi-kpi-icon-wrap { color: #d97706; }
+.fbi-kpi-red   .fbi-kpi-icon-wrap { color: #dc2626; }
+
+.fbi-kpi-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.fbi-kpi-unit {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+}
+
+.fbi-kpi-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
+.fbi-kpi-sub {
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+/* Two-col layout */
+.fbi-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 1000px) { .fbi-two-col { grid-template-columns: 1fr; } }
+
+/* Card variants */
+.fbi-card-positive { border-top: 3px solid var(--primary); }
+.fbi-card-opportunity { border-top: 3px solid #d97706; }
+
+/* Channel bar chart */
+.fbi-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.fbi-bar-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 130px;
+    flex-shrink: 0;
+}
+
+.fbi-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--neutral-light);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.fbi-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    animation: barGrow 0.9s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+.fbi-bar-val {
+    font-size: 0.88rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Dimension bars */
+.fbi-dim-row { margin-bottom: 20px; }
+
+.fbi-dim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.fbi-dim-label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+
+.fbi-dim-score { font-size: 0.95rem; font-weight: 800; }
+
+.fbi-dim-track {
+    height: 10px;
+    background: var(--neutral-light);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.fbi-dim-fill {
+    height: 100%;
+    border-radius: 5px;
+    animation: barGrow 0.9s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+.fbi-dim-desc { font-size: 0.76rem; color: var(--text-tertiary); }
+
+/* Theme items */
+.fbi-theme-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+    animation: fadeInUp 0.3s ease both;
+}
+
+.fbi-theme-bar-wrap {
+    height: 4px;
+    background: var(--neutral-light);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.fbi-theme-bar {
+    height: 100%;
+    border-radius: 2px;
+    animation: barGrow 0.7s ease both;
+}
+
+.fbi-theme-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.fbi-theme-text {
+    font-size: 0.875rem;
+    color: var(--text);
+    font-weight: 500;
+    flex: 1;
+}
+
+.fbi-theme-count {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.fbi-count-opp { color: #d97706; }
+
+/* Highlights */
+.fbi-highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+@media (max-width: 1100px) { .fbi-highlights-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px)  { .fbi-highlights-grid { grid-template-columns: 1fr; } }
+
+.fbi-highlight-card {
+    background: var(--neutral-50);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    animation: fadeInUp 0.4s ease both;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.fbi-highlight-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+
+.fbi-highlight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.fbi-highlight-channel {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+    background: var(--primary-50);
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+.fbi-highlight-date {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.fbi-highlight-section {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    font-size: 0.81rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.fbi-highlight-section svg { flex-shrink: 0; margin-top: 1px; }
+
+.fbi-opp-section { color: var(--text-tertiary); }
+
+.fbi-highlight-score {
+    display: flex;
+    gap: 5px;
+    margin-top: 2px;
+}
+
+.fbi-score-pip {
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.fbi-score-pip.good { background: var(--primary-50); color: var(--primary-dark); }
+.fbi-score-pip.mid  { background: #FEF3C7; color: #92400E; }
+.fbi-score-pip.low  { background: #FEE2E2; color: #991B1B; }
+
+/* Card subtitle below h3 */
+.fbi-card-sub {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    margin-top: -10px;
+    margin-bottom: 18px;
+    line-height: 1.45;
+}
+
+/* Card h3 with icon (replaces inline styles) */
+.fbi-card-h3-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fbi-card-h3-icon svg { flex-shrink: 0; }
+
+.fbi-highlights-card { margin-top: 16px; }
+
+/* Empty state */
+.fbi-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    font-style: italic;
+    background: var(--neutral-50);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border);
+}
+
+/* Filter Indicator Badge */
+.fbi-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px 8px 12px;
+    background: var(--primary-50);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-light);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    animation: scaleIn 0.25s ease;
+}
+
+.fbi-filter-badge svg { color: var(--primary); }
+
+.fbi-filter-badge button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+    padding: 0 0 0 4px;
+    opacity: 0.65;
+    transition: opacity var(--transition-fast);
+    border-left: 1px solid var(--primary-light);
+    margin-left: 6px;
+    padding-left: 10px;
+}
+
+.fbi-filter-badge button:hover { opacity: 1; }
+
+/* Brand Performance */
+.fbi-brand-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 36px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    animation: fadeInUp 0.3s ease both;
+}
+
+.fbi-brand-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.fbi-brand-bar-outer {
+    height: 22px;
+    min-width: 35%;
+}
+
+.fbi-brand-bar-stack {
+    display: flex;
+    height: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--neutral-light);
+}
+
+.fbi-brand-bar-pos,
+.fbi-brand-bar-opp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: white;
+    animation: barGrow 0.8s cubic-bezier(0.4,0,0.2,1) both;
+    min-width: 0;
+    transition: filter var(--transition-fast);
+}
+
+.fbi-brand-bar-pos { background: linear-gradient(90deg, #005c1e, #00C853); }
+.fbi-brand-bar-opp { background: linear-gradient(90deg, #b45309, #f59e0b); }
+
+.fbi-brand-bar-pos:hover,
+.fbi-brand-bar-opp:hover { filter: brightness(1.1); }
+
+.fbi-brand-total {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: right;
+}
+
+.fbi-brand-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.fbi-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.fbi-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.fbi-legend-dot.pos { background: #00C853; }
+.fbi-legend-dot.opp { background: #f59e0b; }
+
+/* Monthly Trend */
+.fbi-trend-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 1fr 78px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeInUp 0.3s ease both;
+}
+
+.fbi-trend-row:last-child { border-bottom: none; }
+
+.fbi-trend-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.fbi-trend-bar-pair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+}
+
+.fbi-trend-month {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 22px;
+}
+
+.fbi-trend-track {
+    flex: 1;
+    height: 6px;
+    background: var(--neutral-light);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 30px;
+}
+
+.fbi-trend-fill {
+    height: 100%;
+    border-radius: 3px;
+    animation: barGrow 0.7s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+.fbi-trend-fill.mar { background: #94a3b8; }
+.fbi-trend-fill.apr { background: linear-gradient(90deg, #005c1e, #00C853); }
+
+.fbi-trend-val {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 22px;
+    text-align: right;
+}
+
+.fbi-trend-delta {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .fbi-trend-row { grid-template-columns: 1fr; gap: 4px; padding: 12px 0; }
 }
