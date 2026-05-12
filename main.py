@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -29,6 +30,25 @@ app = FastAPI(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+DEFAULT_SESSION_CACHE = os.path.join(BASE_DIR, "static", "data", "default_session.json")
+
+
+@app.on_event("startup")
+async def warm_embedding_model():
+    """Pre-load ChromaDB's embedding model into memory so the first user query is fast.
+
+    The model is also baked into the Docker image at build time, but this ensures
+    in-memory residency (RAM-resident embeddings) for any deployment surface.
+    """
+    try:
+        warmup = vector_db.client.get_or_create_collection("__startup_warmup__")
+        warmup.upsert(documents=["server startup warmup"], ids=["w1"])
+        warmup.query(query_texts=["warmup"], n_results=1)
+        vector_db.client.delete_collection("__startup_warmup__")
+        print("[startup] Embedding model loaded and resident")
+    except Exception as e:
+        print(f"[startup] Embedding warmup skipped (non-fatal): {e}")
 
 SUPPORTED_ENCODINGS = ["utf-8", "latin-1", "cp1252", "iso-8859-1"]
 
@@ -183,3 +203,14 @@ async def clear_vector_db(request: Request):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/default-session")
+async def get_default_session():
+    if not os.path.exists(DEFAULT_SESSION_CACHE):
+        raise HTTPException(status_code=404, detail="Default sample analysis not available")
+    try:
+        with open(DEFAULT_SESSION_CACHE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=500, detail=f"Default sample file is corrupt: {e}")

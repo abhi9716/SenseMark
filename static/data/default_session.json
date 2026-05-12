@@ -1,0 +1,147 @@
+{
+  "filename": "Mumbai_Field_Visit_Demo.docx",
+  "is_default": true,
+  "collection_id": "default_demo_session",
+  "analysis": {
+    "summary": "Field conversation with senior sales rep across 4 pharmacy retailers in Mumbai metro — strong Sensodyne momentum offset by Panadol stockouts and growing Colgate competitive pressure on the sensitivity-toothpaste shelf.",
+    "sentiment": {
+      "score": 0.62,
+      "overall": "mixed_positive",
+      "nuance": "Optimistic on Sensodyne pull-through and HCP advocacy, but flagging persistent supply gaps and rising competitor pressure on toothpaste shelf share.",
+      "breakdown": {
+        "product_performance": "positive",
+        "supply_chain": "negative",
+        "competitive_landscape": "mixed",
+        "retailer_advocacy": "positive",
+        "consumer_demand": "positive"
+      }
+    },
+    "categories": [
+      { "name": "brand_strength", "score": 8.4, "sentiment": "positive", "severity": "low", "description": "Sensodyne dominates the sensitivity segment; Panadol remains the family-default pain reliever.", "evidence": "Rep noted Sensodyne maintains ~67% sensitivity share-of-shelf across the four pharmacies visited." },
+      { "name": "supply_continuity", "score": 4.2, "sentiment": "negative", "severity": "high", "description": "Recurring stockouts of Panadol Extra and Voltaren Emulgel 50g flagged at 3 of 4 outlets.", "evidence": "Two retailers explicitly mentioned unfulfilled orders sitting with the distributor for 2+ weeks." },
+      { "name": "competitive_pressure", "score": 5.5, "sentiment": "mixed", "severity": "medium", "description": "Colgate Pro-Relief is gaining shelf space in mid-tier outlets via richer trade margins.", "evidence": "Rep saw new Colgate Pro-Relief shelf-talkers and improved facings at 2 of 4 stores." },
+      { "name": "hcp_advocacy", "score": 8.1, "sentiment": "positive", "severity": "low", "description": "Dentist conversion for Sensodyne Repair & Protect is at an all-time high in this catchment.", "evidence": "Retailers reported 30%+ uplift in Repair & Protect SKU pull-through after the Q1 detailing cycle." },
+      { "name": "digital_engagement", "score": 3.8, "sentiment": "negative", "severity": "medium", "description": "Field tools and digital POS materials are underutilised.", "evidence": "Two retailers asked for QR-code-driven reorder — the current paper-based flow is slowing replenishment." }
+    ],
+    "metrics": {
+      "demand_index": { "value": 7.8, "reasoning": "Sensodyne consumer pull is strong at all 4 visited outlets; Panadol is heading into a seasonal spike with the monsoon-driven cold and flu cycle starting." },
+      "supply_risk": { "value": 6.4, "reasoning": "Panadol Extra and Voltaren Emulgel 50g stockouts persistent at 3 of 4 outlets with a 2+ week unfulfilled order backlog from the distributor." },
+      "retailer_advocacy": { "value": 7.6, "reasoning": "Retailers actively recommending Sensodyne; one shopkeeper steered a walk-in customer from store-brand back to Sensodyne during the visit." },
+      "brand_loyalty": { "value": 8.2, "reasoning": "Customers asking for Sensodyne by name; one stockout case ended with the customer leaving rather than substituting to Colgate." }
+    },
+    "products": [
+      { "name": "Sensodyne Repair & Protect", "performance": "very_strong", "demand_level": "Very High", "substitution_risk": "Low", "feedback": "Best-selling SKU; pharmacist-recommended; pulls through post-dentist visit. Premium positioning fully maintained." },
+      { "name": "Sensodyne Rapid Relief", "performance": "strong", "demand_level": "High", "substitution_risk": "Low", "feedback": "Strong loyal repeat base benefiting from the category-leader halo. Display compliance is high but Colgate is closing facing gaps." },
+      { "name": "Panadol Extra", "performance": "moderate", "demand_level": "High", "substitution_risk": "Medium", "feedback": "Persistent stockouts driving consumer substitution to Crocin and generics. Brand trust is high but availability is hurting the franchise." },
+      { "name": "Voltaren Emulgel", "performance": "moderate", "demand_level": "Medium", "substitution_risk": "Medium", "feedback": "50g pack stockout common; 100g moving slower at its premium price point. Needs OTC awareness push to broaden the base." },
+      { "name": "Centrum Complete", "performance": "weak", "demand_level": "Low", "substitution_risk": "High", "feedback": "Losing share to Himalaya and Blackmores in the vitamins category; price perceived as premium without value differentiation." },
+      { "name": "Otrivin Nasal Spray", "performance": "moderate", "demand_level": "Medium", "substitution_risk": "Low", "feedback": "Seasonal demand stable; strong ENT specialist recommendation. Needs consumer-facing education for differentiation." }
+    ],
+    "pain_points": [
+      { "issue": "Recurring Panadol Extra stockouts at 3 of 4 visited pharmacies", "root_cause": "14-day distributor reorder cycle misses the seasonal flu-demand spike", "impact": "high", "suggested_action": "Shorten reorder cycle to 7 days for Panadol Extra and Voltaren Emulgel 50g during Apr–Sep" },
+      { "issue": "Colgate Pro-Relief gaining shelf space via richer trade margin", "root_cause": "Trade margin parity gap in the sensitivity sub-segment", "impact": "medium", "suggested_action": "Review Sensodyne Rapid Relief trade margin for mid-tier pharmacies; introduce Q2 trade scheme" },
+      { "issue": "Field reps lack digital tools for POS engagement and reorder", "root_cause": "Process is paper-based; no integration with retailer POS or distributor app", "impact": "medium", "suggested_action": "Pilot QR-code reorder tool at the top 20% pharmacies in Mumbai region" },
+      { "issue": "Centrum perceived expensive; losing share to Himalaya/Blackmores", "root_cause": "Price gap of ~25% vs Himalaya without differentiated value communication", "impact": "medium", "suggested_action": "Launch consumer-facing 'clinical-grade vitamins' campaign with HCP testimonials" }
+    ],
+    "opportunities": [
+      { "opportunity": "Expand Sensodyne Repair & Protect into top-100 dentist clinics for sampling and co-branding", "potential": "high", "quick_win": true, "requirements": "Partnership with IDA Mumbai chapter; sampling budget allocation" },
+      { "opportunity": "Bundle Panadol + Centrum 'Family Wellness Pack' for seasonal flu promo", "potential": "medium", "quick_win": true, "requirements": "Trade marketing approval; pack design; 3-month national run" },
+      { "opportunity": "Launch Voltaren OTC consumer education — 'know your pain reliever' digital series", "potential": "medium", "quick_win": false, "requirements": "Brand team brief; digital agency engagement; budget ~INR 40L for pilot" },
+      { "opportunity": "Pilot Sensodyne subscription on the DTC site for dentist-referred consumers", "potential": "high", "quick_win": false, "requirements": "DTC platform readiness; CRM integration; HCP referral codes" }
+    ],
+    "competitive_intel": [
+      { "competitor_or_channel": "Colgate Pro-Relief", "threat_type": "shelf_share_loss", "details": "Aggressive trade margins (2–3% higher) gaining facings in mid-tier pharmacies. New shelf-talkers and promotional displays at 2 of 4 outlets.", "customer_behavior_shift": "Some consumers being persuaded by retailer push despite preferring Sensodyne by name." },
+      { "competitor_or_channel": "Himalaya Vitamins", "threat_type": "category_erosion", "details": "Himalaya pricing ~25% lower than Centrum; herbal positioning resonating with consumers seeking 'natural' alternatives.", "customer_behavior_shift": "Centrum repeat-purchase rate declining in mid-income segments." },
+      { "competitor_or_channel": "Crocin / Generic paracetamol", "threat_type": "substitution_during_stockout", "details": "When Panadol Extra is out of stock, retailers default to Crocin, creating a substitution pattern.", "customer_behavior_shift": "20–30% of Panadol-loyal customers buying Crocin during stockouts; some becoming regular buyers." }
+    ],
+    "action_items": [
+      { "action": "Escalate Panadol Extra distributor reorder cycle to 7 days for Mumbai region", "urgency": "immediate" },
+      { "action": "Review Sensodyne Rapid Relief trade margin structure for mid-tier pharmacies", "urgency": "short_term" },
+      { "action": "Brief Centrum brand team on value-perception gap vs Himalaya", "urgency": "short_term" },
+      { "action": "Initiate digital reorder QR tool pilot at top-20 pharmacies", "urgency": "long_term" },
+      { "action": "Coordinate with Sensodyne brand team on dentist sampling expansion", "urgency": "short_term" }
+    ],
+    "cause_effect": [
+      { "cause": "14-day distributor reorder cycle for Panadol Extra", "effect": "Persistent stockouts creating consumer substitution to Crocin and generics", "evidence": "Retailers at 3 of 4 visited pharmacies report 2+ week unfulfilled order backlog." },
+      { "cause": "2–3% trade margin gap vs Colgate Pro-Relief", "effect": "Retailer push slowly shifting toward Colgate in the sensitivity segment", "evidence": "Rep saw new Colgate shelf-talkers and improved facings at 2 of 4 outlets visited." },
+      { "cause": "Q1 dentist detailing cycle landed clinical claims well", "effect": "30%+ uplift in Sensodyne Repair & Protect pull-through reported by retailers", "evidence": "Multiple retailers cited 'dentists are recommending it more' as the driver." }
+    ],
+    "insights": {
+      "what_is_working": [
+        "Sensodyne Repair & Protect HCP advocacy delivering 30%+ pull-through uplift",
+        "Q1 dentist detailing campaign clearly visible in retailer feedback",
+        "Brand loyalty strong — consumers asking for Sensodyne by name even when stocked-out",
+        "Otrivin ENT specialist recommendation channel stable"
+      ],
+      "what_is_breaking": [
+        "Panadol Extra stockouts creating consumer substitution to competitors",
+        "Centrum losing share to lower-priced herbal alternatives",
+        "Field rep tools paper-based, slowing reorder flow",
+        "Sensodyne Rapid Relief shelf share under pressure from Colgate trade push"
+      ],
+      "hidden_signals": [
+        "Substitution stickiness — some Panadol-to-Crocin switchers becoming regular generic buyers (silent share loss)",
+        "Mid-income consumers shifting Centrum loyalty to Himalaya before HCPs notice",
+        "Retailers signalling appetite for digital reorder — first-mover advantage available"
+      ]
+    },
+    "revenue_map": {
+      "relevant": true,
+      "confidence": 0.85,
+      "must_sell": [
+        "Sensodyne Repair & Protect — highest pull-through SKU; lead with this on every visit",
+        "Sensodyne Rapid Relief — defend trade margins to counter Colgate"
+      ],
+      "upsell": [
+        "Sensodyne family pack to existing Repair & Protect buyers",
+        "Voltaren Emulgel 100g to chronic-pain household buyers",
+        "Centrum Complete to vitamin-aisle consumers as 'clinical grade' positioning"
+      ],
+      "cross_sell": [
+        "Panadol + Centrum 'Family Wellness Pack' for seasonal flu (Apr–Sep)",
+        "Sensodyne + Polident bundle for the older demographic"
+      ],
+      "pain_points": [
+        "Panadol Extra stockouts creating brand-substitution risk — fix supply first",
+        "Centrum price-perception gap vs Himalaya — needs comm intervention",
+        "Field rep lacks reorder digital tool"
+      ],
+      "improve_strategy": [
+        "Shorten distributor reorder cycle for high-demand Panadol/Voltaren SKUs to 7 days",
+        "Revise Sensodyne Rapid Relief trade margin in mid-tier pharmacies",
+        "Pilot digital reorder QR tool at top-20 pharmacies",
+        "Brief Centrum brand on value-perception gap vs Himalaya"
+      ],
+      "think_over_selling": [
+        "Centrum Complete — pulling sell-in volumes may worsen unsold inventory in mid-tier outlets",
+        "Voltaren 100g SKU pushed in low-income outlets — likely sits on shelf"
+      ]
+    },
+    "risks": [
+      { "flag": "Panadol Extra stockouts driving consumer substitution to generics — repeat-buyer erosion risk", "severity": "high", "risk_type": "supply_chain", "is_conditional": false },
+      { "flag": "Colgate Pro-Relief shelf gain in sensitivity segment — Q2 risk of share-of-shelf slipping below 65%", "severity": "medium", "risk_type": "competitive", "is_conditional": true, "condition": "If Sensodyne Rapid Relief trade margins are not adjusted by mid-Q2" },
+      { "flag": "Centrum repeat-purchase decline in mid-income segment — silent share loss to Himalaya", "severity": "medium", "risk_type": "category", "is_conditional": false },
+      { "flag": "Digital tool gap — competitors may build distributor relationship moats first", "severity": "low", "risk_type": "operational", "is_conditional": false }
+    ],
+    "key_phrases": [
+      { "text": "Sensodyne is what dentists recommend", "score": 9.2, "tags": ["demand", "loyalty", "quality"], "context": "Retailer at Andheri pharmacy on why Repair & Protect pulls through consistently." },
+      { "text": "We've been waiting 2 weeks for Panadol Extra", "score": 8.7, "tags": ["supply", "margin"], "context": "Pharmacist in Bandra flagging a persistent stockout impacting walk-in conversion." },
+      { "text": "Colgate has better margin for us", "score": 8.4, "tags": ["competition", "margin"], "context": "Mid-tier pharmacy owner explaining shift toward Colgate Pro-Relief facings." },
+      { "text": "Customers ask for it by name", "score": 8.9, "tags": ["loyalty", "demand", "sentiment_positive"], "context": "Multiple retailers describing Sensodyne brand pull." },
+      { "text": "Centrum is too expensive now", "score": 7.8, "tags": ["pricing", "competition"], "context": "Retailer commenting on consumer pushback vs Himalaya alternatives." },
+      { "text": "QR code reorder would help us", "score": 7.4, "tags": ["general", "supply"], "context": "Two retailers expressing interest in a digital reorder mechanism." },
+      { "text": "Dentists are sending more patients", "score": 8.6, "tags": ["demand", "relationship"], "context": "Retailer attributing Sensodyne uplift to HCP detailing impact." },
+      { "text": "Voltaren works but it's pricey", "score": 6.9, "tags": ["pricing", "quality"], "context": "Consumer feedback relayed by pharmacist on premium SKUs." },
+      { "text": "We do whatever the doctor says", "score": 7.6, "tags": ["customer_behavior", "relationship"], "context": "Consumer dependency on HCP recommendation channel." },
+      { "text": "Generics are eating into our pain relief", "score": 7.5, "tags": ["competition", "pricing"], "context": "Retailer on Crocin/generic encroachment during Panadol stockouts." },
+      { "text": "Himalaya is half the price", "score": 7.1, "tags": ["pricing", "competition"], "context": "Vitamins category competitive feedback." },
+      { "text": "Sensodyne shelf is always at eye level", "score": 7.9, "tags": ["quality", "schemes"], "context": "Strong planogram compliance observation by the rep." }
+    ],
+    "qa": [
+      { "question": "What is the biggest immediate business risk?", "answer": "Panadol Extra stockouts at 3 of 4 visited pharmacies — driving consumer substitution to Crocin and generics, with some switchers becoming regular buyers (silent share erosion)." },
+      { "question": "Which product is performing best in this conversation?", "answer": "Sensodyne Repair & Protect — 30%+ pull-through uplift post Q1 dentist detailing, consumers asking for it by name, very high retailer advocacy." },
+      { "question": "What's the top quick win?", "answer": "Shorten Panadol Extra distributor reorder cycle from 14 to 7 days for Mumbai region — addresses the immediate stockout pain and reduces substitution risk." },
+      { "question": "What competitive threats need attention?", "answer": "Colgate Pro-Relief gaining shelf space via 2–3% higher trade margins in mid-tier pharmacies; Himalaya eroding Centrum share via ~25% lower pricing." }
+    ]
+  }
+}

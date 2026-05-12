@@ -1,12 +1,12 @@
 :root {
-    --primary: #007a28;
-    --primary-dark: #005c1e;
-    --primary-light: #a8f0c6;
-    --primary-50: #ecfdf5;
+    --primary: #1F7110;
+    --primary-dark: #155009;
+    --primary-light: #b9eba6;
+    --primary-50: #ecfce6;
     --success: #059669;
     --success-dark: #047857;
     --success-light: #a7f3d0;
-    --success-50: #ecfdf5;
+    --success-50: #ecfce6;
     --warning: #d97706;
     --warning-dark: #b45309;
     --warning-light: #fde68a;
@@ -59,18 +59,18 @@
     --color-good-border: #A7F3D0;
 
     /* Haleon brand tokens */
-    --haleon-green: #00C853;
-    --haleon-green-dark: #00952e;
-    --haleon-green-mid: #00a844;
-    --haleon-green-light: #e6fff1;
-    --haleon-green-muted: #b3f0d1;
+    --haleon-green: #3FE320;
+    --haleon-green-dark: #1F7110;
+    --haleon-green-mid: #34BD1A;
+    --haleon-green-light: #ecfce6;
+    --haleon-green-muted: #b9eba6;
     --haleon-charcoal: #111111;
     --haleon-gray: #F5F7F9;
     --haleon-gray-mid: #e8ecf0;
     --haleon-text-muted: #7A7A7A;
-    --haleon-star-on: #00C853;
+    --haleon-star-on: #3FE320;
     --haleon-star-off: #D1D5DB;
-    --haleon-star-hover: #00a844;
+    --haleon-star-hover: #34BD1A;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -323,6 +323,93 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
     padding: 28px;
 }
+
+/* Divider between upload form and demo button */
+.upload-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    gap: 12px;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+/* Demo button — secondary CTA on upload landing */
+.btn-demo {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px dashed var(--primary-light);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-base);
+    font-family: inherit;
+}
+
+.btn-demo:hover:not(:disabled) {
+    background: var(--primary-50);
+    border-color: var(--primary);
+    border-style: solid;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-demo:active:not(:disabled) { transform: translateY(0); }
+.btn-demo:disabled { opacity: 0.55; cursor: progress; }
+
+.btn-demo > svg:first-child {
+    flex-shrink: 0;
+    color: var(--primary);
+    background: var(--primary-50);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    width: 36px;
+    height: 36px;
+}
+
+.btn-demo-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.btn-demo-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.btn-demo-sub {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+.btn-demo-arrow {
+    flex-shrink: 0;
+    color: var(--primary);
+    transition: transform var(--transition-base);
+}
+
+.btn-demo:hover:not(:disabled) .btn-demo-arrow { transform: translateX(3px); }
 
 .upload-hero-image {
     flex: 1;
@@ -653,9 +740,21 @@ body {
 .chat-header {
     padding: 20px 20px 16px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 45%, var(--haleon-green) 100%);
     color: white;
+    position: relative;
+    overflow: hidden;
 }
+
+.chat-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.12) 0%, transparent 65%);
+    pointer-events: none;
+}
+
+.chat-header > * { position: relative; }
 
 .chat-header h3 {
     font-size: 1.05rem;
@@ -682,20 +781,22 @@ body {
 
 .chat-preset-btn {
     padding: 6px 12px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--primary-light);
     border-radius: 16px;
-    background: var(--neutral-50);
+    background: var(--primary-50);
     cursor: pointer;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--primary-dark);
     transition: all var(--transition-fast);
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .chat-preset-btn:hover {
-    background: var(--primary-50);
-    color: var(--primary);
-    border-color: var(--primary-light);
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .chat-messages {
@@ -777,10 +878,12 @@ body {
 }
 
 .chat-message.ai .chat-bubble {
-    background: var(--neutral-50);
+    background: var(--surface);
     color: var(--text);
-    border: 1px solid var(--border);
+    border: 1px solid var(--primary-light);
+    border-left: 3px solid var(--primary);
     border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(31, 113, 16, 0.05);
 }
 
 .chat-bubble p { margin-bottom: 8px; }
@@ -1912,7 +2015,7 @@ body {
 /* ===== HALEON DESIGN SYSTEM — FEEDBACK TAB ===== */
 /* Title bar override for Haleon */
 .haleon-title-bar {
-    background: linear-gradient(135deg, #00952e 0%, #00C853 60%, #00e676 100%) !important;
+    background: linear-gradient(135deg, #1F7110 0%, #3FE320 60%, #5FF048 100%) !important;
     position: relative;
     overflow: hidden;
 }
@@ -1961,7 +2064,7 @@ body {
     border-radius: 14px 14px 0 0;
 }
 
-.fbi-kpi-green::before { background: linear-gradient(90deg, #005c1e, #00C853); }
+.fbi-kpi-green::before { background: linear-gradient(90deg, #155009, #3FE320); }
 .fbi-kpi-blue::before  { background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
 .fbi-kpi-amber::before { background: linear-gradient(90deg, #b45309, #f59e0b); }
 .fbi-kpi-red::before   { background: linear-gradient(90deg, #b91c1c, #f87171); }
@@ -2315,7 +2418,7 @@ body {
     transition: filter var(--transition-fast);
 }
 
-.fbi-brand-bar-pos { background: linear-gradient(90deg, #005c1e, #00C853); }
+.fbi-brand-bar-pos { background: linear-gradient(90deg, #155009, #3FE320); }
 .fbi-brand-bar-opp { background: linear-gradient(90deg, #b45309, #f59e0b); }
 
 .fbi-brand-bar-pos:hover,
@@ -2350,7 +2453,7 @@ body {
     border-radius: 2px;
 }
 
-.fbi-legend-dot.pos { background: #00C853; }
+.fbi-legend-dot.pos { background: #3FE320; }
 .fbi-legend-dot.opp { background: #f59e0b; }
 
 /* Monthly Trend */
@@ -2404,7 +2507,7 @@ body {
 }
 
 .fbi-trend-fill.mar { background: #94a3b8; }
-.fbi-trend-fill.apr { background: linear-gradient(90deg, #005c1e, #00C853); }
+.fbi-trend-fill.apr { background: linear-gradient(90deg, #155009, #3FE320); }
 
 .fbi-trend-val {
     font-size: 0.78rem;

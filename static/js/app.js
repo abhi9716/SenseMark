@@ -126,6 +126,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (queryPresets) queryPresets.innerHTML = '';
     });
 
+    const seeTestBtn = document.getElementById('seeTestBtn');
+    if (seeTestBtn) {
+        seeTestBtn.addEventListener('click', () => {
+            seeTestBtn.disabled = true;
+            loadDefaultSession().finally(() => { seeTestBtn.disabled = false; });
+        });
+    }
+
     sidebarClearBtn.addEventListener('click', () => {
         if (confirm('Clear all cached sessions?')) {
             clearAllSessions();
@@ -206,6 +214,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     queryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !queryBtn.disabled) sendQuery(); });
 
+    function isDemoSession(session) {
+        return session && session.collectionId === 'default_demo_session';
+    }
+
+    function resolveDemoQuery(query, data) {
+        if (!data) return 'No demo data available.';
+        const normalize = (s) => s.toLowerCase().trim().replace(/[?.!,]+$/g, '').replace(/\s+/g, ' ');
+        const qa = data.qa || [];
+        const nq = normalize(query);
+
+        for (const item of qa) {
+            if (normalize(item.question) === nq) return item.answer;
+        }
+        for (const item of qa) {
+            const tokens = normalize(item.question).split(' ').filter(w => w.length > 4);
+            const overlap = tokens.filter(t => nq.includes(t)).length;
+            if (tokens.length && overlap / tokens.length >= 0.5) return item.answer;
+        }
+
+        const out = [];
+        if (/\b(product|sku|brand|sensodyne|panadol|voltaren|centrum|otrivin|haleon)\b/i.test(query)) {
+            const items = (data.products || []).slice(0, 4);
+            if (items.length) out.push('**Products in this conversation:**\n' + items.map(p => `- **${p.name}** _(${p.performance})_: ${p.feedback}`).join('\n'));
+        }
+        if (/\b(risk|threat|danger|concern|exposure)\b/i.test(query)) {
+            const items = (data.risks || []).slice(0, 4);
+            if (items.length) out.push('**Top risks:**\n' + items.map(r => `- _[${r.severity}]_ ${r.flag}`).join('\n'));
+        }
+        if (/\b(opportunit|growth|upside|expand|launch)\b/i.test(query)) {
+            const items = (data.opportunities || []).slice(0, 4);
+            if (items.length) out.push('**Top opportunities:**\n' + items.map(o => `- ${o.opportunity}${o.quick_win ? ' _(quick win)_' : ''}`).join('\n'));
+        }
+        if (/\b(compet|colgate|himalaya|generic|crocin|share)\b/i.test(query)) {
+            const items = (data.competitive_intel || []).slice(0, 4);
+            if (items.length) out.push('**Competitive landscape:**\n' + items.map(c => `- **${c.competitor_or_channel}**: ${c.details}`).join('\n'));
+        }
+        if (/\b(action|next step|do|plan|playbook)\b/i.test(query)) {
+            const items = (data.action_items || []).slice(0, 5);
+            if (items.length) out.push('**Recommended actions:**\n' + items.map(a => `- _[${a.urgency.replace('_', ' ')}]_ ${a.action}`).join('\n'));
+        }
+        if (/\b(pain|issue|problem|blocker|stockout)\b/i.test(query)) {
+            const items = (data.pain_points || []).slice(0, 4);
+            if (items.length) out.push('**Pain points:**\n' + items.map(p => `- _[${p.impact}]_ ${p.issue} — _${p.suggested_action}_`).join('\n'));
+        }
+        if (/\b(sentiment|tone|mood|positive|negative)\b/i.test(query) && data.sentiment) {
+            const s = data.sentiment;
+            out.push(`**Sentiment:** ${s.overall.replace('_', ' ')} (${Math.round(s.score*100)}%)\n\n${s.nuance || ''}`);
+        }
+        if (/\b(summary|tldr|overview|recap)\b/i.test(query) && data.summary) {
+            out.push(`**Summary:** ${data.summary}`);
+        }
+
+        if (out.length) return out.join('\n\n');
+
+        return `I'm working from cached insights for this **demo session**. Try one of the suggested questions above, or ask about:\n\n- **Products** — Sensodyne, Panadol, Voltaren, Centrum, Otrivin\n- **Risks** and threats to the business\n- **Opportunities** for growth\n- **Competition** — Colgate, Himalaya, generics\n- **Action items** and next steps\n- **Pain points** and issues\n\n_For full LLM-powered Q&A, upload your own transcript via "New Analysis"._`;
+    }
+
     async function sendQuery() {
         const query = queryInput.value.trim();
         const session = getSession(activeSessionId);
@@ -213,6 +278,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         appendUserMessage(query);
         queryInput.value = '';
+
+        if (isDemoSession(session)) {
+            const loadingId = appendLoadingMessage();
+            queryBtn.disabled = true;
+            await new Promise(r => setTimeout(r, 700));
+            removeLoadingMessage(loadingId);
+            appendAIMessage(resolveDemoQuery(query, session.data));
+            queryBtn.disabled = false;
+            return;
+        }
 
         const loadingId = appendLoadingMessage();
         queryBtn.disabled = true;
@@ -1205,7 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const delta = (t.apr != null && t.mar != null) ? t.apr - t.mar : null;
             let dCls = 'flat', dSym = '—', dCol = 'var(--text-tertiary)';
             if (delta != null) {
-                if (delta > 0.15) { dCls = 'up'; dSym = '▲'; dCol = '#007a28'; }
+                if (delta > 0.15) { dCls = 'up'; dSym = '▲'; dCol = '#1F7110'; }
                 else if (delta < -0.15) { dCls = 'down'; dSym = '▼'; dCol = '#dc2626'; }
             }
             const marPct = t.mar != null ? (t.mar / 5) * 100 : 0;
@@ -1232,7 +1307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el) return;
         el.innerHTML = stats.map(c => {
             const pct = Math.round((c.avg/5)*100);
-            const col = c.avg>=4?'#007a28':c.avg>=3?'#d97706':'#dc2626';
+            const col = c.avg>=4?'#1F7110':c.avg>=3?'#d97706':'#dc2626';
             return `<div class="fbi-bar-row">
                 <div class="fbi-bar-label">${c.label}</div>
                 <div class="fbi-bar-track"><div class="fbi-bar-fill" style="width:${pct}%;background:${col}"></div></div>
@@ -1251,7 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         el.innerHTML = dims.map(d => {
             const pct = Math.round((d.val/5)*100);
-            const col = d.val>=4?'#007a28':d.val>=3?'#d97706':'#dc2626';
+            const col = d.val>=4?'#1F7110':d.val>=3?'#d97706':'#dc2626';
             return `<div class="fbi-dim-row">
                 <div class="fbi-dim-header">
                     <span class="fbi-dim-label">${d.label}</span>
@@ -1270,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxO = Math.max(...FBI_OPP.map(t=>t.count));
         if (ww) ww.innerHTML = FBI_WORKING.map((t,i) => `
             <div class="fbi-theme-item" style="animation-delay:${i*0.07}s">
-                <div class="fbi-theme-bar-wrap"><div class="fbi-theme-bar" style="width:${Math.round((t.count/maxW)*100)}%;background:linear-gradient(90deg,#005c1e,#00C853)"></div></div>
+                <div class="fbi-theme-bar-wrap"><div class="fbi-theme-bar" style="width:${Math.round((t.count/maxW)*100)}%;background:linear-gradient(90deg,#155009,#3FE320)"></div></div>
                 <div class="fbi-theme-info">
                     <span class="fbi-theme-text">${t.theme}</span>
                     <span class="fbi-theme-count">${t.count} mentions</span>
@@ -1312,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="fbi-highlight-date">${r.date}</span>
                 </div>
                 <div class="fbi-highlight-section">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007a28" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1F7110" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg>
                     <span>${escapeHtml(r.working_well)}</span>
                 </div>
                 <div class="fbi-highlight-section fbi-opp-section">
@@ -1361,11 +1436,35 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFeedbackFilter();
 
     // ---- Restore sessions on load ----
+    async function loadDefaultSession() {
+        showLoading();
+        const minDelay = new Promise(resolve => setTimeout(resolve, 3800));
+        try {
+            const fetchData = fetch('/api/default-session').then(r => r.ok ? r.json() : null);
+            const [data] = await Promise.all([fetchData, minDelay]);
+            if (!data || !data.analysis || data.analysis.error) {
+                hideLoading();
+                return false;
+            }
+            const filename = data.filename || 'Demo Analysis';
+            addSession(filename, data.analysis, '', data.collection_id);
+            activateSession(sessions[sessions.length - 1].id);
+            return true;
+        } catch (e) {
+            console.warn('Default session load failed:', e);
+            hideLoading();
+            return false;
+        }
+    }
+
     renderSidebar();
     const hasCached = loadSessions();
     if (hasCached && sessions.length > 0) {
         uploadLanding.classList.add('hidden');
+        appHeader.classList.remove('hidden');
         appLayout.classList.remove('hidden');
         activateSession(sessions[sessions.length - 1].id);
+    } else {
+        loadDefaultSession();
     }
 });
