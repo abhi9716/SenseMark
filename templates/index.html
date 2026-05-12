@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SenseIQ — by IQlytics Solutions Pvt Ltd</title>
+    <title>SenseIQ — IQlytics Solutions Pvt Ltd</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
             <div class="logo">
                 <div class="logo-text">
                     <span class="logo-brand"><span class="logo-sense">Sense</span><span class="logo-iq">IQ</span></span>
-                    <span class="logo-byline">by IQlytics Solutions Pvt Ltd</span>
+                    <span class="logo-byline">IQlytics Solutions Pvt Ltd</span>
                 </div>
             </div>
             <div class="header-right"></div>
@@ -29,7 +29,7 @@
                 <div class="upload-hero-logo">
                     <div class="logo-text">
                         <span class="logo-brand"><span class="logo-sense">Sense</span><span class="logo-iq">IQ</span></span>
-                        <span class="logo-byline">by IQlytics Solutions Pvt Ltd</span>
+                        <span class="logo-byline">IQlytics Solutions Pvt Ltd</span>
                     </div>
                 </div>
                 <div class="upload-hero-content">
@@ -115,13 +115,13 @@
         <main class="dashboard-container">
             <section class="dashboard-section" id="dashboardSection">
                 <div class="dashboard-tabs" id="dashboardTabs">
-                    <button class="tab-btn active" data-tab="overview">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        Overview
+                    <button class="tab-btn active" data-tab="feedback">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Feedback Analysis
                     </button>
-                    <button class="tab-btn" data-tab="revenue">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Revenue Recommendation
+                    <button class="tab-btn" data-tab="overview">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Overall Sentiment
                     </button>
                     <button class="tab-btn" data-tab="insights">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -131,9 +131,9 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                         Key Phrases
                     </button>
-                    <button class="tab-btn" data-tab="feedback">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                        Feedback Analysis
+                    <button class="tab-btn" data-tab="revenue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Revenue Recommendations
                     </button>
                 </div>
 
@@ -176,13 +176,13 @@
 
                 <div class="dashboard-layout">
                     <div class="tab-content" id="tabContent">
-                        <!-- Overview Tab -->
-                        <div class="tab-pane active" id="tab-overview">
+                        <!-- Overall Sentiment Tab -->
+                        <div class="tab-pane" id="tab-overview">
                             <div class="tab-title-bar">
                                 <div class="tab-title-story">
                                     <div>
-                                        <div class="tab-story-step">Step 1 of 5 — Start Here</div>
-                                        <h2>Conversation at a Glance</h2>
+                                        <div class="tab-story-step">Step 2 of 5 — Conversation Sentiment</div>
+                                        <h2>Overall Sentiment</h2>
                                         <p id="overviewSubtitle">Sentiment, business signals, and performance scores extracted from this field conversation</p>
                                     </div>
                                     <div class="tab-story-icon">
@@ -222,8 +222,8 @@
                             <div class="tab-title-bar">
                                 <div class="tab-title-story">
                                     <div>
-                                        <div class="tab-story-step">Step 2 of 5 — Revenue Actions</div>
-                                        <h2>Revenue Playbook</h2>
+                                        <div class="tab-story-step">Step 5 of 5 — Revenue Actions</div>
+                                        <h2>Revenue Recommendations</h2>
                                         <p id="revenueSubtitle">Translate this conversation into prioritized selling actions — what to push, upsell, and address</p>
                                     </div>
                                     <div class="tab-story-icon">
@@ -246,7 +246,7 @@
                                 <div class="tab-title-story">
                                     <div>
                                         <div class="tab-story-step">Step 3 of 5 — Growth Intelligence</div>
-                                        <h2>Product &amp; Market Intelligence</h2>
+                                        <h2>Product Insights</h2>
                                         <p>What is working, what is blocking growth, and where the biggest opportunities lie</p>
                                     </div>
                                     <div class="tab-story-icon">
@@ -337,11 +337,11 @@
                         </div>
 
                         <!-- Feedback Insights Tab -->
-                        <div class="tab-pane" id="tab-feedback">
+                        <div class="tab-pane active" id="tab-feedback">
                             <div class="tab-title-bar haleon-title-bar">
                                 <div class="tab-title-story">
                                     <div>
-                                        <div class="tab-story-step" style="color:rgba(255,255,255,0.7)">Step 5 of 5 — Market Intelligence</div>
+                                        <div class="tab-story-step" style="color:rgba(255,255,255,0.7)">Step 1 of 5 — Market Intelligence</div>
                                         <h2>Market Feedback Dashboard</h2>
                                         <p>Aggregated insights from 42 market visit responses across 7 channels — patterns, scores, and emerging themes</p>
                                     </div>
