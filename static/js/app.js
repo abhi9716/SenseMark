@@ -191,12 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const ratingsDist = { 1:0, 2:0, 3:0, 4:0, 5:0 };
         ratings.forEach(r => { if (ratingsDist[r] != null) ratingsDist[r]++; });
         const totalRatings = ratings.length;
+        const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
         const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const totalFeedbacks = data.length;
 
         renderKpis({
+            avgRating, totalRatings,
             respondents: uniqueVisits.size,
             outlets: uniqueOutlets.size,
             feedbacks: totalFeedbacks,
@@ -211,25 +213,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el) return;
         const items = [
             {
+                label: 'Average Rating',
+                value: stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—',
+                unit: stats.avgRating > 0 ? '/5' : '',
+                sub: `${stats.totalRatings} ratings collected`, cls: 'fbi-kpi-green',
+                icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`,
+            },
+            {
                 label: 'Respondents', value: stats.respondents,
-                sub: `unique market visits`, cls: 'fbi-kpi-green',
+                sub: `unique market visits`, cls: 'fbi-kpi-blue',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
             },
             {
                 label: 'Outlets', value: stats.outlets,
-                sub: `points of sale covered`, cls: 'fbi-kpi-blue',
+                sub: `points of sale covered`, cls: 'fbi-kpi-amber',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg>`,
             },
             {
                 label: 'Feedbacks', value: stats.feedbacks,
-                sub: `total responses captured`, cls: 'fbi-kpi-amber',
+                sub: `total responses captured`, cls: 'fbi-kpi-purple',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
             },
         ];
         el.innerHTML = items.map((k, i) => `
             <div class="fbi-kpi-card ${k.cls}" style="animation-delay:${i*0.08}s">
                 <div class="fbi-kpi-icon-wrap">${k.icon}</div>
-                <div class="fbi-kpi-value">${k.value}</div>
+                <div class="fbi-kpi-value">${k.value}${k.unit ? `<span class="fbi-kpi-unit">${k.unit}</span>` : ''}</div>
                 <div class="fbi-kpi-label">${k.label}</div>
                 <div class="fbi-kpi-sub">${k.sub}</div>
             </div>`).join('');
@@ -279,59 +288,93 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Themes lexicon
-        const themes = [];
         const all = texts.join(' ').toLowerCase();
-        const themeRules = [
-            ['sensodyne', 'Sensodyne mentions', 'positive'],
-            ['panadol', 'Panadol mentions', 'positive'],
-            ['centrum', 'Centrum mentions', 'neutral'],
-            ['otrivin', 'Otrivin mentions', 'neutral'],
-            ['voltaren', 'Voltaren mentions', 'positive'],
-            ['enshine|colgate|himalaya|competitor|compet', 'Competitor activity', 'negative'],
-            ['stockout|out of stock|availability', 'Stock availability', 'negative'],
-            ['display|shelf|visibility|sleeve|sku', 'Visibility & display', 'positive'],
-            ['train|educat|learn', 'Training opportunity', 'neutral'],
-            ['price|expensive|cost|margin', 'Pricing sensitivity', 'negative'],
-            ['recommend|prescribe|advise', 'HCP recommendation', 'positive'],
-        ];
-        themeRules.forEach(([pat, text, type]) => {
-            if (new RegExp(pat).test(all)) themes.push({ text, type });
-        });
 
-        const posWords = ['good','great','excellent','best','love','recommend','effective','helpful','satisfied','strong','fast','improved','trust','happy','impressed','reliable'];
-        const negWords = ['improvement','expensive','missing','lack','poor','difficult','stockout','issue','problem','slow','weak','limited','confusing','unavailable'];
+        // Sentiment scoring
+        const posWords = ['good','great','excellent','best','love','recommend','effective','helpful','satisfied','strong','improved','trust','impressed','reliable','working','build','opportunity'];
+        const negWords = ['improvement','expensive','missing','lack','poor','difficult','stockout','issue','problem','slow','weak','limited','confusing','unavailable','empty','out of stock'];
         let posCount = 0, negCount = 0;
         posWords.forEach(w => { if (all.includes(w)) posCount++; });
         negWords.forEach(w => { if (all.includes(w)) negCount++; });
         const sentiment = posCount > negCount ? 'positive' : negCount > posCount ? 'negative' : 'mixed';
         const sentLabel = sentiment === 'positive' ? '🟢 Positive' : sentiment === 'negative' ? '🔴 Needs Attention' : '🟡 Mixed';
 
-        // Top words
-        const freq = {};
-        texts.forEach(t => {
-            t.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).forEach(w => {
-                if (w.length > 3 && !FB_STOP_WORDS.has(w)) freq[w] = (freq[w] || 0) + 1;
-            });
+        // Actionable themes — each maps to an opportunity/risk leadership cares about
+        const themeRules = [
+            ['sensodyne', 'Sensodyne brand traction', 'positive', 'opportunity'],
+            ['panadol', 'Panadol pull from consumers', 'positive', 'opportunity'],
+            ['centrum', 'Centrum value perception', 'neutral', 'watch'],
+            ['otrivin', 'Otrivin relief signal', 'neutral', 'watch'],
+            ['voltaren', 'Voltaren efficacy callout', 'positive', 'opportunity'],
+            ['enshine|colgate|himalaya|competitor|compet', 'Competitor activity in-store', 'negative', 'risk'],
+            ['stockout|out of stock|empty|replenish|empt', 'Replenishment opportunity', 'negative', 'risk'],
+            ['display|shelf|visibility|sleeve|sku|hangar|standee', 'In-store visibility & merchandising', 'positive', 'opportunity'],
+            ['train|educat|learn', 'Field training opportunity', 'neutral', 'watch'],
+            ['price|expensive|cost|margin', 'Pricing sensitivity', 'negative', 'risk'],
+            ['recommend|prescribe|advise', 'HCP recommendation channel', 'positive', 'opportunity'],
+            ['sample|trial', 'Sampling / trial programs', 'neutral', 'watch'],
+            ['digital|app|qr|online', 'Digital engagement opening', 'neutral', 'opportunity'],
+        ];
+        const themes = [];
+        themeRules.forEach(([pat, text, type, action]) => {
+            if (new RegExp(pat, 'i').test(all)) themes.push({ text, type, action });
         });
-        const topWords = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0, 6);
+
+        // Narrative summary tied to detected themes
+        const headlineBits = [];
+        if (themes.some(t => t.action === 'opportunity')) headlineBits.push('clear opportunities in brand visibility and pull');
+        if (themes.some(t => /Replenishment/.test(t.text))) headlineBits.push('replenishment gaps to close');
+        if (themes.some(t => /Competitor/.test(t.text))) headlineBits.push('competitor pressure in-store');
+        if (themes.some(t => /Pricing/.test(t.text))) headlineBits.push('pricing sensitivity flagged');
+        if (themes.some(t => /HCP/.test(t.text))) headlineBits.push('strong HCP recommendation cues');
+        const narrative = headlineBits.length
+            ? `Field feedback points to ${headlineBits.slice(0, 3).join(', ')}.`
+            : `Open-ended responses are limited but ${sentiment === 'positive' ? 'lean positive' : sentiment === 'negative' ? 'flag concerns to follow up on' : 'paint a mixed picture'}.`;
+
+        // Verbatim quotes — pick the 2 longest distinct responses, sanitized & truncated
+        const quotes = [...new Set(texts)]
+            .filter(t => t.length > 25)
+            .sort((a, b) => b.length - a.length)
+            .slice(0, 2)
+            .map(t => t.length > 240 ? t.slice(0, 237).trim() + '…' : t);
+
+        // Group themes into Opportunities vs Risks for executive scan
+        const opportunities = themes.filter(t => t.action === 'opportunity');
+        const risks = themes.filter(t => t.action === 'risk');
+        const watch = themes.filter(t => t.action === 'watch');
 
         el.innerHTML = `
             <div class="fb-summary">
                 <div class="fb-summary-row">
                     <span class="fb-summary-pill">${sentLabel}</span>
-                    <span class="fb-summary-meta">${texts.length} response${texts.length === 1 ? '' : 's'} analysed</span>
+                    <span class="fb-summary-meta">${texts.length} verbatim response${texts.length === 1 ? '' : 's'}</span>
                 </div>
-                ${topWords.length ? `<div class="fb-summary-block">
-                    <span class="fb-summary-label">Top mentions</span>
-                    <div class="fb-summary-words">${topWords.map(([w, c]) => `<span class="fb-word-chip">${escapeHtml(w)} <em>${c}</em></span>`).join('')}</div>
+
+                <p class="fb-summary-narrative">${escapeHtml(narrative)}</p>
+
+                ${quotes.length ? `<div class="fb-summary-block">
+                    <span class="fb-summary-label">Field voice</span>
+                    <div class="fb-summary-quotes">
+                        ${quotes.map(q => `<blockquote class="fb-quote">${escapeHtml(q)}</blockquote>`).join('')}
+                    </div>
                 </div>` : ''}
-                ${themes.length ? `<div class="fb-summary-block">
-                    <span class="fb-summary-label">Themes detected</span>
-                    <div class="fb-summary-themes">${themes.map(t => `<span class="fb-ai-tag ${t.type}">${escapeHtml(t.text)}</span>`).join('')}</div>
+
+                ${opportunities.length || risks.length || watch.length ? `<div class="fb-summary-grid">
+                    ${opportunities.length ? `<div class="fb-summary-bucket opportunity">
+                        <span class="fb-summary-label">Opportunities</span>
+                        <ul class="fb-summary-list">${opportunities.map(t => `<li>${escapeHtml(t.text)}</li>`).join('')}</ul>
+                    </div>` : ''}
+                    ${risks.length ? `<div class="fb-summary-bucket risk">
+                        <span class="fb-summary-label">Risks</span>
+                        <ul class="fb-summary-list">${risks.map(t => `<li>${escapeHtml(t.text)}</li>`).join('')}</ul>
+                    </div>` : ''}
+                    ${watch.length ? `<div class="fb-summary-bucket watch">
+                        <span class="fb-summary-label">Watch</span>
+                        <ul class="fb-summary-list">${watch.map(t => `<li>${escapeHtml(t.text)}</li>`).join('')}</ul>
+                    </div>` : ''}
                 </div>` : ''}
             </div>`;
-        if (scopeEl) scopeEl.textContent = `${texts.length} open-ended response${texts.length === 1 ? '' : 's'}`;
+        if (scopeEl) scopeEl.textContent = `${texts.length} open-ended response${texts.length === 1 ? '' : 's'} from field visits`;
     }
 
     function renderResponsesTable(data) {

@@ -3239,7 +3239,7 @@ body {
 }
 @media (max-width: 1100px) { .fb-dashboard-grid-2 { grid-template-columns: 1fr; } }
 
-/* ===== VERBATIM SUMMARY ===== */
+/* ===== VERBATIM SUMMARY (leadership view) ===== */
 .fb-summary { display: flex; flex-direction: column; gap: 16px; }
 .fb-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .fb-summary-pill {
@@ -3250,20 +3250,83 @@ body {
     border: 1px solid var(--primary-light);
 }
 .fb-summary-meta { font-size: 0.82rem; color: var(--text-tertiary); }
+
+.fb-summary-narrative {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.55;
+    margin: 0;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, var(--primary-50), #ffffff);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+}
+
 .fb-summary-block { display: flex; flex-direction: column; gap: 8px; }
 .fb-summary-label {
     font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary);
     text-transform: uppercase; letter-spacing: 0.06em;
 }
-.fb-summary-words { display: flex; flex-wrap: wrap; gap: 6px; }
-.fb-word-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px 10px; border-radius: 12px;
-    background: var(--neutral-50); border: 1px solid var(--border);
-    font-size: 0.82rem; font-weight: 600; color: var(--text);
+
+.fb-summary-quotes { display: flex; flex-direction: column; gap: 8px; }
+.fb-quote {
+    margin: 0;
+    padding: 10px 14px;
+    background: var(--neutral-50);
+    border-left: 3px solid var(--border-dark);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.5;
+    font-style: italic;
+    position: relative;
 }
-.fb-word-chip em { font-style: normal; font-weight: 700; color: var(--primary); font-size: 0.72rem; }
-.fb-summary-themes { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-quote::before {
+    content: '"';
+    color: var(--border-dark);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-right: 4px;
+    line-height: 0;
+    vertical-align: -3px;
+}
+
+.fb-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+@media (max-width: 900px) { .fb-summary-grid { grid-template-columns: 1fr; } }
+
+.fb-summary-bucket {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.fb-summary-bucket.opportunity { border-color: #a7f3d0; background: #f0fdf4; }
+.fb-summary-bucket.risk        { border-color: #fecaca; background: #fef2f2; }
+.fb-summary-bucket.watch       { border-color: #fde68a; background: #fffbeb; }
+
+.fb-summary-bucket.opportunity .fb-summary-label { color: #047857; }
+.fb-summary-bucket.risk .fb-summary-label        { color: #b91c1c; }
+.fb-summary-bucket.watch .fb-summary-label       { color: #b45309; }
+
+.fb-summary-list {
+    margin: 0;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.fb-summary-list li {
+    font-size: 0.86rem;
+    color: var(--text);
+    line-height: 1.45;
+}
 
 /* ===== VISITS TABLE COUNT ===== */
 .fb-responses-count {
