@@ -170,7 +170,30 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             const view = btn.dataset.view;
             if (view) showView(view);
+            closeMobileSidebar();
         });
+    });
+
+    // ---- Mobile sidebar toggle ----
+    function openMobileSidebar() {
+        document.getElementById('sidebar')?.classList.add('is-open');
+        document.getElementById('sidebarScrim')?.classList.add('is-visible');
+        document.body.classList.add('sidebar-open');
+    }
+    function closeMobileSidebar() {
+        document.getElementById('sidebar')?.classList.remove('is-open');
+        document.getElementById('sidebarScrim')?.classList.remove('is-visible');
+        document.body.classList.remove('sidebar-open');
+    }
+    document.getElementById('headerMenuBtn')?.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar?.classList.contains('is-open')) closeMobileSidebar();
+        else openMobileSidebar();
+    });
+    document.getElementById('sidebarScrim')?.addEventListener('click', closeMobileSidebar);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobileSidebar(); });
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) closeMobileSidebar();
     });
 
     // ---- Dashboard ----
@@ -414,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const oName = outletName(r.outlet_id);
             const oCode = outletCode(r.outlet_id);
             return `<tr>
-                <td class="fb-cell-outlet">
+                <td class="fb-cell-outlet" data-label="Outlet">
                     <div class="fb-cell-outlet-stack">
                         <span class="fb-cell-outlet-name">${escapeHtml(oName)}</span>
                         <div class="fb-cell-outlet-meta">
@@ -423,13 +446,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </td>
-                <td class="fb-cell-q">
+                <td class="fb-cell-q" data-label="Question">
                     <div class="fb-q-stack">
                         <span class="fb-q-pill">${escapeHtml(qNo)}</span>
                         <span class="fb-q-text">${escapeHtml(qText)}</span>
                     </div>
                 </td>
-                <td class="fb-cell-resp">
+                <td class="fb-cell-resp" data-label="Response">
                     <div class="fb-cell-resp-stack">
                         ${responseText
                             ? `<p class="fb-response-text" title="${escapeHtml(responseText)}">${escapeHtml(responseText)}</p>`
@@ -437,8 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${stars}
                     </div>
                 </td>
-                <td class="fb-cell-media">${rowMediaChips(r)}</td>
-                <td class="fb-cell-meta">
+                <td class="fb-cell-media" data-label="Media">${rowMediaChips(r)}</td>
+                <td class="fb-cell-meta" data-label="Visit">
                     <div class="fb-cell-meta-stack">
                         <span class="fb-cell-meta-visit">#${r.visit_id}</span>
                         <span class="fb-cell-meta-date">${escapeHtml(formatDateShort(r.created_at))}</span>
@@ -752,13 +775,13 @@ document.addEventListener('DOMContentLoaded', () => {
         body.innerHTML = visits.map(v => {
             const lvl = inferLevel(v.level, v.outlet_id);
             return `<tr>
-                <td style="font-weight:700">${v.visit_id}</td>
-                <td style="font-size:0.85rem;color:var(--text-secondary)">${escapeHtml(outletCode(v.outlet_id))}</td>
-                <td>${escapeHtml(outletName(v.outlet_id))}</td>
-                <td><span class="fb-type-badge ${lvl}">${visitTypeLabel(lvl)}</span></td>
-                <td>${v.total_answers}</td>
-                <td style="font-size:0.85rem;color:var(--text-secondary);white-space:nowrap">${formatDateLong(v.created_at)}</td>
-                <td class="ta-right"><button class="btn btn-sm btn-ghost" data-visit-view="${v.visit_id}">View</button></td>
+                <td data-label="Visit ID" style="font-weight:700">${v.visit_id}</td>
+                <td data-label="Outlet Code" style="font-size:0.85rem;color:var(--text-secondary)">${escapeHtml(outletCode(v.outlet_id))}</td>
+                <td data-label="Outlet Name">${escapeHtml(outletName(v.outlet_id))}</td>
+                <td data-label="Visit Type"><span class="fb-type-badge ${lvl}">${visitTypeLabel(lvl)}</span></td>
+                <td data-label="Answers">${v.total_answers}</td>
+                <td data-label="Date" style="font-size:0.85rem;color:var(--text-secondary);white-space:nowrap">${formatDateLong(v.created_at)}</td>
+                <td data-label="Action" class="ta-right"><button class="btn btn-sm btn-ghost" data-visit-view="${v.visit_id}">View</button></td>
             </tr>`;
         }).join('');
 
