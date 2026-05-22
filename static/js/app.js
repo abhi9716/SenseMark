@@ -396,18 +396,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const typeClass = inferLevel(r.level, r.outlet_id);
             const ratingHtml = r.rating != null
                 ? `<span class="fb-rating-pip" style="background:${['#dc2626','#f97316','#eab308','#84cc16','#22c55e'][r.rating - 1] || '#94a3b8'}">${r.rating}</span>`
-                : '<span style="color:var(--text-tertiary);font-size:0.75rem">—</span>';
+                : '<span class="fb-cell-muted">—</span>';
             const responseText = r.answer_text || r.voice_text || '';
-            const qShort = r.question_id != null ? questionShort(r.question_id) : '—';
+            const q = _fbQuestionsById[r.question_id];
+            const qNo = q ? (q.question_no || `Q${r.question_id}`) : (r.question_id != null ? `Q${r.question_id}` : '—');
+            const qText = q && q.question_text ? q.question_text : '';
+            const oName = outletName(r.outlet_id);
             return `<tr>
-                <td style="font-weight:600;font-size:0.8rem">#${r.visit_id}</td>
-                <td><span class="fb-type-badge ${typeClass}">${visitTypeLabel(typeClass)}</span></td>
-                <td style="font-size:0.82rem">${escapeHtml(outletName(r.outlet_id))}</td>
-                <td style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap">${escapeHtml(qShort)}</td>
-                <td>${ratingHtml}</td>
-                <td><span class="fb-response-text" title="${escapeHtml(responseText)}">${responseText ? escapeHtml(responseText.slice(0, 80)) + (responseText.length > 80 ? '…' : '') : '<span style="color:var(--text-tertiary)">—</span>'}</span></td>
-                <td>${rowMediaChips(r)}</td>
-                <td style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap">${formatDateShort(r.created_at)}</td>
+                <td class="fb-cell-visit">#${r.visit_id}</td>
+                <td class="fb-cell-level"><span class="fb-type-badge ${typeClass}">${visitTypeLabel(typeClass)}</span></td>
+                <td class="fb-cell-outlet" title="${escapeHtml(oName)}">${escapeHtml(oName)}</td>
+                <td class="fb-cell-q">
+                    <div class="fb-q-stack">
+                        <span class="fb-q-pill">${escapeHtml(qNo)}</span>
+                        <span class="fb-q-text">${escapeHtml(qText)}</span>
+                    </div>
+                </td>
+                <td class="fb-cell-rating">${ratingHtml}</td>
+                <td class="fb-cell-response"><span class="fb-response-text" title="${escapeHtml(responseText)}">${responseText ? escapeHtml(responseText) : '<span class="fb-cell-muted">—</span>'}</span></td>
+                <td class="fb-cell-media">${rowMediaChips(r)}</td>
+                <td class="fb-cell-date">${formatDateShort(r.created_at)}</td>
             </tr>`;
         }).join('');
     }
@@ -417,15 +425,83 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = mediaUrl(r.image_path);
         const aud = mediaUrl(r.audio_path);
         const vid = mediaUrl(r.video_path);
-        if (img) chips.push(`<a class="fb-media-chip fb-media-img-chip" href="${escapeHtml(img)}" target="_blank" rel="noopener" title="Open image"><img src="${escapeHtml(img)}" loading="lazy" alt="image" onerror="this.parentElement.classList.add('errored')"></a>`);
-        if (aud) chips.push(`<a class="fb-media-chip" href="${escapeHtml(aud)}" target="_blank" rel="noopener" title="Open audio">
+        const q = _fbQuestionsById[r.question_id];
+        const caption = q ? `${q.question_no || ''} — ${q.question_text || ''}` : `Visit #${r.visit_id}`;
+        if (img) chips.push(`<button type="button" class="fb-media-chip fb-media-img-chip" data-media-kind="image" data-media-url="${escapeHtml(img)}" data-media-caption="${escapeHtml(caption)}" title="View image"><img src="${escapeHtml(img)}" loading="lazy" alt="image" onerror="this.parentElement.classList.add('errored')"></button>`);
+        if (aud) chips.push(`<button type="button" class="fb-media-chip" data-media-kind="audio" data-media-url="${escapeHtml(aud)}" data-media-caption="${escapeHtml(caption)}" title="Play audio">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3v5zM3 19a2 2 0 0 0 2 2h1v-7H3v5z"/></svg>
-        </a>`);
-        if (vid) chips.push(`<a class="fb-media-chip" href="${escapeHtml(vid)}" target="_blank" rel="noopener" title="Open video">
+        </button>`);
+        if (vid) chips.push(`<button type="button" class="fb-media-chip" data-media-kind="video" data-media-url="${escapeHtml(vid)}" data-media-caption="${escapeHtml(caption)}" title="Play video">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </a>`);
-        return chips.length ? `<div class="fb-media-chips">${chips.join('')}</div>` : '<span style="color:var(--text-tertiary);font-size:0.75rem">—</span>';
+        </button>`);
+        return chips.length ? `<div class="fb-media-chips">${chips.join('')}</div>` : '<span class="fb-cell-muted">—</span>';
     }
+
+    // ---- Media modal (in-page lightbox) ----
+    function ensureMediaModal() {
+        let modal = document.getElementById('mediaModal');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.id = 'mediaModal';
+        modal.className = 'media-modal hidden';
+        modal.innerHTML = `
+            <div class="media-modal-overlay" data-close="1"></div>
+            <div class="media-modal-card">
+                <header class="media-modal-head">
+                    <span class="media-modal-caption" id="mediaModalCaption"></span>
+                    <button type="button" class="media-modal-close" data-close="1" aria-label="Close">&times;</button>
+                </header>
+                <div class="media-modal-body" id="mediaModalBody"></div>
+                <footer class="media-modal-foot">
+                    <a class="media-modal-link" id="mediaModalLink" target="_blank" rel="noopener">Open in new tab</a>
+                </footer>
+            </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => {
+            if (e.target.dataset.close === '1') closeMediaModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeMediaModal();
+        });
+        return modal;
+    }
+
+    function openMediaModal(kind, url, caption) {
+        const modal = ensureMediaModal();
+        const body = modal.querySelector('#mediaModalBody');
+        const cap = modal.querySelector('#mediaModalCaption');
+        const link = modal.querySelector('#mediaModalLink');
+        cap.textContent = caption || '';
+        link.href = url;
+        if (kind === 'image') {
+            body.innerHTML = `<img src="${escapeHtml(url)}" alt="" class="media-modal-img">`;
+        } else if (kind === 'audio') {
+            body.innerHTML = `<audio class="media-modal-audio" controls autoplay src="${escapeHtml(url)}"></audio>`;
+        } else if (kind === 'video') {
+            body.innerHTML = `<video class="media-modal-video" controls autoplay src="${escapeHtml(url)}"></video>`;
+        } else {
+            body.innerHTML = '';
+        }
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMediaModal() {
+        const modal = document.getElementById('mediaModal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        const body = modal.querySelector('#mediaModalBody');
+        if (body) body.innerHTML = '';
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-media-url]');
+        if (trigger) {
+            e.preventDefault();
+            openMediaModal(trigger.dataset.mediaKind, trigger.dataset.mediaUrl, trigger.dataset.mediaCaption);
+        }
+    });
 
     // ---- Filter logic ----
     function applyFeedbackFilters() {
@@ -486,7 +562,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const ids = getQuestionIdsInData(scopedData);
         const prev = _fbQuestionFilter;
         sel.innerHTML = '<option value="all">All Questions</option>' +
-            ids.map(id => `<option value="${id}">${escapeHtml(questionLabel(id, 80))}</option>`).join('');
+            ids.map(id => {
+                const q = _fbQuestionsById[id];
+                const qno = q ? (q.question_no || `Q${id}`) : `Q${id}`;
+                const text = q && q.question_text ? q.question_text : '';
+                const label = text ? `${qno} — ${text}` : qno;
+                return `<option value="${id}" title="${escapeHtml(label)}">${escapeHtml(label)}</option>`;
+            }).join('');
         if (prev !== 'all' && ids.map(String).includes(String(prev))) {
             sel.value = String(prev);
         } else {
@@ -664,9 +746,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     ${voiceAnswer}
                     <div class="qa-media-row">
-                        ${mediaBlock('Image Capture', a.image_path, 'image')}
-                        ${mediaBlock('Video Recording', a.video_path, 'video')}
-                        ${mediaBlock('Audio Note', a.audio_path, 'audio')}
+                        ${mediaBlock('Image Capture', a.image_path, 'image', `${qno} — ${qtext || 'Image'}`)}
+                        ${mediaBlock('Video Recording', a.video_path, 'video', `${qno} — ${qtext || 'Video'}`)}
+                        ${mediaBlock('Audio Note', a.audio_path, 'audio', `${qno} — ${qtext || 'Audio'}`)}
                     </div>
                 </div>`;
         }).join('');
@@ -682,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return MEDIA_BASE_URL + (p.startsWith('/') ? p : '/' + p);
     }
 
-    function mediaBlock(label, path, kind) {
+    function mediaBlock(label, path, kind, caption) {
         const url = mediaUrl(path);
         if (!url) {
             return `<div class="qa-media qa-media-${kind}">
@@ -691,14 +773,18 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         }
         let player = '';
+        const cap = caption || label;
         if (kind === 'image') {
-            player = `<a class="qa-media-img" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+            player = `<button type="button" class="qa-media-img" data-media-kind="image" data-media-url="${escapeHtml(url)}" data-media-caption="${escapeHtml(cap)}" aria-label="${escapeHtml(label)}">
                 <img src="${escapeHtml(url)}" alt="${escapeHtml(label)}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('qa-media-err')">
-            </a>`;
+            </button>`;
         } else if (kind === 'audio') {
             player = `<audio class="qa-media-audio" controls preload="none" src="${escapeHtml(url)}"></audio>`;
         } else if (kind === 'video') {
-            player = `<video class="qa-media-video" controls preload="none" src="${escapeHtml(url)}"></video>`;
+            player = `<button type="button" class="qa-media-video-btn" data-media-kind="video" data-media-url="${escapeHtml(url)}" data-media-caption="${escapeHtml(cap)}" aria-label="${escapeHtml(label)}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                Play video
+            </button>`;
         }
         return `<div class="qa-media qa-media-${kind} has">
             <span class="qa-media-label">${escapeHtml(label)}</span>
