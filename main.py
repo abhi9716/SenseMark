@@ -244,12 +244,31 @@ async def get_default_session():
 
 
 CSV_DATA_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_answers.csv")
+USERS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_users.csv")
+QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions.csv")
 
 # Question ID -> level mapping (inferred from question sets per visit type)
 QID_LEVEL_MAP = {}
 for qid in range(1, 6): QID_LEVEL_MAP[qid] = "trade"
 for qid in range(8, 13): QID_LEVEL_MAP[qid] = "hcp"
 for qid in range(15, 20): QID_LEVEL_MAP[qid] = "consumer"
+
+
+def _parse_csv_rows(path):
+    rows = []
+    if not os.path.exists(path):
+        return rows
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            cleaned = {}
+            for k, v in r.items():
+                if v == "" or v == "NULL" or v is None:
+                    cleaned[k] = None
+                else:
+                    cleaned[k] = v
+            rows.append(cleaned)
+    return rows
 
 
 @app.get("/api/feedback-data")
@@ -278,3 +297,44 @@ async def get_feedback_data():
         return {"data": rows, "total": len(rows), "source": os.path.basename(CSV_DATA_PATH)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/feedback-meta")
+async def get_feedback_meta():
+    users_raw = _parse_csv_rows(USERS_CSV_PATH)
+    questions_raw = _parse_csv_rows(QUESTIONS_CSV_PATH)
+
+    users = []
+    for u in users_raw:
+        try:
+            uid = int(u["id"]) if u.get("id") else None
+        except (ValueError, TypeError):
+            uid = None
+        if uid is None:
+            continue
+        users.append({
+            "id": uid,
+            "user_name": u.get("user_name") or f"User #{uid}",
+            "email": u.get("email"),
+            "designation": u.get("designation"),
+            "visit_type": u.get("visit_type"),
+        })
+
+    questions = []
+    for q in questions_raw:
+        try:
+            qid = int(q["id"]) if q.get("id") else None
+        except (ValueError, TypeError):
+            qid = None
+        if qid is None:
+            continue
+        questions.append({
+            "id": qid,
+            "channel": q.get("channel"),
+            "channel_type": q.get("channel_type"),
+            "question_no": q.get("question_no"),
+            "question_text": q.get("question_text"),
+            "answer_type": q.get("answer_type"),
+        })
+
+    return {"users": users, "questions": questions}
