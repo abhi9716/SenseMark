@@ -253,11 +253,19 @@ OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv
 # different user.
 CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # 9 = Kedar Lele
 
-# Question ID -> level mapping (inferred from question sets per visit type)
+# Question ID -> level mapping aligned to the questions table channels:
+#   Pharmacy Store / Grocery Store / MT Store / In-Market Activation / Dcommerce -> trade (retail-side)
+#   HCP                                                                          -> hcp
+#   Consumer / Consumer1                                                         -> consumer
 QID_LEVEL_MAP = {}
-for qid in range(1, 6): QID_LEVEL_MAP[qid] = "trade"
-for qid in range(8, 13): QID_LEVEL_MAP[qid] = "hcp"
-for qid in range(15, 20): QID_LEVEL_MAP[qid] = "consumer"
+for qid in range(1, 6):   QID_LEVEL_MAP[qid] = "trade"     # Pharmacy Store
+for qid in range(8, 13):  QID_LEVEL_MAP[qid] = "trade"     # Grocery Store
+for qid in range(15, 20): QID_LEVEL_MAP[qid] = "trade"     # MT Store
+for qid in range(22, 29): QID_LEVEL_MAP[qid] = "trade"     # In-Market Activation
+for qid in range(29, 34): QID_LEVEL_MAP[qid] = "hcp"       # HCP
+for qid in range(36, 41): QID_LEVEL_MAP[qid] = "consumer"  # Consumer
+for qid in range(43, 48): QID_LEVEL_MAP[qid] = "trade"     # Dcommerce (retail-side)
+for qid in range(50, 55): QID_LEVEL_MAP[qid] = "consumer"  # Consumer1
 
 
 def _parse_csv_rows(path):
