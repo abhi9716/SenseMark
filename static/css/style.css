@@ -2783,6 +2783,15 @@ body {
 
 /* ===== FEEDBACK DASHBOARD REDESIGN ===== */
 
+/* Sticky filter area (desktop + mobile) */
+.fb-sticky-filter-area {
+    position: sticky;
+    top: 56px;
+    z-index: 50;
+    background: var(--bg);
+    padding-top: 4px;
+}
+
 /* Level Selector */
 .fb-level-selector {
     display: flex;
@@ -4024,15 +4033,6 @@ body.sidebar-open { overflow: hidden; }
     .tab-title-bar p { display: none; }
     .tab-story-step { font-size: 0.62rem; }
     .tab-story-icon { display: none; }
-
-    /* Sticky filter area: header+tabs+frozen on scroll */
-    .fb-sticky-filter-area {
-        position: sticky;
-        top: 56px;
-        z-index: 50;
-        background: var(--bg);
-        padding-top: 4px;
-    }
 
     /* Filters: collapsed by default behind toggle button */
     .fb-filters-toggle { display: inline-flex; padding: 11px 14px; font-size: 0.88rem; margin-bottom: 12px; }
