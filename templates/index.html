@@ -87,30 +87,43 @@
                         </div>
                     </div>
 
-                    <div class="fb-level-selector" id="fbLevelSelector">
-                        <button class="fb-level-btn active" data-level="all">All</button>
-                        <button class="fb-level-btn" data-level="trade">Trade</button>
-                        <button class="fb-level-btn" data-level="hcp">HCP</button>
-                        <button class="fb-level-btn" data-level="consumer">Consumer</button>
-                    </div>
+                    <button class="fb-filters-toggle" id="fbFiltersToggle" type="button" aria-expanded="false" aria-controls="fbFiltersGroup">
+                        <span class="fb-filters-toggle-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        </span>
+                        <span class="fb-filters-toggle-label">Filters</span>
+                        <span class="fb-filters-toggle-count" id="fbFiltersCount"></span>
+                        <span class="fb-filters-toggle-chev">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
+                    </button>
 
-                    <div class="fb-filter-bar" id="fbFilterBar">
-                        <div class="fb-filter-group fb-filter-group-wide">
-                            <label>Question</label>
-                            <select id="fbFilterQuestion"><option value="all">All Questions</option></select>
+                    <div class="fb-filters-group" id="fbFiltersGroup">
+                        <div class="fb-level-selector" id="fbLevelSelector">
+                            <button class="fb-level-btn active" data-level="all">All</button>
+                            <button class="fb-level-btn" data-level="trade">Trade</button>
+                            <button class="fb-level-btn" data-level="hcp">HCP</button>
+                            <button class="fb-level-btn" data-level="consumer">Consumer</button>
                         </div>
-                        <div class="fb-filter-group">
-                            <label>Outlet</label>
-                            <select id="fbFilterOutlet"><option value="all">All Outlets</option></select>
-                        </div>
-                        <div class="fb-filter-group">
-                            <label>Date Range</label>
-                            <select id="fbFilterDate">
-                                <option value="all">All Time</option>
-                                <option value="7d">Last 7 Days</option>
-                                <option value="14d">Last 14 Days</option>
-                                <option value="30d">Last 30 Days</option>
-                            </select>
+
+                        <div class="fb-filter-bar" id="fbFilterBar">
+                            <div class="fb-filter-group fb-filter-group-wide">
+                                <label>Question</label>
+                                <select id="fbFilterQuestion"><option value="all">All Questions</option></select>
+                            </div>
+                            <div class="fb-filter-group">
+                                <label>Outlet</label>
+                                <select id="fbFilterOutlet"><option value="all">All Outlets</option></select>
+                            </div>
+                            <div class="fb-filter-group">
+                                <label>Date Range</label>
+                                <select id="fbFilterDate">
+                                    <option value="all">All Time</option>
+                                    <option value="7d">Last 7 Days</option>
+                                    <option value="14d">Last 14 Days</option>
+                                    <option value="30d">Last 30 Days</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 

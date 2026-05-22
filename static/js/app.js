@@ -637,6 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.classList.add('hidden');
         }
 
+        if (typeof updateFiltersCount === 'function') updateFiltersCount();
         renderDashboard();
     }
 
@@ -724,6 +725,34 @@ document.addEventListener('DOMContentLoaded', () => {
         _fbQuestionFilter = e.target.value || 'all';
         applyFeedbackFilters();
     });
+    // ---- Filters toggle (mobile collapsible) ----
+    const filtersToggle = document.getElementById('fbFiltersToggle');
+    const filtersGroup = document.getElementById('fbFiltersGroup');
+    filtersToggle?.addEventListener('click', () => {
+        const open = filtersGroup?.classList.toggle('is-open');
+        filtersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    function updateFiltersCount() {
+        const countEl = document.getElementById('fbFiltersCount');
+        if (!countEl) return;
+        const level = document.querySelector('.fb-level-btn.active')?.dataset?.level || 'all';
+        const outlet = document.getElementById('fbFilterOutlet')?.value || 'all';
+        const dateRange = document.getElementById('fbFilterDate')?.value || 'all';
+        let n = 0;
+        if (level !== 'all') n++;
+        if (outlet !== 'all') n++;
+        if (dateRange !== 'all') n++;
+        if (_fbQuestionFilter !== 'all') n++;
+        if (n > 0) {
+            countEl.textContent = n;
+            countEl.classList.add('is-active');
+        } else {
+            countEl.textContent = '';
+            countEl.classList.remove('is-active');
+        }
+    }
+
     document.getElementById('fbFilterClearBtn')?.addEventListener('click', () => {
         document.querySelectorAll('.fb-level-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.fb-level-btn[data-level="all"]')?.classList.add('active');
