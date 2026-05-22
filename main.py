@@ -1,17 +1,12 @@
 import asyncio
 import json
 import os
+import csv
 import subprocess
 from pathlib import Path
 from io import BytesIO
-from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from services.analyzer import analyze_text, analyze_with_query
-from services import vector_db
-
+# Load .env before any imports that need env vars
 env_path = Path(__file__).parent / ".env"
 if env_path.exists():
     with open(env_path) as f:
@@ -20,6 +15,14 @@ if env_path.exists():
             if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip())
+
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from services.analyzer import analyze_text, analyze_with_query, analyze_feedback_text
+from services import vector_db
 
 app = FastAPI(
     title="SenseMark Market Intelligence Platform",
@@ -36,19 +39,15 @@ DEFAULT_SESSION_CACHE = os.path.join(BASE_DIR, "static", "data", "default_sessio
 
 @app.on_event("startup")
 async def warm_embedding_model():
-    """Pre-load ChromaDB's embedding model into memory so the first user query is fast.
-
-    The model is also baked into the Docker image at build time, but this ensures
-    in-memory residency (RAM-resident embeddings) for any deployment surface.
-    """
     try:
-        warmup = vector_db.client.get_or_create_collection("__startup_warmup__")
+        warmup = vector_db.client.get_or_create_collection("startup_warmup")
         warmup.upsert(documents=["server startup warmup"], ids=["w1"])
         warmup.query(query_texts=["warmup"], n_results=1)
-        vector_db.client.delete_collection("__startup_warmup__")
+        vector_db.client.delete_collection("startup_warmup")
         print("[startup] Embedding model loaded and resident")
     except Exception as e:
         print(f"[startup] Embedding warmup skipped (non-fatal): {e}")
+
 
 SUPPORTED_ENCODINGS = ["utf-8", "latin-1", "cp1252", "iso-8859-1"]
 
@@ -77,10 +76,8 @@ def read_docx_file(file: UploadFile) -> str:
 def read_doc_file(file: UploadFile) -> str:
     raw = file.file.read()
     tmp_path = Path(f"/tmp/opencode/upload_{os.getpid()}.doc")
-
     try:
         tmp_path.write_bytes(raw)
-
         try:
             result = subprocess.run(
                 ["antiword", "-m", "UTF-8", str(tmp_path)],
@@ -90,7 +87,6 @@ def read_doc_file(file: UploadFile) -> str:
                 return result.stdout.strip()
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
-
         try:
             subprocess.run(
                 ["libreoffice", "--headless", "--convert-to", "txt", "--outdir", "/tmp/opencode", str(tmp_path)],
@@ -104,7 +100,6 @@ def read_doc_file(file: UploadFile) -> str:
                     return content.strip()
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
-
         raise HTTPException(
             status_code=400,
             detail="Cannot convert .doc file. Install 'antiword' (apt install antiword) or 'libreoffice' to process legacy .doc files. Alternatively, save as .docx or plain text.",
@@ -115,7 +110,6 @@ def read_doc_file(file: UploadFile) -> str:
 
 def read_file_content(file: UploadFile) -> str:
     _, ext = os.path.splitext(file.filename.lower())
-
     if ext == ".docx":
         return read_docx_file(file)
     elif ext == ".doc":
@@ -130,7 +124,7 @@ async def index(request: Request):
 
 
 @app.post("/api/analyze")
-async def analyze(file: UploadFile = File(...), model: str = Form(default="gemma4:31b-cloud")):
+async def analyze(file: UploadFile = File(...), model: str = Form(default="big-pickle")):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
@@ -169,7 +163,7 @@ async def query_analysis(request: Request):
         collection_id = body.get("collection_id", "")
         text = body.get("text", "")
         query = body.get("query", "")
-        model = body.get("model", "gemma4:31b-cloud")
+        model = body.get("model", "big-pickle")
 
         if not query.strip():
             raise HTTPException(status_code=400, detail="No query provided")
@@ -193,6 +187,39 @@ async def query_analysis(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/analyze-feedback")
+async def analyze_feedback(request: Request):
+    try:
+        body = await request.json()
+        text = body.get("text", "")
+        model = body.get("model", "big-pickle")
+
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="No feedback text provided")
+
+        result = await analyze_feedback_text(text, model=model)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Feedback analysis error (non-fatal): {e}")
+        return {
+            "error": f"AI analysis unavailable: {str(e)}",
+            "summary": "AI analysis is currently unavailable. The feedback dashboard works without it.",
+            "sentiment": {"overall": "unknown", "score": 0.5, "nuance": "AI analysis unavailable"},
+            "categories": [],
+            "metrics": {},
+            "revenue_map": {"relevant": False, "confidence": 0, "must_sell": [], "upsell": [], "cross_sell": [], "pain_points": [], "improve_strategy": []},
+            "key_phrases": [],
+            "risks": [],
+            "opportunities": [],
+            "insights": {"what_is_working": [], "what_is_breaking": [], "hidden_signals": []},
+            "products": [],
+            "action_items": [],
+            "qa": [],
+        }
+
+
 @app.post("/api/clear-vector-db")
 async def clear_vector_db(request: Request):
     try:
@@ -214,3 +241,40 @@ async def get_default_session():
             return json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"Default sample file is corrupt: {e}")
+
+
+CSV_DATA_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_answers.csv")
+
+# Question ID -> level mapping (inferred from question sets per visit type)
+QID_LEVEL_MAP = {}
+for qid in range(1, 6): QID_LEVEL_MAP[qid] = "trade"
+for qid in range(8, 13): QID_LEVEL_MAP[qid] = "hcp"
+for qid in range(15, 20): QID_LEVEL_MAP[qid] = "consumer"
+
+
+@app.get("/api/feedback-data")
+async def get_feedback_data():
+    if not os.path.exists(CSV_DATA_PATH):
+        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
+    try:
+        rows = []
+        with open(CSV_DATA_PATH, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                row = {}
+                for k, v in r.items():
+                    if v == "" or v == "NULL":
+                        row[k] = None
+                    elif k in ("rating", "id", "visit_id", "user_id", "outlet_id", "question_id"):
+                        try:
+                            row[k] = int(float(v)) if v else None
+                        except (ValueError, TypeError):
+                            row[k] = None
+                    else:
+                        row[k] = v
+                # Derive level from question_id
+                row["level"] = QID_LEVEL_MAP.get(row.get("question_id")) if row.get("question_id") else None
+                rows.append(row)
+        return {"data": rows, "total": len(rows), "source": os.path.basename(CSV_DATA_PATH)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

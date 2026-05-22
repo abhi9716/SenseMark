@@ -27,3 +27,6 @@ Thumbs.db
 # Temporary
 test_data.docx
 graphify-out/
+
+# Data generation script (not needed in production)
+generate_data.py

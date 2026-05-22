@@ -1,0 +1,111 @@
+"id","visit_id","user_id","outlet_id","visit_type","question_id","rating","answer_text","answer_number","created_at","status","voice_text","image_path","video_path","audio_path"
+"1","46","2","50",,"15","5",NULL,NULL,"2026-05-19 12:21:58","submitted","I think more product knowledge to be given and some training sessions to be scheduled for these doctors.",NULL,NULL,"/uploads/feedback/1779193317410-283022454"
+"2","46","2","50",,"16","5",NULL,NULL,"2026-05-19 12:21:58","submitted",NULL,"/uploads/feedback/1779193317411-693224282.jpg",NULL,NULL
+"3","46","2","50",,"17","5",NULL,NULL,"2026-05-19 12:21:58","submitted",NULL,NULL,NULL,NULL
+"4","46","2","50",,"18",NULL,"Nothing all ok",NULL,"2026-05-19 12:21:58","submitted",NULL,NULL,NULL,NULL
+"5","46","2","50",,"19",NULL,"More training sessions",NULL,"2026-05-19 12:21:58","submitted",NULL,NULL,NULL,NULL
+"6","1","2","49",,"1","5",NULL,NULL,"2026-05-19 12:40:00","submitted","Working very well. I think more stock to be pushed to the outlet.",NULL,NULL,"/uploads/feedback/1779194399151-434041870"
+"7","1","2","49",,"2","3",NULL,NULL,"2026-05-19 12:40:00","submitted","Overall it's good, but the execution of the poster could be better.",NULL,NULL,"/uploads/feedback/1779194399151-87349560"
+"8","1","2","49",,"3","5",NULL,NULL,"2026-05-19 12:40:00","submitted",NULL,"/uploads/feedback/1779194399154-463027485.jpg",NULL,NULL
+"9","1","2","49",,"4",NULL,"The retiler knowledge of the product",NULL,"2026-05-19 12:40:00","submitted",NULL,NULL,NULL,NULL
+"10","1","2","49",,"5",NULL,NULL,NULL,"2026-05-19 12:40:00","submitted",NULL,NULL,"/uploads/feedback/1779194399189-923135227.mp4",NULL
+"11","2","2","51",,"15","5",NULL,NULL,"2026-05-19 13:20:12","submitted","The outlet aggregation is good, however, top depths need to be increased.","/uploads/feedback/1779196810919-906860744.jpg",NULL,"/uploads/feedback/1779196810929-900500297"
+"12","2","2","51",,"16","5",NULL,NULL,"2026-05-19 13:20:12","submitted",NULL,NULL,NULL,NULL
+"13","2","2","51",,"17",NULL,NULL,NULL,"2026-05-19 13:20:12","submitted",NULL,NULL,NULL,NULL
+"14","2","2","51",,"18",NULL,"Ol",NULL,"2026-05-19 13:20:12","submitted",NULL,NULL,NULL,NULL
+"15","2","2","51",,"19",NULL,"Ok",NULL,"2026-05-19 13:20:12","submitted",NULL,NULL,NULL,NULL
+"21","4","2","9",,"8","4",NULL,NULL,"2026-05-20 06:16:11","submitted","Overall good execution, stock depth to be increased however.","/uploads/feedback/1779257770255-727988430.jpg",NULL,"/uploads/feedback/1779257770278-873375382"
+"22","4","2","9",,"9",NULL,NULL,NULL,"2026-05-20 06:16:11","submitted",NULL,NULL,NULL,NULL
+"23","4","2","9",,"10",NULL,NULL,NULL,"2026-05-20 06:16:11","submitted",NULL,NULL,NULL,NULL
+"24","4","2","9",,"11",NULL,NULL,NULL,"2026-05-20 06:16:11","submitted",NULL,NULL,NULL,NULL
+"25","4","2","9",,"12",NULL,NULL,NULL,"2026-05-20 06:16:11","submitted",NULL,NULL,NULL,NULL
+"26","5","2","10",,"8","5",NULL,NULL,"2026-05-20 06:37:24","submitted",NULL,"/uploads/feedback/1779259043052-463486011.jpg","/uploads/feedback/1779259043072-8706408.mp4",NULL
+"27","5","2","10",,"9",NULL,NULL,NULL,"2026-05-20 06:37:24","submitted",NULL,NULL,NULL,NULL
+"28","5","2","10",,"10",NULL,NULL,NULL,"2026-05-20 06:37:24","submitted",NULL,NULL,NULL,NULL
+"29","5","2","10",,"11",NULL,NULL,NULL,"2026-05-20 06:37:24","submitted",NULL,NULL,NULL,NULL
+"30","5","2","10",,"12",NULL,NULL,NULL,"2026-05-20 06:37:24","submitted",NULL,NULL,NULL,NULL
+"56","11","2","41",,"29",NULL,NULL,NULL,"2026-05-20 08:29:31","submitted","Hello, this is Abhishek here.",NULL,NULL,"/uploads/feedback/1779265769971-258486663.webm"
+"57","11","2","41",,"30",NULL,NULL,NULL,"2026-05-20 08:29:31","submitted",NULL,NULL,NULL,NULL
+"58","11","2","41",,"31",NULL,NULL,NULL,"2026-05-20 08:29:31","submitted",NULL,NULL,NULL,NULL
+"59","11","2","41",,"32",NULL,NULL,NULL,"2026-05-20 08:29:31","submitted",NULL,NULL,NULL,NULL
+"60","11","2","41",,"33",NULL,NULL,NULL,"2026-05-20 08:29:31","submitted",NULL,NULL,NULL,NULL
+"81","21","2","48",NULL,"15",NULL,NULL,NULL,"2026-05-20 11:08:24","submitted","Hello, yeah, the overall execution is good.","/uploads/feedback/1779275304134-794456236.jpeg","/uploads/feedback/1779275304139-482826047.MOV","/uploads/feedback/1779275304141-67627744.webm"
+"82","21","2","48",NULL,"16",NULL,NULL,NULL,"2026-05-20 11:08:24","submitted",NULL,NULL,NULL,NULL
+"83","21","2","48",NULL,"17",NULL,NULL,NULL,"2026-05-20 11:08:24","submitted",NULL,NULL,NULL,NULL
+"84","21","2","48",NULL,"18",NULL,NULL,NULL,"2026-05-20 11:08:24","submitted",NULL,NULL,NULL,NULL
+"85","21","2","48",NULL,"19",NULL,NULL,NULL,"2026-05-20 11:08:24","submitted",NULL,NULL,NULL,NULL
+"116","28","6","171",NULL,"1","4",NULL,NULL,"2026-05-20 11:47:39","submitted","I am pleased to see the Sentram recharge display at Gagan Medicals.","/uploads/feedback/1779277659084-332529189.jpg",NULL,"/uploads/feedback/1779277659090-240050446.webm"
+"117","28","6","171",NULL,"2","5",NULL,NULL,"2026-05-20 11:47:39","submitted","Good usage",NULL,NULL,NULL
+"118","28","6","171",NULL,"3","5",NULL,NULL,"2026-05-20 11:47:39","submitted",NULL,NULL,NULL,NULL
+"119","28","6","171",NULL,"4",NULL,"Relationship",NULL,"2026-05-20 11:47:39","submitted",NULL,NULL,NULL,NULL
+"120","28","6","171",NULL,"5",NULL,"Schemes",NULL,"2026-05-20 11:47:39","submitted",NULL,NULL,NULL,NULL
+"126","30","1","165",NULL,"1",NULL,NULL,NULL,"2026-05-20 11:55:17","submitted",NULL,"/uploads/feedback/1779278114105-432777046.jpeg","/uploads/feedback/1779278114106-673943637.mp4",NULL
+"127","30","1","165",NULL,"2",NULL,NULL,NULL,"2026-05-20 11:55:17","submitted",NULL,NULL,NULL,NULL
+"128","30","1","165",NULL,"3",NULL,NULL,NULL,"2026-05-20 11:55:17","submitted",NULL,NULL,NULL,NULL
+"129","30","1","165",NULL,"4",NULL,NULL,NULL,"2026-05-20 11:55:17","submitted",NULL,NULL,NULL,NULL
+"130","30","1","165",NULL,"5",NULL,NULL,NULL,"2026-05-20 11:55:17","submitted",NULL,NULL,NULL,NULL
+"131","31","1","168",NULL,"8",NULL,NULL,NULL,"2026-05-20 11:58:24","submitted",NULL,"/uploads/feedback/1779278301339-345458937.jpeg","/uploads/feedback/1779278301343-180475814.webm",NULL
+"132","31","1","168",NULL,"9",NULL,NULL,NULL,"2026-05-20 11:58:24","submitted",NULL,NULL,NULL,NULL
+"133","31","1","168",NULL,"10",NULL,NULL,NULL,"2026-05-20 11:58:24","submitted",NULL,NULL,NULL,NULL
+"134","31","1","168",NULL,"11",NULL,NULL,NULL,"2026-05-20 11:58:24","submitted",NULL,NULL,NULL,NULL
+"135","31","1","168",NULL,"12",NULL,NULL,NULL,"2026-05-20 11:58:24","submitted",NULL,NULL,NULL,NULL
+"136","32","1","164",NULL,"8",NULL,NULL,NULL,"2026-05-20 12:01:31","submitted",NULL,"/uploads/feedback/1779278487795-151416458.jpeg","/uploads/feedback/1779278487799-691742149.webm",NULL
+"137","32","1","164",NULL,"9",NULL,NULL,NULL,"2026-05-20 12:01:31","submitted",NULL,NULL,NULL,NULL
+"138","32","1","164",NULL,"10",NULL,NULL,NULL,"2026-05-20 12:01:31","submitted",NULL,NULL,NULL,NULL
+"139","32","1","164",NULL,"11",NULL,NULL,NULL,"2026-05-20 12:01:31","submitted",NULL,NULL,NULL,NULL
+"140","32","1","164",NULL,"12",NULL,NULL,NULL,"2026-05-20 12:01:31","submitted",NULL,NULL,NULL,NULL
+"141","33","1","8",NULL,"8",NULL,NULL,NULL,"2026-05-20 12:03:58","submitted",NULL,"/uploads/feedback/1779278635431-636412884.jpeg","/uploads/feedback/1779278635436-970487704.webm",NULL
+"142","33","1","8",NULL,"9",NULL,NULL,NULL,"2026-05-20 12:03:58","submitted",NULL,NULL,NULL,NULL
+"143","33","1","8",NULL,"10",NULL,NULL,NULL,"2026-05-20 12:03:58","submitted",NULL,NULL,NULL,NULL
+"144","33","1","8",NULL,"11",NULL,NULL,NULL,"2026-05-20 12:03:58","submitted",NULL,NULL,NULL,NULL
+"145","33","1","8",NULL,"12",NULL,NULL,NULL,"2026-05-20 12:03:58","submitted",NULL,NULL,NULL,NULL
+"146","34","1","7",NULL,"15",NULL,NULL,NULL,"2026-05-20 12:11:44","submitted",NULL,NULL,"/uploads/feedback/1779279103250-946162181.webm",NULL
+"147","34","1","7",NULL,"16",NULL,NULL,NULL,"2026-05-20 12:11:44","submitted",NULL,NULL,NULL,NULL
+"148","34","1","7",NULL,"17",NULL,NULL,NULL,"2026-05-20 12:11:44","submitted",NULL,NULL,NULL,NULL
+"149","34","1","7",NULL,"18",NULL,NULL,NULL,"2026-05-20 12:11:44","submitted",NULL,NULL,NULL,NULL
+"150","34","1","7",NULL,"19",NULL,NULL,NULL,"2026-05-20 12:11:44","submitted",NULL,NULL,NULL,NULL
+"151","35","1","173",NULL,"1",NULL,NULL,NULL,"2026-05-20 12:35:04","submitted",NULL,NULL,"/uploads/feedback/1779280501019-371878507.webm",NULL
+"152","35","1","173",NULL,"2",NULL,NULL,NULL,"2026-05-20 12:35:04","submitted",NULL,NULL,NULL,NULL
+"153","35","1","173",NULL,"3",NULL,NULL,NULL,"2026-05-20 12:35:04","submitted",NULL,NULL,NULL,NULL
+"154","35","1","173",NULL,"4",NULL,NULL,NULL,"2026-05-20 12:35:04","submitted",NULL,NULL,NULL,NULL
+"155","35","1","173",NULL,"5",NULL,NULL,NULL,"2026-05-20 12:35:04","submitted",NULL,NULL,NULL,NULL
+"156","36","1","174",NULL,"15",NULL,NULL,NULL,"2026-05-20 12:35:32","submitted","How do you rate the primary sales share and visibility for Indian products in this competition?","/uploads/feedback/1779280532080-167647501.jpg",NULL,"/uploads/feedback/1779280532080-755300813.webm"
+"157","36","1","174",NULL,"16","5",NULL,NULL,"2026-05-20 12:35:32","submitted",NULL,"/uploads/feedback/1779280532081-394551224.jpg",NULL,NULL
+"158","36","1","174",NULL,"17","5",NULL,NULL,"2026-05-20 12:35:32","submitted","All is good",NULL,"/uploads/feedback/1779280532086-499255998.webm",NULL
+"159","36","1","174",NULL,"18",NULL,NULL,NULL,"2026-05-20 12:35:32","submitted","All is good.","/uploads/feedback/1779280532088-399048148.jpg",NULL,"/uploads/feedback/1779280532088-696802338.webm"
+"160","36","1","174",NULL,"19",NULL,NULL,NULL,"2026-05-20 12:35:32","submitted",NULL,"/uploads/feedback/1779280532088-38375719.jpg",NULL,NULL
+"161","37","1","6",NULL,"43",NULL,NULL,NULL,"2026-05-20 12:38:34","submitted",NULL,NULL,"/uploads/feedback/1779280714010-326665735.webm",NULL
+"162","37","1","6",NULL,"44",NULL,NULL,NULL,"2026-05-20 12:38:34","submitted",NULL,NULL,NULL,NULL
+"163","37","1","6",NULL,"45",NULL,NULL,NULL,"2026-05-20 12:38:34","submitted",NULL,NULL,NULL,NULL
+"164","37","1","6",NULL,"46",NULL,NULL,NULL,"2026-05-20 12:38:34","submitted",NULL,NULL,NULL,NULL
+"165","37","1","6",NULL,"47",NULL,NULL,NULL,"2026-05-20 12:38:34","submitted",NULL,NULL,NULL,NULL
+"166","38","1","4",NULL,"1",NULL,NULL,NULL,"2026-05-20 12:42:33","submitted",NULL,NULL,NULL,NULL
+"167","38","1","4",NULL,"2",NULL,NULL,NULL,"2026-05-20 12:42:33","submitted",NULL,NULL,NULL,NULL
+"168","38","1","4",NULL,"3",NULL,NULL,NULL,"2026-05-20 12:42:33","submitted",NULL,NULL,NULL,NULL
+"169","38","1","4",NULL,"4",NULL,NULL,NULL,"2026-05-20 12:42:33","submitted",NULL,NULL,NULL,NULL
+"170","38","1","4",NULL,"5",NULL,NULL,NULL,"2026-05-20 12:42:33","submitted",NULL,NULL,"/uploads/feedback/1779280952979-368582938.webm",NULL
+"171","39","1","175",NULL,"1","5",NULL,NULL,"2026-05-20 12:43:09","submitted","There is a park near my house. The park is big and beautiful.","/uploads/feedback/1779280989056-234917976.jpg",NULL,"/uploads/feedback/1779280989056-494196917.webm"
+"172","39","1","175",NULL,"2","5",NULL,NULL,"2026-05-20 12:43:09","submitted",NULL,"/uploads/feedback/1779280989056-315031298.jpg",NULL,NULL
+"173","39","1","175",NULL,"3","5",NULL,NULL,"2026-05-20 12:43:09","submitted",NULL,NULL,"/uploads/feedback/1779280989057-186731101.webm",NULL
+"174","39","1","175",NULL,"4",NULL,NULL,NULL,"2026-05-20 12:43:09","submitted",NULL,"/uploads/feedback/1779280989059-595274794.jpg",NULL,NULL
+"175","39","1","175",NULL,"5",NULL,NULL,NULL,"2026-05-20 12:43:09","submitted",NULL,"/uploads/feedback/1779280989060-380183082.jpg",NULL,NULL
+"176","40","1","177",NULL,"1","5",NULL,NULL,"2026-05-20 12:51:27","submitted","There is a park near my house. The park is big and beautiful.","/uploads/feedback/1779281487106-963601254.jpg",NULL,"/uploads/feedback/1779281487107-154524116.webm"
+"177","40","1","177",NULL,"2","5",NULL,NULL,"2026-05-20 12:51:27","submitted","All is good",NULL,"/uploads/feedback/1779281487107-550782008.webm",NULL
+"178","40","1","177",NULL,"3","5",NULL,NULL,"2026-05-20 12:51:27","submitted","How do you read the product?","/uploads/feedback/1779281487109-432081552.jpg",NULL,"/uploads/feedback/1779281487109-426978535.webm"
+"179","40","1","177",NULL,"4",NULL,NULL,NULL,"2026-05-20 12:51:27","submitted",NULL,"/uploads/feedback/1779281487110-850680572.jpg",NULL,NULL
+"180","40","1","177",NULL,"5",NULL,NULL,NULL,"2026-05-20 12:51:27","submitted",NULL,"/uploads/feedback/1779281487110-37847607.jpg",NULL,NULL
+"181","41","1","176",NULL,"1",NULL,NULL,NULL,"2026-05-20 13:00:06","submitted",NULL,NULL,"/uploads/feedback/1779282006069-268811120.webm",NULL
+"182","41","1","176",NULL,"2",NULL,NULL,NULL,"2026-05-20 13:00:06","submitted",NULL,NULL,NULL,NULL
+"183","41","1","176",NULL,"3",NULL,NULL,NULL,"2026-05-20 13:00:06","submitted",NULL,NULL,NULL,NULL
+"184","41","1","176",NULL,"4",NULL,NULL,NULL,"2026-05-20 13:00:06","submitted",NULL,NULL,NULL,NULL
+"185","41","1","176",NULL,"5",NULL,NULL,NULL,"2026-05-20 13:00:06","submitted",NULL,NULL,NULL,NULL
+"186","42","1","169",NULL,"36","4",NULL,NULL,"2026-05-20 15:09:23","submitted","Hello Abhishek is here. Are you listening? How do you rate the quality of infection overall?","/uploads/feedback/1779289762593-865733342.jpg","/uploads/feedback/1779289762594-125386856.webm","/uploads/feedback/1779289762600-875677599.webm"
+"187","42","1","169",NULL,"37","4",NULL,NULL,"2026-05-20 15:09:23","submitted",NULL,"/uploads/feedback/1779289762601-259384216.jpg",NULL,NULL
+"188","42","1","169",NULL,"38",NULL,NULL,NULL,"2026-05-20 15:09:23","submitted",NULL,NULL,NULL,NULL
+"189","42","1","169",NULL,"39",NULL,NULL,NULL,"2026-05-20 15:09:23","submitted",NULL,NULL,NULL,NULL
+"190","42","1","169",NULL,"40",NULL,"Done",NULL,"2026-05-20 15:09:23","submitted",NULL,NULL,NULL,NULL
+"191","43","12","538",NULL,"1","5",NULL,NULL,"2026-05-20 15:29:04","submitted","Doctor is prescribing CCM instead of centrum joints.",NULL,NULL,"/uploads/feedback/1779290943321-739068007.webm"
+"192","43","12","538",NULL,"2","5",NULL,NULL,"2026-05-20 15:29:04","submitted",NULL,NULL,NULL,NULL
+"193","43","12","538",NULL,"3",NULL,NULL,NULL,"2026-05-20 15:29:04","submitted",NULL,NULL,NULL,NULL
+"194","43","12","538",NULL,"4",NULL,NULL,NULL,"2026-05-20 15:29:04","submitted",NULL,NULL,NULL,NULL
+"195","43","12","538",NULL,"5",NULL,NULL,NULL,"2026-05-20 15:29:04","submitted",NULL,NULL,NULL,NULL

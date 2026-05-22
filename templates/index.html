@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <header class="app-header hidden" id="appHeader">
+    <header class="app-header" id="appHeader">
         <div class="header-content">
             <div class="logo">
                 <div class="logo-text">
@@ -22,94 +22,34 @@
         </div>
     </header>
 
-    <!-- Upload Landing Page -->
-    <section class="upload-landing" id="uploadLanding">
-        <div class="upload-hero-layout">
-            <div class="upload-hero-card">
-                <div class="upload-hero-logo">
-                    <div class="logo-text">
-                        <span class="logo-brand"><span class="logo-sense">Sense</span><span class="logo-iq">IQ</span></span>
-                        <span class="logo-byline">IQlytics Solutions Pvt Ltd</span>
-                    </div>
-                </div>
-                <div class="upload-hero-content">
-                    <h1 class="upload-hero-title">Own the Narrative of Your Market</h1>
-                    <p class="upload-hero-subtitle">Transform raw sales conversations into actionable intelligence with AI-powered text analytics.</p>
-                </div>
-
-                <form id="uploadForm" enctype="multipart/form-data" class="upload-form">
-                    <div class="file-drop-zone" id="dropZone">
-                        <input type="file" id="fileInput" name="files" accept=".txt,.csv,.md,.log,.tsv,.doc,.docx" multiple>
-                        <div class="drop-content">
-                            <svg class="upload-file-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17,8 12,3 7,8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <p class="drop-text">Drop files here or click to upload</p>
-                            <p class="drop-hint">Supports .txt, .csv, .md, .log, .tsv, .doc, .docx</p>
-                        </div>
-                        <div class="file-list hidden" id="fileList"></div>
-                    </div>
-
-                    <div class="upload-controls">
-                        <div class="model-select-inline">
-                            <label for="modelSelect">Model</label>
-                            <select id="modelSelect" name="model">
-                                <option value="gemma4:31b-cloud">Gemma 4 31B Cloud</option>
-                                <option value="gemma3:27b-cloud">Gemma 3 27B Cloud</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-lg" id="analyzeBtn" disabled>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/>
-                            </svg>
-                            Analyze Transcript
-                        </button>
-                    </div>
-                </form>
-
-                <div class="upload-divider"><span>or explore without uploading</span></div>
-
-                <button type="button" class="btn-demo" id="seeTestBtn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-                    <span class="btn-demo-text">
-                        <span class="btn-demo-title">See Sample Analysis</span>
-                        <span class="btn-demo-sub">Try the dashboard with pre-loaded demo data</span>
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-demo-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-                </button>
-            </div>
-
-            <div class="upload-hero-image">
-                <img src="https://haleonhuddle.com/assets/PRODUCT_SHOT_GREENBAR_MAY_2024_1920X1080-CXGM4t3-.png" alt="Market Intelligence Visualization">
-            </div>
-        </div>
-    </section>
-
     <!-- Loading Overlay -->
     <div class="loading-overlay hidden" id="loadingOverlay">
         <div class="loading-card">
             <div class="spinner"></div>
-            <h3>Processing Conversation...</h3>
+            <h3>Processing...</h3>
             <div class="loading-steps">
-                <div class="step" id="step1"><span class="step-dot"></span> Parsing transcript</div>
-                <div class="step" id="step2"><span class="step-dot"></span> AI analysis &amp; categorization</div>
-                <div class="step" id="step3"><span class="step-dot"></span> Revenue mapping</div>
+                <div class="step" id="step1"><span class="step-dot"></span> Uploading file</div>
+                <div class="step" id="step2"><span class="step-dot"></span> AI analysis</div>
+                <div class="step" id="step3"><span class="step-dot"></span> Generating insights</div>
                 <div class="step" id="step4"><span class="step-dot"></span> Building dashboard</div>
             </div>
         </div>
     </div>
 
     <!-- Dashboard -->
-    <div class="app-layout hidden" id="appLayout">
+    <div class="app-layout" id="appLayout">
         <aside class="sidebar" id="sidebar">
             <button class="sidebar-new-btn" id="sidebarNewBtn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                New Analysis
+                Upload File
             </button>
             <div class="sidebar-sessions" id="sidebarSessions"></div>
+            <div class="sidebar-datasource" id="sidebarDatasource">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span id="sidebarDatasourceName">tbl_market_visit_feedback_answers.csv</span>
+            </div>
             <button class="sidebar-clear-btn" id="sidebarClearBtn">Clear All</button>
+            <input type="file" id="fileInput" name="files" accept=".txt,.csv,.md,.log,.tsv,.doc,.docx" style="display:none">
         </aside>
 
         <main class="dashboard-container">
@@ -117,289 +57,130 @@
                 <div class="dashboard-tabs" id="dashboardTabs">
                     <button class="tab-btn active" data-tab="feedback">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                        Feedback Analysis
+                        Feedback Dashboard
                     </button>
-                    <button class="tab-btn" data-tab="overview">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        Overall Sentiment
-                    </button>
-                    <button class="tab-btn" data-tab="insights">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        Product Insights
-                    </button>
-                    <button class="tab-btn" data-tab="wordcloud">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                        Key Phrases
-                    </button>
-                    <button class="tab-btn" data-tab="revenue">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Revenue Recommendations
-                    </button>
-                </div>
-
-                <!-- Filter Bar (shared across all tabs) -->
-                <div class="filter-bar" id="filterBar">
-                    <div class="filter-group">
-                        <label for="filterRetailer">Retailer</label>
-                        <select id="filterRetailer"><option value="all">All</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterRep">Sales Rep</label>
-                        <select id="filterRep"><option value="all">All</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterProduct">Product</label>
-                        <select id="filterProduct"><option value="all">All</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterChannel">Channel</label>
-                        <select id="filterChannel">
-                            <option value="all">All Channels</option>
-                            <option value="pharmacy">Pharmacy Store</option>
-                            <option value="grocery">Grocery Store</option>
-                            <option value="mt">MT Store</option>
-                            <option value="activation">In-Market Activation</option>
-                            <option value="hcp">HCP</option>
-                            <option value="consumer">Consumer</option>
-                            <option value="dcommerce">Dcommerce</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterRegion">Region</label>
-                        <select id="filterRegion"><option value="all">All</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterDateRange">Date Range</label>
-                        <select id="filterDateRange"><option value="all">All Time</option></select>
-                    </div>
                 </div>
 
                 <div class="dashboard-layout">
                     <div class="tab-content" id="tabContent">
-                        <!-- Overall Sentiment Tab -->
-                        <div class="tab-pane" id="tab-overview">
-                            <div class="tab-title-bar">
-                                <div class="tab-title-story">
-                                    <div>
-                                        <div class="tab-story-step">Step 2 of 5 — Conversation Sentiment</div>
-                                        <h2>Overall Sentiment</h2>
-                                        <p id="overviewSubtitle">Sentiment, business signals, and performance scores extracted from this field conversation</p>
-                                    </div>
-                                    <div class="tab-story-icon">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="overview-section hidden" id="businessMetricsCard">
-                                <h3>Business Metrics</h3>
-                                <div class="derived-metrics" id="derivedMetrics"></div>
-                            </div>
-
-                            <div class="overview-grid">
-                                <div class="card" id="sentimentCard">
-                                    <div class="sentiment-card-header">
-                                        <h3>Sentiment</h3>
-                                        <span class="sentiment-score" id="sentimentScore"></span>
-                                    </div>
-                                    <div class="sentiment-overall">
-                                        <div class="sentiment-meter"><div class="sentiment-fill" id="sentimentFill"></div></div>
-                                        <span class="sentiment-label" id="sentimentLabel"></span>
-                                    </div>
-                                    <p class="sentiment-nuance" id="sentimentNuance"></p>
-                                    <div class="sentiment-breakdown" id="sentimentBreakdown"></div>
-                                </div>
-
-                                <div class="card" id="scoreBarsCard">
-                                    <h3>Categories</h3>
-                                    <div class="score-bars" id="scoreBars"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Revenue Recommendation Tab -->
-                        <div class="tab-pane" id="tab-revenue">
-                            <div class="tab-title-bar">
-                                <div class="tab-title-story">
-                                    <div>
-                                        <div class="tab-story-step">Step 5 of 5 — Revenue Actions</div>
-                                        <h2>Revenue Recommendations</h2>
-                                        <p id="revenueSubtitle">Translate this conversation into prioritized selling actions — what to push, upsell, and address</p>
-                                    </div>
-                                    <div class="tab-story-icon">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="revenue-grid" id="revenueGrid"></div>
-
-                            <div class="card" id="risksCard">
-                                <h3>Risk Flags</h3>
-                                <div class="risks-list" id="risksList"></div>
-                            </div>
-                        </div>
-
-                        <!-- Product Insights Tab -->
-                        <div class="tab-pane" id="tab-insights">
-                            <div class="tab-title-bar">
-                                <div class="tab-title-story">
-                                    <div>
-                                        <div class="tab-story-step">Step 3 of 5 — Growth Intelligence</div>
-                                        <h2>Product Insights</h2>
-                                        <p>What is working, what is blocking growth, and where the biggest opportunities lie</p>
-                                    </div>
-                                    <div class="tab-story-icon">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card" id="productsCard">
-                                <h3>Product Insights</h3>
-                                <div class="products-list" id="productsList"></div>
-                            </div>
-
-                            <div class="card" id="causeEffectCard">
-                                <h3>Cause &amp; Effect Mapping</h3>
-                                <div class="cause-effect-list" id="causeEffectList"></div>
-                            </div>
-
-                            <div class="card" id="decisionsCard">
-                                <h3>Decision Insights</h3>
-                                <div class="decisions-grid" id="decisionsGrid"></div>
-                            </div>
-
-                            <div class="card" id="painpointsCard">
-                                <h3>Pain Points</h3>
-                                <div class="painpoints-list" id="painpointsList"></div>
-                            </div>
-
-                            <div class="card" id="opportunitiesCard">
-                                <h3>Opportunities</h3>
-                                <div class="opportunities-list" id="opportunitiesList"></div>
-                            </div>
-
-                            <div class="card" id="competitiveCard">
-                                <h3>Competitive Intelligence</h3>
-                                <div class="competitive-list" id="competitiveList"></div>
-                            </div>
-
-                            <div class="card" id="actionsCard">
-                                <h3>Action Items</h3>
-                                <div class="actions-list" id="actionsList"></div>
-                            </div>
-                        </div>
-
-                        <!-- Key Phrases Tab -->
-                        <div class="tab-pane" id="tab-wordcloud">
-                            <div class="tab-title-bar">
-                                <div class="tab-title-story">
-                                    <div>
-                                        <div class="tab-story-step">Step 4 of 5 — Field Evidence</div>
-                                        <h2>Verbatim from the Field</h2>
-                                        <p>Exact language used — click tags to filter and surface proof points or objections by category</p>
-                                    </div>
-                                    <div class="tab-story-icon">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Interactive Phrase Cloud -->
-                            <div class="phrase-cloud-card" id="phraseCloudCard">
-                                <h3>Tag Cloud</h3>
-                                <div class="phrase-cloud" id="phraseCloud"></div>
-                            </div>
-
-                            <div class="active-filters" id="activeFilters"></div>
-
-                            <div class="card">
-                                <div class="phrase-table-wrap">
-                                    <table class="phrase-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Phrase</th>
-                                                <th>Score</th>
-                                                <th>Tags</th>
-                                                <th>Context</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="phraseTableBody"></tbody>
-                                    </table>
-                                </div>
-                                <div class="phrase-table-empty hidden" id="phraseTableEmpty">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                                    <p>No phrases match the selected tags</p>
-                                    <button class="btn btn-sm btn-ghost" id="clearFilterBtn">Clear Filter</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Feedback Insights Tab -->
                         <div class="tab-pane active" id="tab-feedback">
                             <div class="tab-title-bar haleon-title-bar">
                                 <div class="tab-title-story">
                                     <div>
-                                        <div class="tab-story-step" style="color:rgba(255,255,255,0.7)">Step 1 of 5 — Market Intelligence</div>
-                                        <h2>Market Feedback Dashboard</h2>
-                                        <p>Aggregated insights from 42 market visit responses across 7 channels — patterns, scores, and emerging themes</p>
+                                        <div class="tab-story-step" style="color:rgba(255,255,255,0.7)">Market Feedback Dashboard</div>
+                                        <h2>Feedback Analysis</h2>
+                                        <p>Aggregated insights from market visit responses — rating distribution, verbatim analysis, and response review</p>
                                     </div>
                                     <div class="tab-story-icon">
                                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Level Selector -->
+                            <div class="fb-level-selector" id="fbLevelSelector">
+                                <button class="fb-level-btn active" data-level="all">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                    All
+                                </button>
+                                <button class="fb-level-btn" data-level="trade">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg>
+                                    Trade
+                                </button>
+                                <button class="fb-level-btn" data-level="hcp">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                    HCP
+                                </button>
+                                <button class="fb-level-btn" data-level="consumer">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    Consumer
+                                </button>
+                            </div>
+
+                            <!-- Filter Bar -->
+                            <div class="fb-filter-bar" id="fbFilterBar">
+                                <div class="fb-filter-group">
+                                    <label>Outlet</label>
+                                    <select id="fbFilterOutlet"><option value="all">All Outlets</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>User</label>
+                                    <select id="fbFilterUser"><option value="all">All Users</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Date Range</label>
+                                    <select id="fbFilterDate">
+                                        <option value="all">All Time</option>
+                                        <option value="7d">Last 7 Days</option>
+                                        <option value="14d">Last 14 Days</option>
+                                        <option value="30d">Last 30 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="fbi-filter-badge hidden" id="fbFilterBadge">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                                 <span id="fbFilterBadgeText">Filtered view</span>
-                                <button type="button" id="fbFilterClearBtn" aria-label="Clear channel filter">&times;</button>
+                                <button type="button" id="fbFilterClearBtn" aria-label="Clear filters">&times;</button>
                             </div>
+
+                            <!-- KPI Row -->
                             <div class="fbi-kpi-row" id="fbKpiRow"></div>
-                            <div class="fbi-two-col">
-                                <div class="card">
-                                    <h3>Channel Performance Score</h3>
-                                    <p class="fbi-card-sub">Average satisfaction score (1–5) by channel</p>
-                                    <div id="fbChannelBars"></div>
+
+                            <!-- Main Dashboard Grid -->
+                            <div class="fb-dashboard-grid">
+                                <!-- Rating Distribution -->
+                                <div class="card fb-card-span-1">
+                                    <h3>Rating Distribution</h3>
+                                    <p class="fbi-card-sub">Distribution of scores across all responses</p>
+                                    <div id="fbRatingDist"></div>
                                 </div>
-                                <div class="card">
-                                    <h3>Score by Dimension</h3>
-                                    <p class="fbi-card-sub">Performance across the three core measurement areas</p>
-                                    <div id="fbDimensionBars"></div>
+
+                                <!-- Word Cloud -->
+                                <div class="card fb-card-span-1">
+                                    <h3>Word Cloud</h3>
+                                    <p class="fbi-card-sub">Most frequent words from open-ended feedback</p>
+                                    <div id="fbWordCloud"></div>
                                 </div>
-                            </div>
-                            <div class="fbi-two-col">
-                                <div class="card">
-                                    <h3>Brand Voice Share</h3>
-                                    <p class="fbi-card-sub">Mention split per Haleon brand: positive signals vs improvement areas</p>
-                                    <div id="fbBrandPerf"></div>
-                                </div>
-                                <div class="card">
-                                    <h3>Monthly Score Trend</h3>
-                                    <p class="fbi-card-sub">Channel-level shift from March to April 2026</p>
-                                    <div id="fbTrend"></div>
-                                </div>
-                            </div>
-                            <div class="fbi-two-col">
-                                <div class="card fbi-card-positive">
-                                    <h3 class="fbi-card-h3-icon">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg>
-                                        What's Working Well
-                                    </h3>
-                                    <div id="fbWorkingWell"></div>
-                                </div>
-                                <div class="card fbi-card-opportunity">
-                                    <h3 class="fbi-card-h3-icon">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                        Key Opportunities
-                                    </h3>
-                                    <div id="fbOpportunities"></div>
+
+                                <!-- AI Summary -->
+                                <div class="card fb-card-span-2">
+                                    <h3>AI Summary of Open-Ended Responses</h3>
+                                    <p class="fbi-card-sub">Key themes and patterns extracted from verbatim feedback</p>
+                                    <div id="fbAiSummary"></div>
                                 </div>
                             </div>
-                            <div class="card fbi-highlights-card">
-                                <h3>Recent Feedback Highlights</h3>
-                                <p class="fbi-card-sub">Representative responses from the field</p>
-                                <div id="fbHighlights"></div>
+
+                            <!-- Complete Responses -->
+                            <div class="card fb-responses-card">
+                                <div class="fb-responses-header">
+                                    <h3>Complete Responses</h3>
+                                    <button class="btn btn-sm btn-primary" id="fbDownloadBtn">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download CSV
+                                    </button>
+                                </div>
+                                <p class="fbi-card-sub">All feedback entries with ratings and open-ended responses</p>
+                                <div class="fb-table-wrap">
+                                    <table class="fb-table" id="fbTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Visit ID</th>
+                                                <th>Level</th>
+                                                <th>Outlet ID</th>
+                                                <th>User ID</th>
+                                                <th>Rating</th>
+                                                <th>Response</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fbTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div class="fb-table-empty hidden" id="fbTableEmpty">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                    <p>No responses match the selected filters</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -407,8 +188,10 @@
                     <!-- Persistent Chat Sidebar -->
                     <aside class="chat-sidebar" id="chatSidebar">
                         <div class="chat-header">
-                            <h3>Ask AI</h3>
-                            <span>Explore deeper with AI</span>
+                            <div class="chat-header-text">
+                                <h3>Ask AI</h3>
+                                <span>Explore deeper with AI</span>
+                            </div>
                         </div>
 
                         <div class="chat-presets" id="queryPresets"></div>
@@ -417,7 +200,7 @@
 
                         <div class="chat-input-area">
                             <div class="chat-input-wrap">
-                                <input type="text" id="queryInput" placeholder="Type your question..." aria-label="Ask AI a question">
+                                <input type="text" id="queryInput" placeholder="Ask a question about your feedback data..." aria-label="Ask AI a question">
                                 <button class="chat-send-btn" id="queryBtn" aria-label="Send message">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
                                 </button>

@@ -1,0 +1,57 @@
+# Match .gitignore + dev/test artifacts that should never enter the image
+
+# Env / secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Vector / model caches
+.vector_db/
+.chroma/
+
+# VCS
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs / dev scripts not needed at runtime
+README.md
+AGENTS.md
+docs/
+graphify-out/
+feedback_dashboard_doc.txt
+generate_data.py
+test_data.docx
+
+# Alternate / unused data
+tbl_market_visit_feedback_answers_2.csv
+
+# Lock files
+.~lock.*#
+
+# Docker meta
+Dockerfile
+.dockerignore
+docker-compose*.yml
