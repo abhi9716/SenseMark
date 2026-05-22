@@ -3358,69 +3358,187 @@ body {
 .fb-media-img-chip.errored { background: #fee2e2; }
 .fb-media-img-chip.errored img { display: none; }
 
-/* ===== COMPLETE RESPONSES TABLE — column widths + consistent cells ===== */
-#fbTable {
+/* ===== COMPLETE RESPONSES — compact 5-col table with stacked cells ===== */
+.fb-table-compact {
     table-layout: fixed;
     width: 100%;
 }
 
-#fbTable th,
-#fbTable td {
+.fb-table-compact th,
+.fb-table-compact td {
     vertical-align: top;
-    padding: 12px 12px;
-    line-height: 1.45;
+    padding: 14px 14px;
+    line-height: 1.5;
 }
 
-.fb-cell-visit  { width: 64px;  font-weight: 700; font-size: 0.82rem; color: var(--text); white-space: nowrap; }
-.fb-cell-level  { width: 92px; }
-.fb-cell-outlet {
-    width: 170px;
-    font-size: 0.86rem; font-weight: 600; color: var(--text);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.fb-table-compact thead th {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--neutral-50);
+    border-bottom: 1px solid var(--border);
 }
-.fb-cell-q      { width: 230px; }
-.fb-cell-rating { width: 70px;  text-align: center; }
-.fb-cell-response { width: auto; }
-.fb-cell-media  { width: 110px; }
-.fb-cell-date   { width: 100px; font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; }
 
-.fb-cell-muted { color: var(--text-tertiary); font-size: 0.8rem; }
+.fb-table-compact tbody tr + tr td { border-top: 1px solid var(--border); }
 
-.fb-q-stack { display: flex; flex-direction: column; gap: 4px; }
+.fb-col-outlet { width: 18%; }
+.fb-col-q      { width: 28%; }
+.fb-col-resp   { width: 34%; }
+.fb-col-media  { width: 9%;  }
+.fb-col-meta   { width: 11%; }
+
+@media (max-width: 1100px) {
+    .fb-col-outlet { width: 22%; }
+    .fb-col-q      { width: 28%; }
+    .fb-col-resp   { width: 30%; }
+    .fb-col-media  { width: 10%; }
+    .fb-col-meta   { width: 10%; }
+}
+
+.fb-cell-muted { color: var(--text-tertiary); font-size: 0.82rem; }
+
+/* Outlet cell */
+.fb-cell-outlet-stack { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fb-cell-outlet-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+    word-wrap: break-word;
+}
+.fb-cell-outlet-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fb-cell-outlet-code {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+}
+
+/* Question cell */
+.fb-q-stack { display: flex; flex-direction: column; gap: 6px; }
 .fb-q-pill {
     display: inline-block;
     width: fit-content;
-    padding: 2px 8px;
+    padding: 3px 9px;
     font-size: 0.7rem; font-weight: 700;
     color: white;
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    border-radius: 4px;
-    letter-spacing: 0.03em;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
 }
 .fb-q-text {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    word-wrap: break-word;
-}
-
-.fb-response-text {
-    display: block;
-    font-size: 0.85rem;
+    font-size: 0.86rem;
     color: var(--text);
     line-height: 1.5;
     word-wrap: break-word;
-    overflow-wrap: anywhere;
-    max-height: 4.5em;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
 }
 
-@media (max-width: 1100px) {
-    #fbTable { table-layout: auto; }
-    .fb-cell-outlet { white-space: normal; }
+/* Response cell */
+.fb-cell-resp-stack { display: flex; flex-direction: column; gap: 10px; }
+.fb-response-text {
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.55;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.fb-cell-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: var(--neutral-50);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    width: fit-content;
+}
+.fb-stars { color: #f59e0b; font-size: 0.95rem; letter-spacing: 1px; line-height: 1; }
+.fb-cell-rating-val {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+/* Meta (visit + date) cell */
+.fb-cell-meta-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.fb-cell-meta-visit {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.fb-cell-meta-date {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ===== Pagination ===== */
+.fb-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 10px 4px;
+}
+.fb-pagination:empty { display: none; }
+
+.fb-pagination-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.fb-pagination-info strong {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.fb-pagination-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fb-pagination-page {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 110px;
+    text-align: center;
+}
+
+.fb-page-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.fb-page-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-50);
+}
+.fb-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .fb-pagination { flex-direction: column; align-items: stretch; gap: 10px; }
+    .fb-pagination-controls { justify-content: center; }
 }
 
 /* ===== Filter select — show full question text on hover ===== */

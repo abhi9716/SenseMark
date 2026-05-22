@@ -141,22 +141,20 @@
                         </div>
                         <p class="fbi-card-sub">All feedback entries with ratings and open-ended responses</p>
                         <div class="fb-table-wrap">
-                            <table class="fb-table" id="fbTable">
+                            <table class="fb-table fb-table-compact" id="fbTable">
                                 <thead>
                                     <tr>
-                                        <th>Visit</th>
-                                        <th>Level</th>
-                                        <th>Outlet</th>
-                                        <th>Question</th>
-                                        <th>Rating</th>
-                                        <th>Response</th>
-                                        <th>Media</th>
-                                        <th>Date</th>
+                                        <th class="fb-col-outlet">Outlet</th>
+                                        <th class="fb-col-q">Question</th>
+                                        <th class="fb-col-resp">Response &amp; Rating</th>
+                                        <th class="fb-col-media">Media</th>
+                                        <th class="fb-col-meta">Visit</th>
                                     </tr>
                                 </thead>
                                 <tbody id="fbTableBody"></tbody>
                             </table>
                         </div>
+                        <div class="fb-pagination" id="fbPagination"></div>
                         <div class="fb-table-empty hidden" id="fbTableEmpty">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                             <p>No responses match the selected filters</p>

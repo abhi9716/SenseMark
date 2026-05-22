@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let _fbData = [];
     let _fbFiltered = [];
     let _fbQuestionFilter = 'all';
+    let _fbPage = 1;
+    const FB_PAGE_SIZE = 10;
     let _fbUsersById = {};
     let _fbQuestionsById = {};
     let _fbOutletsById = {};
@@ -381,43 +383,97 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = document.getElementById('fbTableBody');
         const empty = document.getElementById('fbTableEmpty');
         const wrap = document.querySelector('#view-dashboard .fb-table-wrap');
+        const pager = document.getElementById('fbPagination');
         if (!body) return;
 
         if (!data.length) {
             wrap?.classList.add('hidden');
             empty?.classList.remove('hidden');
+            if (pager) pager.innerHTML = '';
             return;
         }
         wrap?.classList.remove('hidden');
         empty?.classList.add('hidden');
 
-        const shown = [...data].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 200);
-        body.innerHTML = shown.map(r => {
+        const sorted = [...data].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const totalPages = Math.max(1, Math.ceil(sorted.length / FB_PAGE_SIZE));
+        if (_fbPage > totalPages) _fbPage = totalPages;
+        if (_fbPage < 1) _fbPage = 1;
+        const start = (_fbPage - 1) * FB_PAGE_SIZE;
+        const pageRows = sorted.slice(start, start + FB_PAGE_SIZE);
+
+        body.innerHTML = pageRows.map(r => {
             const typeClass = inferLevel(r.level, r.outlet_id);
-            const ratingHtml = r.rating != null
-                ? `<span class="fb-rating-pip" style="background:${['#dc2626','#f97316','#eab308','#84cc16','#22c55e'][r.rating - 1] || '#94a3b8'}">${r.rating}</span>`
-                : '<span class="fb-cell-muted">—</span>';
+            const stars = r.rating != null
+                ? `<div class="fb-cell-stars"><span class="fb-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span><span class="fb-cell-rating-val">${r.rating}/5</span></div>`
+                : `<div class="fb-cell-stars fb-cell-muted">No rating</div>`;
             const responseText = r.answer_text || r.voice_text || '';
             const q = _fbQuestionsById[r.question_id];
             const qNo = q ? (q.question_no || `Q${r.question_id}`) : (r.question_id != null ? `Q${r.question_id}` : '—');
             const qText = q && q.question_text ? q.question_text : '';
             const oName = outletName(r.outlet_id);
+            const oCode = outletCode(r.outlet_id);
             return `<tr>
-                <td class="fb-cell-visit">#${r.visit_id}</td>
-                <td class="fb-cell-level"><span class="fb-type-badge ${typeClass}">${visitTypeLabel(typeClass)}</span></td>
-                <td class="fb-cell-outlet" title="${escapeHtml(oName)}">${escapeHtml(oName)}</td>
+                <td class="fb-cell-outlet">
+                    <div class="fb-cell-outlet-stack">
+                        <span class="fb-cell-outlet-name">${escapeHtml(oName)}</span>
+                        <div class="fb-cell-outlet-meta">
+                            <span class="fb-type-badge ${typeClass}">${visitTypeLabel(typeClass)}</span>
+                            <span class="fb-cell-outlet-code">${escapeHtml(oCode)}</span>
+                        </div>
+                    </div>
+                </td>
                 <td class="fb-cell-q">
                     <div class="fb-q-stack">
                         <span class="fb-q-pill">${escapeHtml(qNo)}</span>
                         <span class="fb-q-text">${escapeHtml(qText)}</span>
                     </div>
                 </td>
-                <td class="fb-cell-rating">${ratingHtml}</td>
-                <td class="fb-cell-response"><span class="fb-response-text" title="${escapeHtml(responseText)}">${responseText ? escapeHtml(responseText) : '<span class="fb-cell-muted">—</span>'}</span></td>
+                <td class="fb-cell-resp">
+                    <div class="fb-cell-resp-stack">
+                        ${responseText
+                            ? `<p class="fb-response-text" title="${escapeHtml(responseText)}">${escapeHtml(responseText)}</p>`
+                            : `<p class="fb-cell-muted fb-response-text">No verbatim response</p>`}
+                        ${stars}
+                    </div>
+                </td>
                 <td class="fb-cell-media">${rowMediaChips(r)}</td>
-                <td class="fb-cell-date">${formatDateShort(r.created_at)}</td>
+                <td class="fb-cell-meta">
+                    <div class="fb-cell-meta-stack">
+                        <span class="fb-cell-meta-visit">#${r.visit_id}</span>
+                        <span class="fb-cell-meta-date">${escapeHtml(formatDateShort(r.created_at))}</span>
+                    </div>
+                </td>
             </tr>`;
         }).join('');
+
+        renderPagination(pager, sorted.length, totalPages);
+    }
+
+    function renderPagination(pager, total, totalPages) {
+        if (!pager) return;
+        if (total <= FB_PAGE_SIZE) { pager.innerHTML = ''; return; }
+        const start = (_fbPage - 1) * FB_PAGE_SIZE + 1;
+        const end = Math.min(_fbPage * FB_PAGE_SIZE, total);
+        pager.innerHTML = `
+            <span class="fb-pagination-info">Showing <strong>${start}</strong>–<strong>${end}</strong> of <strong>${total}</strong></span>
+            <div class="fb-pagination-controls">
+                <button type="button" class="fb-page-btn" data-page-action="prev" ${_fbPage === 1 ? 'disabled' : ''} aria-label="Previous page">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="fb-pagination-page">Page ${_fbPage} of ${totalPages}</span>
+                <button type="button" class="fb-page-btn" data-page-action="next" ${_fbPage === totalPages ? 'disabled' : ''} aria-label="Next page">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>`;
+        pager.querySelectorAll('[data-page-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.pageAction === 'prev' && _fbPage > 1) _fbPage--;
+                if (btn.dataset.pageAction === 'next' && _fbPage < totalPages) _fbPage++;
+                renderResponsesTable(_fbFiltered);
+                document.querySelector('.fb-responses-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
     }
 
     function rowMediaChips(r) {
@@ -530,6 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         _fbFiltered = filtered;
+        _fbPage = 1;
 
         const badge = document.getElementById('fbFilterBadge');
         const badgeText = document.getElementById('fbFilterBadgeText');
