@@ -127,12 +127,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyCurrentUserToUi() {
         if (!_currentUser) return;
         const name = _currentUser.user_name || 'User';
+        const firstName = name.split(/\s+/)[0] || name;
         const ini = initials(name);
         const headerName = document.getElementById('headerUserName');
         const headerAvatar = document.getElementById('headerUserAvatar');
         const profName = document.getElementById('sidebarProfileName');
         const profAvatar = document.getElementById('sidebarProfileAvatar');
-        if (headerName) headerName.textContent = name;
+        if (headerName) { headerName.textContent = firstName; headerName.title = name; }
         if (headerAvatar) headerAvatar.textContent = ini;
         if (profName) profName.textContent = name;
         if (profAvatar) profAvatar.textContent = ini;
