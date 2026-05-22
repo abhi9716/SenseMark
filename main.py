@@ -246,6 +246,12 @@ async def get_default_session():
 CSV_DATA_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_answers.csv")
 USERS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_users.csv")
 QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions.csv")
+OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv")
+
+# Logged-in user for this single-tenant UAT build. Change this id (and the
+# header/profile in templates/index.html) to view the dashboard as a
+# different user.
+CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # 9 = Kedar Lele
 
 # Question ID -> level mapping (inferred from question sets per visit type)
 QID_LEVEL_MAP = {}
@@ -271,30 +277,38 @@ def _parse_csv_rows(path):
     return rows
 
 
+def _load_all_answers():
+    rows = []
+    if not os.path.exists(CSV_DATA_PATH):
+        return rows
+    with open(CSV_DATA_PATH, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            row = {}
+            for k, v in r.items():
+                if v == "" or v == "NULL":
+                    row[k] = None
+                elif k in ("rating", "id", "visit_id", "user_id", "outlet_id", "question_id"):
+                    try:
+                        row[k] = int(float(v)) if v else None
+                    except (ValueError, TypeError):
+                        row[k] = None
+                else:
+                    row[k] = v
+            row["level"] = QID_LEVEL_MAP.get(row.get("question_id")) if row.get("question_id") else None
+            rows.append(row)
+    return rows
+
+
 @app.get("/api/feedback-data")
 async def get_feedback_data():
     if not os.path.exists(CSV_DATA_PATH):
         raise HTTPException(status_code=404, detail="Feedback data CSV not found")
     try:
-        rows = []
-        with open(CSV_DATA_PATH, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for r in reader:
-                row = {}
-                for k, v in r.items():
-                    if v == "" or v == "NULL":
-                        row[k] = None
-                    elif k in ("rating", "id", "visit_id", "user_id", "outlet_id", "question_id"):
-                        try:
-                            row[k] = int(float(v)) if v else None
-                        except (ValueError, TypeError):
-                            row[k] = None
-                    else:
-                        row[k] = v
-                # Derive level from question_id
-                row["level"] = QID_LEVEL_MAP.get(row.get("question_id")) if row.get("question_id") else None
-                rows.append(row)
-        return {"data": rows, "total": len(rows), "source": os.path.basename(CSV_DATA_PATH)}
+        all_rows = _load_all_answers()
+        # Scope to logged-in user only
+        rows = [r for r in all_rows if r.get("user_id") == CURRENT_USER_ID]
+        return {"data": rows, "total": len(rows), "user_id": CURRENT_USER_ID}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -303,6 +317,7 @@ async def get_feedback_data():
 async def get_feedback_meta():
     users_raw = _parse_csv_rows(USERS_CSV_PATH)
     questions_raw = _parse_csv_rows(QUESTIONS_CSV_PATH)
+    outlets_raw = _parse_csv_rows(OUTLETS_CSV_PATH)
 
     users = []
     for u in users_raw:
@@ -337,4 +352,48 @@ async def get_feedback_meta():
             "answer_type": q.get("answer_type"),
         })
 
-    return {"users": users, "questions": questions}
+    outlets = []
+    for o in outlets_raw:
+        try:
+            oid = int(o["id"]) if o.get("id") else None
+        except (ValueError, TypeError):
+            oid = None
+        if oid is None:
+            continue
+        outlets.append({
+            "id": oid,
+            "outlet_code": o.get("outlet_code"),
+            "outlet_name": o.get("outlet_name"),
+            "owner_name": o.get("owner_name"),
+            "mobile": o.get("mobile"),
+            "channel": o.get("channel"),
+            "channel_type": o.get("channel_type"),
+            "address": o.get("address"),
+            "city": o.get("city"),
+            "state": o.get("state"),
+        })
+
+    me = next((u for u in users if u["id"] == CURRENT_USER_ID), None)
+    return {
+        "users": users,
+        "questions": questions,
+        "outlets": outlets,
+        "current_user": me or {"id": CURRENT_USER_ID, "user_name": f"User #{CURRENT_USER_ID}"},
+    }
+
+
+@app.get("/api/visit/{visit_id}")
+async def get_visit_detail(visit_id: int):
+    all_rows = _load_all_answers()
+    visit_rows = [r for r in all_rows if r.get("visit_id") == visit_id and r.get("user_id") == CURRENT_USER_ID]
+    if not visit_rows:
+        raise HTTPException(status_code=404, detail="Visit not found for current user")
+    visit_rows.sort(key=lambda r: r.get("question_id") or 0)
+    return {
+        "visit_id": visit_id,
+        "outlet_id": visit_rows[0].get("outlet_id"),
+        "user_id": visit_rows[0].get("user_id"),
+        "level": visit_rows[0].get("level"),
+        "created_at": visit_rows[0].get("created_at"),
+        "answers": visit_rows,
+    }
