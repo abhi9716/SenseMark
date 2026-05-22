@@ -571,7 +571,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = [..._fbData];
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
-        if (_fbQuestionFilter !== 'all') filtered = filtered.filter(r => String(r.question_id) === String(_fbQuestionFilter));
+        if (_fbQuestionFilter !== 'all') {
+            const qSet = new Set(String(_fbQuestionFilter).split(',').map(s => s.trim()));
+            filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        }
 
         if (dateRange !== 'all') {
             const now = new Date('2026-05-21');
@@ -594,7 +597,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (anyFilterActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
-            if (_fbQuestionFilter !== 'all') parts.push(questionShort(_fbQuestionFilter));
+            if (_fbQuestionFilter !== 'all') {
+                const firstQid = parseInt(String(_fbQuestionFilter).split(',')[0]);
+                const q = _fbQuestionsById[firstQid];
+                const qno = q ? (q.question_no || `Q${firstQid}`) : `Q${firstQid}`;
+                const text = q && q.question_text ? q.question_text : '';
+                const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
+                parts.push(text ? `${qno} — ${cap}` : qno);
+            }
             if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
             if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
             const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
@@ -613,24 +623,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return [...ids].sort((a, b) => a - b);
     }
 
+    function normaliseQuestionText(t) {
+        return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '');
+    }
+
     function populateQuestionDropdown(scopedData) {
         const sel = document.getElementById('fbFilterQuestion');
         if (!sel) return;
         const ids = getQuestionIdsInData(scopedData);
+
+        // Group by normalised question text. Fallback to per-qid when text missing.
+        const groups = new Map(); // key -> { qids:[], label, qno }
+        ids.forEach(id => {
+            const q = _fbQuestionsById[id] || {};
+            const text = q.question_text || '';
+            const qno = q.question_no || `Q${id}`;
+            const key = text ? normaliseQuestionText(text) : `qid:${id}`;
+            if (!groups.has(key)) {
+                groups.set(key, { qids: [], label: text ? `${qno} — ${text}` : qno, qno, text });
+            }
+            groups.get(key).qids.push(id);
+        });
+
+        const options = [...groups.values()].sort((a, b) => a.qno.localeCompare(b.qno, undefined, { numeric: true }));
+
         const prev = _fbQuestionFilter;
         sel.innerHTML = '<option value="all">All Questions</option>' +
-            ids.map(id => {
-                const q = _fbQuestionsById[id];
-                const qno = q ? (q.question_no || `Q${id}`) : `Q${id}`;
-                const text = q && q.question_text ? q.question_text : '';
-                const label = text ? `${qno} — ${text}` : qno;
-                return `<option value="${id}" title="${escapeHtml(label)}">${escapeHtml(label)}</option>`;
+            options.map(o => {
+                const value = o.qids.join(',');
+                return `<option value="${escapeHtml(value)}" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</option>`;
             }).join('');
-        if (prev !== 'all' && ids.map(String).includes(String(prev))) {
-            sel.value = String(prev);
+
+        // Preserve previous selection if its qid set is still present
+        if (prev !== 'all' && options.some(o => o.qids.join(',') === prev)) {
+            sel.value = prev;
+        } else if (prev !== 'all') {
+            // Maybe previous was a single qid still available as part of a group
+            const prevIds = String(prev).split(',').map(s => s.trim());
+            const match = options.find(o => prevIds.every(p => o.qids.map(String).includes(p)));
+            if (match) {
+                _fbQuestionFilter = match.qids.join(',');
+                sel.value = _fbQuestionFilter;
+            } else {
+                sel.value = 'all';
+                _fbQuestionFilter = 'all';
+            }
         } else {
             sel.value = 'all';
-            _fbQuestionFilter = 'all';
         }
     }
 
