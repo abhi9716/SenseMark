@@ -836,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="${escapeHtml(url)}" alt="${escapeHtml(label)}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('qa-media-err')">
             </button>`;
         } else if (kind === 'audio') {
-            player = `<audio class="qa-media-audio" controls preload="none" src="${escapeHtml(url)}"></audio>`;
+            player = `<audio class="qa-media-audio-el" controls preload="none" src="${escapeHtml(url)}"></audio>`;
         } else if (kind === 'video') {
             player = `<button type="button" class="qa-media-video-btn" data-media-kind="video" data-media-url="${escapeHtml(url)}" data-media-caption="${escapeHtml(cap)}" aria-label="${escapeHtml(label)}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
