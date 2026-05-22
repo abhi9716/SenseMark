@@ -632,7 +632,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
             if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
             const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
-            badgeText.textContent = `${prefix}${filtered.length} response${filtered.length === 1 ? '' : 's'}`;
+            const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
+            badgeText.textContent = `${prefix}${uniqueVisitCount} feedback${uniqueVisitCount === 1 ? '' : 's'}`;
             badge.classList.remove('hidden');
         } else if (badge) {
             badge.classList.add('hidden');

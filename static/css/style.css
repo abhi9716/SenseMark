@@ -3250,26 +3250,6 @@ body {
     .fb-level-btn { flex: 1; justify-content: center; }
 }
 
-@media (max-width: 640px) {
-    .fb-level-selector {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        width: 100%;
-        background: var(--bg);
-        padding: 8px 0;
-        margin-bottom: 12px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        border-top: none;
-    }
-    .fb-level-btn {
-        padding: 8px 12px;
-        font-size: 0.82rem;
-    }
-}
-
 /* ===== DASHBOARD GRID (2-col) ===== */
 .fb-dashboard-grid-2 {
     display: grid;
@@ -4044,6 +4024,15 @@ body.sidebar-open { overflow: hidden; }
     .tab-title-bar p { display: none; }
     .tab-story-step { font-size: 0.62rem; }
     .tab-story-icon { display: none; }
+
+    /* Sticky filter area: header+tabs+frozen on scroll */
+    .fb-sticky-filter-area {
+        position: sticky;
+        top: 56px;
+        z-index: 50;
+        background: var(--bg);
+        padding-top: 4px;
+    }
 
     /* Filters: collapsed by default behind toggle button */
     .fb-filters-toggle { display: inline-flex; padding: 11px 14px; font-size: 0.88rem; margin-bottom: 12px; }
