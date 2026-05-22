@@ -4138,60 +4138,61 @@ body.sidebar-open { overflow: hidden; }
     /* Hide labels for the fields we're laying out by hand */
     #visitsTable td::before { display: none; }
 
-    /* Outlet name: large headline, spans both columns */
+    /* Outlet code (always '-' here) — hidden on mobile */
+    #visitsTable td:nth-child(2) { display: none; }
+
+    /* Headline: outlet name (col 1) + visit-type pill (col 2) */
     #visitsTable td:nth-child(3) {
         grid-column: 1;
         grid-row: 1;
         font-size: 1.05rem;
         font-weight: 700;
         color: var(--text);
-        line-height: 1.25;
+        line-height: 1.3;
     }
-    /* Visit type pill: top-right */
     #visitsTable td:nth-child(4) {
         grid-column: 2;
         grid-row: 1;
         justify-self: end;
+        align-self: center;
     }
-    /* Meta line: Visit #, answers count, code — small muted row */
-    #visitsTable td:nth-child(1),
-    #visitsTable td:nth-child(2),
-    #visitsTable td:nth-child(5) {
-        display: inline-flex;
-        align-items: center;
-        font-size: 0.78rem;
-        color: var(--text-tertiary);
-        font-weight: 600;
-    }
-    #visitsTable td:nth-child(1) { grid-column: 1 / -1; grid-row: 2; }
-    #visitsTable td:nth-child(1)::after { content: ' · '; padding: 0 4px; color: var(--border-dark); }
-    #visitsTable td:nth-child(2) { display: none; } /* outlet code is '-' anyway */
-    #visitsTable td:nth-child(5) {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        justify-self: start;
-        margin-left: -4px;
-    }
-    #visitsTable td:nth-child(1) { white-space: nowrap; }
-    #visitsTable td:nth-child(1)::before { content: 'Visit #'; display: inline; font-size: 0.78rem; color: var(--text-tertiary); font-weight: 600; margin: 0; letter-spacing: normal; text-transform: none; }
-    #visitsTable td:nth-child(5)::before { content: '· '; display: inline; font-size: 0.78rem; color: var(--border-dark); font-weight: 600; margin: 0 4px 0 8px; letter-spacing: normal; text-transform: none; }
-    #visitsTable td:nth-child(5)::after { content: ' answers'; margin-left: 4px; }
 
-    /* Date row */
+    /* Meta line (visit # / answers / date) — each on its own row, full width */
+    #visitsTable td:nth-child(1),
+    #visitsTable td:nth-child(5),
     #visitsTable td:nth-child(6) {
         grid-column: 1 / -1;
-        grid-row: 3;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         color: var(--text-tertiary);
+        font-weight: 600;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+    #visitsTable td:nth-child(1) { grid-row: 2; }
+    #visitsTable td:nth-child(1)::before {
+        content: 'Visit #';
+        display: inline;
+        font-size: 0.8rem;
+        color: var(--text-tertiary);
+        font-weight: 600;
+        margin: 0;
+        padding: 0;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+    #visitsTable td:nth-child(5) { grid-row: 3; }
+    #visitsTable td:nth-child(5)::after { content: ' answers'; }
+    #visitsTable td:nth-child(6) { grid-row: 4; }
 
     /* Action row: full-width primary button */
     #visitsTable td:nth-child(7),
     #visitsTable td.ta-right {
         grid-column: 1 / -1;
-        grid-row: 4;
+        grid-row: 5;
         text-align: left;
-        margin-top: 4px;
+        margin-top: 6px;
     }
     #visitsTable td:nth-child(7) [data-visit-view] {
         width: 100%;
