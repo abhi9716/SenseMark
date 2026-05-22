@@ -197,13 +197,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
         const uniqueVisits = new Set(data.map(r => r.visit_id));
-        const totalFeedbacks = data.length;
+        const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
         renderKpis({
             avgRating, totalRatings,
-            respondents: uniqueVisits.size,
+            respondents: uniqueUsers.size,
             outlets: uniqueOutlets.size,
-            feedbacks: totalFeedbacks,
+            feedbacks: uniqueVisits.size,
         });
         renderRatingDist(ratingsDist, totalRatings);
         renderVerbatimSummary(data);
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             {
                 label: 'Respondents', value: stats.respondents,
-                sub: `unique market visits`, cls: 'fbi-kpi-blue',
+                sub: `field reps submitting`, cls: 'fbi-kpi-blue',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
             },
             {
