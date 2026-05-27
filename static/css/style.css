@@ -2999,9 +2999,70 @@ body {
     user-select: none;
 }
 
+.fb-word-item {
+    cursor: pointer;
+}
 .fb-word-item:hover {
     transform: translateY(-3px) scale(1.08);
     box-shadow: var(--shadow-md);
+}
+.fb-word-item.active {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    transform: translateY(-2px) scale(1.06);
+}
+
+/* Verbatim panel — appears below word cloud on keyword click */
+.fb-cloud-verbatim {
+    margin-top: 16px;
+    border-top: 1px solid var(--border, #e5e7eb);
+    padding-top: 14px;
+}
+.fb-cloud-verbatim.hidden { display: none; }
+.fb-cloud-verbatim-inner { display: flex; flex-direction: column; gap: 10px; }
+.fb-cloud-verbatim-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+.fb-cloud-verbatim-head strong { color: var(--text); }
+.fb-cloud-verbatim-close {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border: none; background: none;
+    font-size: 1.1rem; line-height: 1;
+    color: var(--text-tertiary);
+    cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition-base);
+}
+.fb-cloud-verbatim-close:hover { background: var(--surface-2, #f3f4f6); color: var(--text); }
+.fb-cloud-verbatim-quotes { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+.fb-cloud-verbatim-quote {
+    background: var(--surface-2, #f9fafb);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.fb-cloud-verbatim-text {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+}
+mark.fb-cloud-hl {
+    background: #fef08a;
+    color: #713f12;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 600;
+}
+.fb-cloud-verbatim-meta {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
 }
 
 /* AI Summary */

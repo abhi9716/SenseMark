@@ -1,0 +1,275 @@
+================================================================================
+FEEDBACK DASHBOARD — LOGIC ASSUMPTIONS & DOCUMENTATION
+================================================================================
+Project: SenseMark (IQlytics Solutions Pvt Ltd)
+Date:    2026-05-21
+================================================================================
+
+1. DATA SOURCE
+================================================================================
+
+  File: tbl_market_visit_feedback_answers.csv
+  Rows: 110
+  Visits: 22 unique visit_ids
+  Columns: id, visit_id, user_id, outlet_id, visit_type, question_id, rating,
+           answer_text, answer_number, created_at, status, voice_text,
+           image_path, video_path, audio_path
+
+  Note: tbl_market_visit_feedback_answers_2.csv (275 rows) is AI-generated
+        and is NOT used. Only the original 110-row CSV is authoritative.
+
+  Encoding tried on text fields: utf-8 → latin-1 → cp1252 → iso-8859-1
+
+
+2. LEVEL MAPPING (Trade / HCP / Consumer)
+================================================================================
+
+  The CSV has NO explicit level column. The "visit_type" column is always NULL.
+  Levels are INFERRED from the question_id of each row:
+
+    question_id 1-5   → "trade"     (9 visits, outlet_ids: 4,49,165,171,173,175,176,177,538)
+    question_id 8-12  → "hcp"       (5 visits, outlet_ids: 8,9,10,164,168)
+    question_id 15-19 → "consumer"  (5 visits, outlet_ids: 7,48,50,51,174)
+
+    question_id 29-33 → unknown     (1 visit, outlet_id: 41)
+    question_id 36-40 → unknown     (1 visit, outlet_id: 169)
+    question_id 43-47 → unknown     (1 visit, outlet_id: 6)
+
+  Unmapped visits (3 total, 15 rows) have level = null and only appear when
+  "All" filter is selected. They are excluded from Trade/HCP/Consumer views.
+
+  Rationale: Each visit answers exactly one question set (5 questions).
+  The question sets are distinct clusters with no overlap, and the outlet_ids
+  for each set are mutually exclusive, confirming they represent different
+  audience types (Trade = retailer, HCP = healthcare professional,
+  Consumer = end patient).
+
+
+3. QUESTION STRUCTURE PER SET
+================================================================================
+
+  Trade (q1-q5):
+    q1: rating (1-5) + voice_text
+    q2: rating (1-5) + voice_text
+    q3: rating (1-5) + voice_text
+    q4: answer_text (open-ended, no rating)
+    q5: answer_text (open-ended, no rating)
+
+  HCP (q8-q12):
+    q8: rating (1-5) + voice_text
+    q9-q12: answer_text (open-ended, no rating) — note: some may have null text
+
+  Consumer (q15-q19):
+    q15: rating (1-5) + voice_text
+    q16: rating (1-5)
+    q17: rating (1-5)
+    q18: answer_text (open-ended, no rating) or voice_text
+    q19: answer_text (open-ended, no rating) or voice_text
+
+  Unknown sets (q29-33, q36-40, q43-47): minimal data, mostly null values
+
+
+4. DASHBOARD STRUCTURE
+================================================================================
+
+  4a. Level Selector
+  ──────────────────
+    Buttons: All | Trade | HCP | Consumer
+    Clicking a level filters ALL dashboard components simultaneously.
+    "All" shows every row including unmapped visits (level = null).
+
+  4b. Filter Bar
+  ──────────────
+    Outlet dropdown: populated dynamically from outlet_id in filtered data
+    User dropdown:   populated dynamically from user_id in filtered data
+    Date Range:      All Time | Last 7 Days | Last 14 Days | Last 30 Days
+
+    Note: There is NO channel filter because the original CSV has no
+    outlet_channel column. Channel-specific filtering (pharmacy, grocery,
+    clinic, etc.) is not possible with this data source.
+
+  4c. KPI Cards
+  ─────────────
+    1. Average Rating  — mean of all ratings in filtered set (out of 5)
+    2. Total Visits    — count of unique visit_ids in filtered set
+    3. Unique Users    — count of unique user_ids in filtered set
+
+  4d. Rating Distribution
+  ───────────────────────
+    Vertical bar chart showing count of ratings 1-5.
+    Only rows with rating != null are counted.
+    Colors: 1=red, 2=orange, 3=yellow, 4=lime, 5=green.
+    Labels: Poor / Fair / Good / Very Good / Excellent.
+
+  4e. Word Cloud
+  ──────────────
+    Built from answer_text + voice_text (both open-ended fields).
+    Words are lowercased, stripped of non-alpha chars, and filtered by
+    stop-word list (common English words, ~50 entries).
+    Minimum word length: 3 characters.
+    Font size and opacity scale with frequency relative to max.
+    If fewer than ~5 unique words after filtering, shows "Not enough..."
+    message.
+
+  4f. AI Summary
+  ──────────────
+    Client-side generated (local JS, not API-dependent).
+    Uses generateAiSummary() which produces:
+      - sentiment: "positive" | "negative" | "mixed"
+      - summary: 2-3 sentence paragraph
+      - themes: array of {text, type} objects (type: "strength"|"improvement")
+
+    Additionally, on page load, a server-side analysis is attempted via
+    POST /api/analyze-feedback. If the LLM API is available (not rate-limited),
+    this replaces the client-side summary with a richer LLM-generated one.
+    If the API returns 429 (rate limit), the client-side summary remains.
+
+  4g. Complete Responses Table
+  ────────────────────────────
+    6 columns: Visit ID, Level, Outlet ID, User ID, Rating, Response, Date
+    Sort order: by created_at descending (most recent first)
+    Max rows shown: 200 (prioritizes rated responses, then open-ended)
+    Response text truncated to 80 chars with ellipsis.
+    Download CSV button exports the currently filtered view.
+
+
+5. API ENDPOINTS
+================================================================================
+
+  GET  /api/feedback-data
+    Returns: { data: [...], total: 110 }
+    Each row contains all CSV columns plus derived "level" field.
+    Integers (id, visit_id, user_id, outlet_id, question_id, rating) are
+    returned as proper ints; null/empty values are returned as null.
+
+  POST /api/analyze
+    Upload file → LLM analysis + vector storage.
+    Returns 200 with analysis structure or error fallback.
+    No longer raises HTTP 500 on AI failure.
+
+  POST /api/query
+    NL question → vector DB lookup or inline text → LLM response.
+    Returns 200 with { answer: "..." } or error string.
+    No longer raises HTTP 500 on AI failure.
+
+  POST /api/analyze-feedback
+    Accepts { text: "..." } of open-ended responses.
+    Returns AI-generated summary/insights or fallback structure.
+    Always returns 200.
+
+  POST /api/clear-vector-db
+    Deletes a vector collection by ID.
+    Used for session management.
+
+
+6. FRONTEND BEHAVIOR
+================================================================================
+
+  6a. Data Loading
+  ────────────────
+    On page load, fetches /api/feedback-data.
+    Populates _fbData and _fbFiltered (initially same).
+    Calls initFeedbackDashboard() to render.
+    Calls populateFilterDropdowns() to fill outlet/user selects.
+
+  6b. Filtering Flow
+  ──────────────────
+    applyFeedbackFilters() is called on:
+      - Level button click
+      - Outlet dropdown change
+      - User dropdown change
+      - Date dropdown change
+      - "Clear Filters" button click
+
+    Filters are applied in sequence: level → outlet → user → date.
+    Each filter narrows the _fbData copy.
+    Result stored in _fbFiltered.
+    Filter badge shows active level filter and count.
+    initFeedbackDashboard() is called at the end to re-render.
+
+  6c. Chat Behavior (No Document Uploaded)
+  ────────────────────────────────────────
+    When user sends a question without uploading a file:
+      1. Collects all open-ended responses (voice_text + answer_text)
+         from the feedback CSV.
+      2. Sends them as context to POST /api/query with the user's question.
+      3. Shows the AI answer in the chat.
+      4. If no open-ended responses exist, shows helpful message.
+      5. If LLM is rate-limited (429), returns a friendly error message
+         and notes the dashboard still works independently.
+
+  6d. Error Handling
+  ──────────────────
+    LLM API errors (401, 429, 400, network) are caught and displayed as
+    user-friendly messages in the chat sidebar.
+    The feedback dashboard is independent of the LLM — all KPI, rating,
+    word cloud, and table rendering work without AI.
+
+
+7. LLM CONFIGURATION
+================================================================================
+
+  Provider: OpenCode Zen API
+  Endpoint: https://opencode.ai/zen/v1/chat/completions
+  Default model: big-pickle (free tier)
+  API key: read from .env → os.environ["opencode_api_key"]
+  Key loading: custom code in main.py (lines 14-21), NOT python-dotenv
+
+  Models used:
+    big-pickle              — default (free, rate-limited)
+    nemotron-3-super-free   — tested, rate-limited
+    deepseek-v4-flash-free  — tested, rate-limited
+
+  Limitations:
+    Free-tier models return 429 FreeUsageLimitError after ~5 requests.
+    No rate-limit reset mechanism implemented.
+    Local Ollama fallback is available but disabled by default.
+    OLLAMA_HOST and OLLAMA_API_KEY in .env for local/cloud alternatives.
+
+  Token limit:
+    num_predict: 8000 on analysis calls.
+    Long transcripts may hit limits; truncated to 150000 chars when sent
+    as inline context.
+
+
+8. ASSUMPTIONS
+================================================================================
+
+  A1. The question_id ranges (1-5, 8-12, 15-19) map to distinct audience
+      levels (Trade, HCP, Consumer). This is inferred from data clustering
+      and is NOT explicitly labeled in the source.
+
+  A2. outlet_id values are opaque identifiers and should NOT be used to
+      infer outlet type, channel, or any other property without a reference
+      table.
+
+  A3. user_id values are opaque identifiers — no user names are available
+      in the original CSV.
+
+  A4. The "visit_type" column in the CSV is always NULL and should be
+      ignored. The derived "level" field is the authoritative tag.
+
+  A5. No channel classification exists in the source data. Any channel
+      filter (pharmacy/grocery/clinic/etc.) requires a separate data source
+      that maps outlet_id to channel.
+
+  A6. The three unknown question sets (q29-33, q36-40, q43-47) likely
+      represent additional audience types but have insufficient data (1
+      visit each) to confidently classify. They are treated as unmapped.
+
+  A7. Rating values are integers 1-5. No other rating schema is supported.
+
+  A8. Date filtering uses a hardcoded "now" of 2026-05-21. In production,
+      this should use new Date() (actual current time).
+
+  A9. AI summaries are best-effort. The dashboard must function without
+      AI (rate-limited API, offline, etc.). All core features (KPI, rating
+      distribution, word cloud, table, download) are AI-independent.
+
+  A10. The chat sidebar uses the feedback CSV's open-ended text as context
+       when no file is uploaded. This is a convenience feature and may hit
+       token limits on very long queries.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

@@ -1236,7 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             respondents: uniqueUsers.size,
             outlets: uniqueOutlets.size,
             feedbacks: uniqueVisits.size,
-        }, 'gKpiRow', { label: 'Field Reps', sub: 'reps contributing feedback' });
+        }, 'gKpiRow', { label: 'Respondents', sub: 'respondents contributing feedback' });
         renderRatingDist(ratingsDist, totalRatings, 'gRatingDist');
         renderVerbatimSummary(data, { elId: 'gAiSummary', scopeElId: 'gVerbatimScope' });
         renderWordCloud(data, 'gWordCloud');
@@ -1292,13 +1292,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const max = words[0][1];
         const palette = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#db2777'];
+        // Clear any open verbatim panel on re-render
+        const verbatimPanel = el.parentElement?.querySelector('.fb-cloud-verbatim');
+        if (verbatimPanel) { verbatimPanel.classList.add('hidden'); verbatimPanel.innerHTML = ''; }
+
         el.innerHTML = words.map(([w, c], i) => {
             const scale = c / max;
             const size = (0.85 + scale * 1.6).toFixed(2);
             const opacity = (0.6 + scale * 0.4).toFixed(2);
             const color = palette[i % palette.length];
-            return `<span class="fb-word-item" style="font-size:${size}rem;opacity:${opacity};color:${color};background:${color}14;animation-delay:${(i * 0.015).toFixed(2)}s" title="${c} mention${c === 1 ? '' : 's'}">${escapeHtml(w)}</span>`;
+            return `<span class="fb-word-item" data-cloud-word="${escapeHtml(w)}" style="font-size:${size}rem;opacity:${opacity};color:${color};background:${color}14;animation-delay:${(i * 0.015).toFixed(2)}s" title="${c} mention${c === 1 ? '' : 's'}">${escapeHtml(w)}</span>`;
         }).join('');
+
+        // Click → show verbatim panel
+        if (verbatimPanel) {
+            el.querySelectorAll('.fb-word-item').forEach(span => {
+                span.addEventListener('click', () => {
+                    const word = span.dataset.cloudWord;
+                    const isActive = span.classList.contains('active');
+                    el.querySelectorAll('.fb-word-item.active').forEach(w => w.classList.remove('active'));
+                    if (isActive) { verbatimPanel.classList.add('hidden'); verbatimPanel.innerHTML = ''; return; }
+                    span.classList.add('active');
+                    showWordVerbatim(word, data, verbatimPanel);
+                });
+            });
+        }
+    }
+
+    // Show verbatim responses containing a word inside the given panel element
+    function showWordVerbatim(word, data, panel) {
+        // Prefix-match: "outlet" matches "outlet", "outlets", "outletting" etc.
+        const re = new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const matches = data.filter(r =>
+            re.test(r.answer_text || '') || re.test(r.voice_text || '')
+        );
+
+        const headCount = matches.length;
+        const rows = matches.slice(0, 12);
+
+        const quotesHtml = rows.length ? rows.map(r => {
+            const raw = (r.answer_text || r.voice_text || '').trim();
+            // Escape HTML then highlight — safe because word is alphabetic
+            const safe = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const highlighted = safe.replace(
+                new RegExp('(' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\w*)', 'gi'),
+                '<mark class="fb-cloud-hl">$1</mark>'
+            );
+            const rep  = escapeHtml(userName(r.user_id));
+            const outl = escapeHtml(outletName(r.outlet_id));
+            const date = escapeHtml(formatDateShort(r.created_at));
+            return `<div class="fb-cloud-verbatim-quote">
+                <p class="fb-cloud-verbatim-text">${highlighted}</p>
+                <div class="fb-cloud-verbatim-meta">${rep} · ${outl} · ${date}</div>
+            </div>`;
+        }).join('') : '<p class="fbi-empty" style="padding:8px 0">No verbatim responses found.</p>';
+
+        panel.innerHTML = `
+            <div class="fb-cloud-verbatim-inner">
+                <div class="fb-cloud-verbatim-head">
+                    <span><strong>${headCount}</strong> response${headCount===1?'':'s'} mentioning "<strong>${escapeHtml(word)}</strong>"</span>
+                    <button class="fb-cloud-verbatim-close" type="button" aria-label="Close">&times;</button>
+                </div>
+                <div class="fb-cloud-verbatim-quotes">${quotesHtml}</div>
+            </div>`;
+        panel.classList.remove('hidden');
+        panel.querySelector('.fb-cloud-verbatim-close')?.addEventListener('click', () => {
+            panel.classList.add('hidden');
+            panel.innerHTML = '';
+            panel.closest('.card')?.querySelectorAll('.fb-word-item.active').forEach(w => w.classList.remove('active'));
+        });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // Positive / negative keyword chips with occurrence counts
