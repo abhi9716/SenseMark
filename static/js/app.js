@@ -3,8 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- State ----
     let _fbData = [];
     let _fbFiltered = [];
-    let _fbQuestionFilter = 'all';
-    let _fbPage = 1;
+    // Group Feedback (across users) — separate dataset + filtered view
+    let _gData = [];
+    let _gFiltered = [];
+    // Question filter + table page are tracked per scope ('fb' = single-user, 'g' = group)
+    const _qFilter = { fb: 'all', g: 'all' };
+    const _tablePages = { fb: 1, g: 1 };
     const FB_PAGE_SIZE = 10;
     let _fbUsersById = {};
     let _fbQuestionsById = {};
@@ -12,15 +16,76 @@ document.addEventListener('DOMContentLoaded', () => {
     let _currentUser = null;
 
     const FB_STOP_WORDS = new Set([
-        'the','and','for','are','but','not','you','all','can','had','her','was',
-        'one','our','out','has','have','been','some','their','them','than',
-        'very','just','with','this','that','from','which','what','when','more',
-        'about','into','over','also','its','other','after','well','will',
-        'would','could','should','your','his','its','each','much','such',
-        'because','before','between','through','during','without','across',
-        'been','being','does','did','doing','done','get','got','gets',
-        'make','made','makes','may','might','must','still','too','way',
+        // Articles & determiners
+        'a','an','the','this','that','these','those','some','any','each','every',
+        'all','both','few','more','most','other','another','such','no','nor',
+        // Pronouns
+        'i','me','my','myself','we','our','ours','ourselves',
+        'you','your','yours','yourself','yourselves',
+        'he','him','his','himself','she','her','hers','herself',
+        'it','its','itself','they','them','their','theirs','themselves',
+        'who','whom','whose','which','what','where','when','why','how',
+        // Conjunctions
+        'and','but','or','nor','for','so','yet','as','if','then','than',
+        'although','because','since','unless','until','while','after','before',
+        'though','whereas',
+        // Prepositions
+        'in','on','at','by','to','of','from','up','out','off','over','under',
+        'into','onto','upon','with','without','within','about','above','below',
+        'between','among','through','during','along','across','behind','beside',
+        'towards','toward','near','per','via','against','around',
+        // Auxiliary verbs
+        'is','am','are','was','were','be','been','being',
+        'have','has','had','having',
+        'do','does','did','doing','done',
+        'will','would','shall','should','may','might','must','can','could',
+        // Common high-frequency low-signal verbs
+        'get','got','gets','getting','gotten',
+        'make','made','makes','making',
+        'go','goes','went','going','gone',
+        'come','comes','came','coming',
+        'take','takes','took','taken','taking',
+        'give','gives','gave','given','giving',
+        'know','knows','knew','known','knowing',
+        'see','sees','saw','seen','seeing',
+        'say','says','said','saying',
+        'use','uses','used','using',
+        'want','wants','wanted','wanting',
+        'look','looks','looked','looking',
+        'seem','seems','seemed',
+        'tell','told','tells','telling',
+        'put','puts','putting',
+        'ask','asked','asks','asking',
+        'let','lets','letting',
+        'try','tries','tried','trying',
+        'call','called','calls','calling',
+        'keep','keeps','kept','keeping',
+        'need','needs','needed','needing',
+        // Adverbs
+        'very','just','now','also','only','even','still','back','again','here',
+        'there','then','too','so','up','already','always','often','never',
+        'maybe','perhaps','quite','rather','really','well','ever','else',
+        'however','therefore','thus','hence','otherwise','instead',
+        // Generic adjectives / low-signal descriptors
+        'new','old','good','bad','big','small','large','long','short',
+        'first','last','next','same','different','many','much','little',
+        'high','low','right','left','own','free','full','open','whole',
+        'able','available','certain','less','least','best','worst',
+        'easy','hard','nice','sure','true','false','real','main','general',
+        // Conversational fillers
+        'yes','yeah','yep','okay','hmm','like','actually','basically',
+        'generally','usually','typically','please','thank','thanks',
+        'sorry','hello','hi','hey','sir','madam','dear',
+        'ok','alright','absolutely','definitely','obviously','clearly',
+        // Numbers written out
+        'one','two','three','four','five','six','seven','eight','nine','ten',
+        // Misc / punctuation words
+        'etc','also','not','but','can','has','was','had','have',
     ]);
+
+    // Sentiment lexicons shared by the verbatim summary and keyword cards
+    const FB_POS_WORDS = ['good','great','excellent','best','love','recommend','effective','helpful','satisfied','strong','improved','trust','impressed','reliable','working','build','opportunity'];
+    const FB_NEG_WORDS = ['improvement','expensive','missing','lack','poor','difficult','stockout','issue','problem','slow','weak','limited','confusing','unavailable','empty'];
 
     // ---- Utilities ----
     function escapeHtml(text) {
@@ -231,12 +296,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         renderRatingDist(ratingsDist, totalRatings);
         renderVerbatimSummary(data);
-        renderResponsesTable(data);
+        renderResponsesTable(data, 'fb');
     }
 
-    function renderKpis(stats) {
-        const el = document.getElementById('fbKpiRow');
+    function renderKpis(stats, elId, repCfg) {
+        const el = document.getElementById(elId || 'fbKpiRow');
         if (!el) return;
+        repCfg = repCfg || { label: 'Respondents', sub: 'field reps submitting' };
         const items = [
             {
                 label: 'Average Rating',
@@ -246,8 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`,
             },
             {
-                label: 'Respondents', value: stats.respondents,
-                sub: `field reps submitting`, cls: 'fbi-kpi-blue',
+                label: repCfg.label, value: stats.respondents,
+                sub: repCfg.sub, cls: 'fbi-kpi-blue',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
             },
             {
@@ -270,8 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`).join('');
     }
 
-    function renderRatingDist(dist, total) {
-        const el = document.getElementById('fbRatingDist');
+    function renderRatingDist(dist, total, elId) {
+        const el = document.getElementById(elId || 'fbRatingDist');
         if (!el) return;
         if (total === 0) { el.innerHTML = '<div class="fbi-empty">No ratings available for this selection</div>'; return; }
         const maxCount = Math.max(...Object.values(dist), 1);
@@ -303,10 +369,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return texts;
     }
 
-    function renderVerbatimSummary(data) {
+    function renderVerbatimSummary(data, cfg) {
+        cfg = cfg || {};
         const texts = getOpenEndedResponses(data);
-        const el = document.getElementById('fbAiSummary');
-        const scopeEl = document.getElementById('fbVerbatimScope');
+        const el = document.getElementById(cfg.elId || 'fbAiSummary');
+        const scopeEl = document.getElementById(cfg.scopeElId || 'fbVerbatimScope');
         if (!el) return;
         if (texts.length === 0) {
             el.innerHTML = '<div class="fbi-empty">No open-ended responses for this selection</div>';
@@ -317,11 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const all = texts.join(' ').toLowerCase();
 
         // Sentiment scoring
-        const posWords = ['good','great','excellent','best','love','recommend','effective','helpful','satisfied','strong','improved','trust','impressed','reliable','working','build','opportunity'];
-        const negWords = ['improvement','expensive','missing','lack','poor','difficult','stockout','issue','problem','slow','weak','limited','confusing','unavailable','empty','out of stock'];
         let posCount = 0, negCount = 0;
-        posWords.forEach(w => { if (all.includes(w)) posCount++; });
-        negWords.forEach(w => { if (all.includes(w)) negCount++; });
+        FB_POS_WORDS.forEach(w => { if (all.includes(w)) posCount++; });
+        FB_NEG_WORDS.forEach(w => { if (all.includes(w)) negCount++; });
         const sentiment = posCount > negCount ? 'positive' : negCount > posCount ? 'negative' : 'mixed';
         const sentLabel = sentiment === 'positive' ? '🟢 Positive' : sentiment === 'negative' ? '🔴 Needs Attention' : '🟡 Mixed';
 
@@ -403,11 +468,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (scopeEl) scopeEl.textContent = `${texts.length} open-ended response${texts.length === 1 ? '' : 's'} from field visits`;
     }
 
-    function renderResponsesTable(data) {
-        const body = document.getElementById('fbTableBody');
-        const empty = document.getElementById('fbTableEmpty');
-        const wrap = document.querySelector('#view-dashboard .fb-table-wrap');
-        const pager = document.getElementById('fbPagination');
+    const TABLE_SCOPES = {
+        fb: { body: 'fbTableBody', empty: 'fbTableEmpty', wrap: '#view-dashboard .fb-table-wrap', pager: 'fbPagination', showUser: false },
+        g:  { body: 'gTableBody',  empty: 'gTableEmpty',  wrap: '#view-group .fb-table-wrap',     pager: 'gPagination',  showUser: true  },
+    };
+
+    function userName(uid) {
+        if (uid == null) return '';
+        const u = _fbUsersById[uid];
+        return u && u.user_name ? u.user_name : `User #${uid}`;
+    }
+
+    function renderResponsesTable(data, scope) {
+        scope = scope || 'fb';
+        const sc = TABLE_SCOPES[scope] || TABLE_SCOPES.fb;
+        const body = document.getElementById(sc.body);
+        const empty = document.getElementById(sc.empty);
+        const wrap = document.querySelector(sc.wrap);
+        const pager = document.getElementById(sc.pager);
         if (!body) return;
 
         if (!data.length) {
@@ -421,9 +499,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sorted = [...data].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         const totalPages = Math.max(1, Math.ceil(sorted.length / FB_PAGE_SIZE));
-        if (_fbPage > totalPages) _fbPage = totalPages;
-        if (_fbPage < 1) _fbPage = 1;
-        const start = (_fbPage - 1) * FB_PAGE_SIZE;
+        if (_tablePages[scope] > totalPages) _tablePages[scope] = totalPages;
+        if (_tablePages[scope] < 1) _tablePages[scope] = 1;
+        const start = (_tablePages[scope] - 1) * FB_PAGE_SIZE;
         const pageRows = sorted.slice(start, start + FB_PAGE_SIZE);
 
         body.innerHTML = pageRows.map(r => {
@@ -465,37 +543,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="fb-cell-meta" data-label="Visit">
                     <div class="fb-cell-meta-stack">
                         <span class="fb-cell-meta-visit">#${r.visit_id}</span>
+                        ${sc.showUser ? `<span class="fb-cell-meta-rep">${escapeHtml(userName(r.user_id))}</span>` : ''}
                         <span class="fb-cell-meta-date">${escapeHtml(formatDateShort(r.created_at))}</span>
                     </div>
                 </td>
             </tr>`;
         }).join('');
 
-        renderPagination(pager, sorted.length, totalPages);
+        renderPagination(pager, sorted.length, totalPages, scope, sorted);
     }
 
-    function renderPagination(pager, total, totalPages) {
+    function renderPagination(pager, total, totalPages, scope, data) {
         if (!pager) return;
+        scope = scope || 'fb';
+        const page = _tablePages[scope];
         if (total <= FB_PAGE_SIZE) { pager.innerHTML = ''; return; }
-        const start = (_fbPage - 1) * FB_PAGE_SIZE + 1;
-        const end = Math.min(_fbPage * FB_PAGE_SIZE, total);
+        const start = (page - 1) * FB_PAGE_SIZE + 1;
+        const end = Math.min(page * FB_PAGE_SIZE, total);
         pager.innerHTML = `
             <span class="fb-pagination-info">Showing <strong>${start}</strong>–<strong>${end}</strong> of <strong>${total}</strong></span>
             <div class="fb-pagination-controls">
-                <button type="button" class="fb-page-btn" data-page-action="prev" ${_fbPage === 1 ? 'disabled' : ''} aria-label="Previous page">
+                <button type="button" class="fb-page-btn" data-page-action="prev" ${page === 1 ? 'disabled' : ''} aria-label="Previous page">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
-                <span class="fb-pagination-page">Page ${_fbPage} of ${totalPages}</span>
-                <button type="button" class="fb-page-btn" data-page-action="next" ${_fbPage === totalPages ? 'disabled' : ''} aria-label="Next page">
+                <span class="fb-pagination-page">Page ${page} of ${totalPages}</span>
+                <button type="button" class="fb-page-btn" data-page-action="next" ${page === totalPages ? 'disabled' : ''} aria-label="Next page">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
             </div>`;
+        const scrollSel = scope === 'g' ? '#view-group .fb-responses-card' : '#view-dashboard .fb-responses-card';
         pager.querySelectorAll('[data-page-action]').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (btn.dataset.pageAction === 'prev' && _fbPage > 1) _fbPage--;
-                if (btn.dataset.pageAction === 'next' && _fbPage < totalPages) _fbPage++;
-                renderResponsesTable(_fbFiltered);
-                document.querySelector('.fb-responses-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (btn.dataset.pageAction === 'prev' && _tablePages[scope] > 1) _tablePages[scope]--;
+                if (btn.dataset.pageAction === 'next' && _tablePages[scope] < totalPages) _tablePages[scope]++;
+                renderResponsesTable(data, scope);
+                document.querySelector(scrollSel)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
     }
@@ -595,8 +677,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = [..._fbData];
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
-        if (_fbQuestionFilter !== 'all') {
-            const qSet = new Set(String(_fbQuestionFilter).split(',').map(s => s.trim()));
+        if (_qFilter.fb !== 'all') {
+            const qSet = new Set(String(_qFilter.fb).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
 
@@ -613,16 +695,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         _fbFiltered = filtered;
-        _fbPage = 1;
+        _tablePages.fb = 1;
 
         const badge = document.getElementById('fbFilterBadge');
         const badgeText = document.getElementById('fbFilterBadgeText');
-        const anyFilterActive = level !== 'all' || outlet !== 'all' || dateRange !== 'all' || _fbQuestionFilter !== 'all';
+        const anyFilterActive = level !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.fb !== 'all';
         if (anyFilterActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
-            if (_fbQuestionFilter !== 'all') {
-                const firstQid = parseInt(String(_fbQuestionFilter).split(',')[0]);
+            if (_qFilter.fb !== 'all') {
+                const firstQid = parseInt(String(_qFilter.fb).split(',')[0]);
                 const q = _fbQuestionsById[firstQid];
                 const qno = q ? (q.question_no || `Q${firstQid}`) : `Q${firstQid}`;
                 const text = q && q.question_text ? q.question_text : '';
@@ -653,8 +735,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[.?!]+$/, '');
     }
 
-    function populateQuestionDropdown(scopedData) {
-        const sel = document.getElementById('fbFilterQuestion');
+    function populateQuestionDropdown(scopedData, scope) {
+        scope = scope || 'fb';
+        const sel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : 'fbFilterQuestion');
         if (!sel) return;
         const ids = getQuestionIdsInData(scopedData);
 
@@ -673,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const options = [...groups.values()].sort((a, b) => a.qno.localeCompare(b.qno, undefined, { numeric: true }));
 
-        const prev = _fbQuestionFilter;
+        const prev = _qFilter[scope];
         sel.innerHTML = '<option value="all">All Questions</option>' +
             options.map(o => {
                 const value = o.qids.join(',');
@@ -688,11 +771,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevIds = String(prev).split(',').map(s => s.trim());
             const match = options.find(o => prevIds.every(p => o.qids.map(String).includes(p)));
             if (match) {
-                _fbQuestionFilter = match.qids.join(',');
-                sel.value = _fbQuestionFilter;
+                _qFilter[scope] = match.qids.join(',');
+                sel.value = _qFilter[scope];
             } else {
                 sel.value = 'all';
-                _fbQuestionFilter = 'all';
+                _qFilter[scope] = 'all';
             }
         } else {
             sel.value = 'all';
@@ -724,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fbFilterOutlet')?.addEventListener('change', applyFeedbackFilters);
     document.getElementById('fbFilterDate')?.addEventListener('change', applyFeedbackFilters);
     document.getElementById('fbFilterQuestion')?.addEventListener('change', (e) => {
-        _fbQuestionFilter = e.target.value || 'all';
+        _qFilter.fb = e.target.value || 'all';
         applyFeedbackFilters();
     });
     // ---- Filters toggle (mobile collapsible) ----
@@ -745,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (level !== 'all') n++;
         if (outlet !== 'all') n++;
         if (dateRange !== 'all') n++;
-        if (_fbQuestionFilter !== 'all') n++;
+        if (_qFilter.fb !== 'all') n++;
         if (n > 0) {
             countEl.textContent = n;
             countEl.classList.add('is-active');
@@ -761,7 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ['fbFilterOutlet','fbFilterDate','fbFilterQuestion'].forEach(id => {
             const e = document.getElementById(id); if (e) e.value = 'all';
         });
-        _fbQuestionFilter = 'all';
+        _qFilter.fb = 'all';
         applyFeedbackFilters();
     });
 
@@ -995,9 +1078,295 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotice('Logout is a placeholder in this UAT build.', 'info');
     });
 
+    // ====================================================================
+    //  GROUP FEEDBACK (across users)
+    //  Reuses the single-user render helpers; only data scope + a handful
+    //  of extra cards (word cloud, sentiment keywords, rep filter) differ.
+    // ====================================================================
+    async function loadGroupData() {
+        try {
+            const res = await fetch('/api/feedback-data-all');
+            if (!res.ok) throw new Error('Failed to load group feedback data');
+            const json = await res.json();
+            _gData = json.data || [];
+            _gFiltered = [..._gData];
+            populateGroupFilterDropdowns();
+            renderGroupDashboard();
+        } catch (e) {
+            console.warn('Could not load group feedback data:', e);
+            ['gKpiRow', 'gRatingDist', 'gAiSummary', 'gWordCloud', 'gKeywords', 'gTableBody']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<div class="fbi-empty">Failed to load team feedback data.</div>';
+                });
+        }
+    }
+
+    function populateGroupFilterDropdowns() {
+        const outlets = new Set();
+        const users = new Set();
+        _gData.forEach(r => {
+            if (r.outlet_id != null) outlets.add(String(r.outlet_id));
+            if (r.user_id != null) users.add(String(r.user_id));
+        });
+        const outletSel = document.getElementById('gFilterOutlet');
+        if (outletSel) {
+            outletSel.innerHTML = '<option value="all">All Outlets</option>';
+            [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o; opt.textContent = outletName(parseInt(o));
+                outletSel.appendChild(opt);
+            });
+        }
+        const userSel = document.getElementById('gFilterUser');
+        if (userSel) {
+            userSel.innerHTML = '<option value="all">All Reps</option>';
+            [...users]
+                .sort((a, b) => userName(parseInt(a)).localeCompare(userName(parseInt(b))))
+                .forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u; opt.textContent = userName(parseInt(u));
+                    userSel.appendChild(opt);
+                });
+        }
+        populateQuestionDropdown(_gData, 'g');
+    }
+
+    function applyGroupFilters() {
+        const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
+        const user = document.getElementById('gFilterUser')?.value || 'all';
+        const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
+        const dateRange = document.getElementById('gFilterDate')?.value || 'all';
+
+        const levelScoped = level !== 'all' ? _gData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _gData;
+        populateQuestionDropdown(levelScoped, 'g');
+
+        let filtered = [..._gData];
+        if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
+        if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
+        if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
+        if (_qFilter.g !== 'all') {
+            const qSet = new Set(String(_qFilter.g).split(',').map(s => s.trim()));
+            filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        }
+        if (dateRange !== 'all') {
+            const now = new Date('2026-05-21');
+            const cutoff = new Date(now);
+            const days = parseInt(dateRange);
+            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
+            filtered = filtered.filter(r => {
+                if (!r.created_at) return true;
+                return new Date(r.created_at) >= cutoff;
+            });
+        }
+
+        _gFiltered = filtered;
+        _tablePages.g = 1;
+
+        const badge = document.getElementById('gFilterBadge');
+        const badgeText = document.getElementById('gFilterBadgeText');
+        const anyActive = level !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.g !== 'all';
+        if (anyActive && badge && badgeText) {
+            const parts = [];
+            if (level !== 'all') parts.push(level.toUpperCase());
+            if (user !== 'all') parts.push(userName(parseInt(user)));
+            if (_qFilter.g !== 'all') {
+                const firstQid = parseInt(String(_qFilter.g).split(',')[0]);
+                const q = _fbQuestionsById[firstQid];
+                const qno = q ? (q.question_no || `Q${firstQid}`) : `Q${firstQid}`;
+                const text = q && q.question_text ? q.question_text : '';
+                const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
+                parts.push(text ? `${qno} — ${cap}` : qno);
+            }
+            if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
+            if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
+            const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
+            const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
+            badgeText.textContent = `${prefix}${uniqueVisitCount} feedback${uniqueVisitCount === 1 ? '' : 's'}`;
+            badge.classList.remove('hidden');
+        } else if (badge) {
+            badge.classList.add('hidden');
+        }
+
+        updateGroupFiltersCount();
+        renderGroupDashboard();
+    }
+
+    function updateGroupFiltersCount() {
+        const countEl = document.getElementById('gFiltersCount');
+        if (!countEl) return;
+        const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
+        const user = document.getElementById('gFilterUser')?.value || 'all';
+        const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
+        const dateRange = document.getElementById('gFilterDate')?.value || 'all';
+        let n = 0;
+        if (level !== 'all') n++;
+        if (user !== 'all') n++;
+        if (outlet !== 'all') n++;
+        if (dateRange !== 'all') n++;
+        if (_qFilter.g !== 'all') n++;
+        if (n > 0) { countEl.textContent = n; countEl.classList.add('is-active'); }
+        else { countEl.textContent = ''; countEl.classList.remove('is-active'); }
+    }
+
+    function renderGroupDashboard() {
+        const data = _gFiltered;
+        if (!data.length) {
+            ['gKpiRow', 'gRatingDist', 'gAiSummary', 'gWordCloud', 'gKeywords']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<div class="fbi-empty">No team feedback for the current selection.</div>';
+                });
+            renderResponsesTable([], 'g');
+            return;
+        }
+
+        const ratings = data.filter(r => r.rating != null).map(r => r.rating);
+        const ratingsDist = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+        ratings.forEach(r => { if (ratingsDist[r] != null) ratingsDist[r]++; });
+        const totalRatings = ratings.length;
+        const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
+
+        const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const uniqueVisits = new Set(data.map(r => r.visit_id));
+        const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
+
+        renderKpis({
+            avgRating, totalRatings,
+            respondents: uniqueUsers.size,
+            outlets: uniqueOutlets.size,
+            feedbacks: uniqueVisits.size,
+        }, 'gKpiRow', { label: 'Field Reps', sub: 'reps contributing feedback' });
+        renderRatingDist(ratingsDist, totalRatings, 'gRatingDist');
+        renderVerbatimSummary(data, { elId: 'gAiSummary', scopeElId: 'gVerbatimScope' });
+        renderWordCloud(data, 'gWordCloud');
+        renderResponsesTable(data, 'g');
+    }
+
+    // Word cloud — frequency-sized terms from open-ended responses
+    function normaliseToken(raw) {
+        // Strip possessive apostrophe ("brand's" → "brands") and curly quotes
+        let w = raw.replace(/[''`]/g, '').toLowerCase();
+        // Drop purely numeric tokens
+        if (/^\d+$/.test(w)) return null;
+        // Collapse common suffix forms to a base (basic stemming)
+        if (w.length > 7 && w.endsWith('tion'))  return w;          // keep "-tion" words intact
+        if (w.length > 7 && w.endsWith('ness'))  return w;          // keep "-ness" words intact
+        if (w.length > 7 && w.endsWith('ment'))  return w;          // keep "-ment" words intact
+        if (w.length > 6 && w.endsWith('ing'))   w = w.slice(0,-3); // selling → sell
+        else if (w.length > 5 && w.endsWith('ed')) w = w.slice(0,-2); // visited → visit
+        else if (w.length > 5 && w.endsWith('ies')) w = w.slice(0,-3) + 'y'; // activities → activity
+        else if (w.length > 4 && w.endsWith('s') && !w.endsWith('ss') && !w.endsWith('us'))
+            w = w.slice(0,-1); // outlets → outlet  (skip: success, class, focus)
+        return w;
+    }
+
+    function renderWordCloud(data, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const texts = getOpenEndedResponses(data);
+        if (!texts.length) {
+            el.innerHTML = '<div class="fbi-empty">Not enough open-ended text for a word cloud yet.</div>';
+            return;
+        }
+        // Clean text: lowercase, strip non-alpha (keep spaces), split
+        const rawTokens = texts.join(' ')
+            .replace(/[''`]/g, '')
+            .replace(/[^a-zA-Z\s]/g, ' ')
+            .toLowerCase()
+            .split(/\s+/);
+
+        const freq = {};
+        rawTokens.forEach(raw => {
+            if (!raw) return;
+            const base = normaliseToken(raw);
+            if (!base || base.length < 4) return;
+            if (FB_STOP_WORDS.has(raw) || FB_STOP_WORDS.has(base)) return;
+            freq[base] = (freq[base] || 0) + 1;
+        });
+
+        const words = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 45);
+        if (words.length < 5) {
+            el.innerHTML = '<div class="fbi-empty">Not enough open-ended text for a word cloud yet.</div>';
+            return;
+        }
+        const max = words[0][1];
+        const palette = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#db2777'];
+        el.innerHTML = words.map(([w, c], i) => {
+            const scale = c / max;
+            const size = (0.85 + scale * 1.6).toFixed(2);
+            const opacity = (0.6 + scale * 0.4).toFixed(2);
+            const color = palette[i % palette.length];
+            return `<span class="fb-word-item" style="font-size:${size}rem;opacity:${opacity};color:${color};background:${color}14;animation-delay:${(i * 0.015).toFixed(2)}s" title="${c} mention${c === 1 ? '' : 's'}">${escapeHtml(w)}</span>`;
+        }).join('');
+    }
+
+    // Positive / negative keyword chips with occurrence counts
+    function renderKeywords(data, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const all = getOpenEndedResponses(data).join(' ').toLowerCase();
+        if (!all.trim()) {
+            el.innerHTML = '<div class="fbi-empty">No open-ended responses for this selection</div>';
+            return;
+        }
+        const countWord = (w) => (all.match(new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+        const pos = FB_POS_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+        const neg = FB_NEG_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+        const chips = (list) => list.length
+            ? list.map(([w, c]) => `<span class="fb-kw-chip">${escapeHtml(w)}<span class="fb-kw-count">${c}</span></span>`).join('')
+            : '<span class="fbi-empty fb-kw-empty">None detected</span>';
+        el.innerHTML = `
+            <div class="fb-keywords">
+                <div class="fb-kw-col positive">
+                    <span class="fb-summary-label">Positive</span>
+                    <div class="fb-kw-list">${chips(pos)}</div>
+                </div>
+                <div class="fb-kw-col negative">
+                    <span class="fb-summary-label">Negative</span>
+                    <div class="fb-kw-list">${chips(neg)}</div>
+                </div>
+            </div>`;
+    }
+
+    // ---- Group event wiring ----
+    document.querySelectorAll('.g-level-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.g-level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyGroupFilters();
+        });
+    });
+    document.getElementById('gFilterUser')?.addEventListener('change', applyGroupFilters);
+    document.getElementById('gFilterOutlet')?.addEventListener('change', applyGroupFilters);
+    document.getElementById('gFilterDate')?.addEventListener('change', applyGroupFilters);
+    document.getElementById('gFilterQuestion')?.addEventListener('change', (e) => {
+        _qFilter.g = e.target.value || 'all';
+        applyGroupFilters();
+    });
+    const gFiltersToggle = document.getElementById('gFiltersToggle');
+    const gFiltersGroup = document.getElementById('gFiltersGroup');
+    gFiltersToggle?.addEventListener('click', () => {
+        const open = gFiltersGroup?.classList.toggle('is-open');
+        gFiltersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.getElementById('gFilterClearBtn')?.addEventListener('click', () => {
+        document.querySelectorAll('.g-level-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.g-level-btn[data-level="all"]')?.classList.add('active');
+        ['gFilterUser','gFilterOutlet','gFilterDate','gFilterQuestion'].forEach(id => {
+            const e = document.getElementById(id); if (e) e.value = 'all';
+        });
+        _qFilter.g = 'all';
+        applyGroupFilters();
+    });
+    document.getElementById('gDownloadBtn')?.addEventListener('click', () => {
+        exportCsv(_gFiltered, 'group_feedback_responses.csv');
+    });
+
     // Bootstrap
     (async () => {
         await loadFeedbackMeta();
         loadFeedbackData();
+        loadGroupData();
     })();
 });

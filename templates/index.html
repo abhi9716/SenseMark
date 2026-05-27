@@ -50,6 +50,10 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
                     Feedback Dashboard
                 </button>
+                <button class="sidebar-nav-item" data-view="group">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Group Feedback
+                </button>
                 <button class="sidebar-nav-item" data-view="visits">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-7L11 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
                     Visits
@@ -175,6 +179,125 @@
                         </div>
                         <div class="fb-pagination" id="fbPagination"></div>
                         <div class="fb-table-empty hidden" id="fbTableEmpty">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <p>No responses match the selected filters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== VIEW: Group Feedback (across users) ===== -->
+                <div class="app-view" id="view-group">
+                    <div class="fb-sticky-filter-area">
+                        <div class="tab-title-bar haleon-title-bar">
+                            <div class="tab-title-story">
+                                <div>
+                                    <div class="tab-story-step">Team Market Feedback</div>
+                                    <h2>Group Feedback</h2>
+                                    <p>Aggregated feedback across all field reps — themes, sentiment, and ratings at a team level</p>
+                                </div>
+                                <div class="tab-story-icon">
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fb-level-selector" id="gLevelSelector">
+                            <button class="fb-level-btn g-level-btn active" data-level="all">All</button>
+                            <button class="fb-level-btn g-level-btn" data-level="trade">Trade</button>
+                            <button class="fb-level-btn g-level-btn" data-level="hcp">HCP</button>
+                            <button class="fb-level-btn g-level-btn" data-level="consumer">Consumer</button>
+                        </div>
+
+                        <button class="fb-filters-toggle" id="gFiltersToggle" type="button" aria-expanded="false" aria-controls="gFiltersGroup">
+                            <span class="fb-filters-toggle-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            </span>
+                            <span class="fb-filters-toggle-label">Filters</span>
+                            <span class="fb-filters-toggle-count" id="gFiltersCount"></span>
+                            <span class="fb-filters-toggle-chev">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </button>
+
+                        <div class="fb-filters-group" id="gFiltersGroup">
+                            <div class="fb-filter-bar" id="gFilterBar">
+                                <div class="fb-filter-group fb-filter-group-wide">
+                                    <label>Question</label>
+                                    <select id="gFilterQuestion"><option value="all">All Questions</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Field Rep</label>
+                                    <select id="gFilterUser"><option value="all">All Reps</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Outlet</label>
+                                    <select id="gFilterOutlet"><option value="all">All Outlets</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Date Range</label>
+                                    <select id="gFilterDate">
+                                        <option value="all">All Time</option>
+                                        <option value="7d">Last 7 Days</option>
+                                        <option value="14d">Last 14 Days</option>
+                                        <option value="30d">Last 30 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fbi-filter-badge hidden" id="gFilterBadge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span id="gFilterBadgeText">Filtered view</span>
+                        <button type="button" id="gFilterClearBtn" aria-label="Clear filters">&times;</button>
+                    </div>
+
+                    <div class="fbi-kpi-row" id="gKpiRow"></div>
+
+                    <div class="fb-dashboard-grid fb-dashboard-grid-2">
+                        <div class="card fb-card-span-1">
+                            <h3>Rating Distribution</h3>
+                            <p class="fbi-card-sub">Distribution of scores across all reps' responses</p>
+                            <div id="gRatingDist"></div>
+                        </div>
+
+                        <div class="card fb-card-span-1">
+                            <h3>Verbatim Summary</h3>
+                            <p class="fbi-card-sub" id="gVerbatimScope">Key themes from open-ended feedback</p>
+                            <div id="gAiSummary"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Word Cloud</h3>
+                        <p class="fbi-card-sub">Most frequent terms across open-ended responses</p>
+                        <div class="fb-word-cloud" id="gWordCloud"></div>
+                    </div>
+
+                    <div class="card fb-responses-card">
+                        <div class="fb-responses-header">
+                            <h3>Complete Responses</h3>
+                            <button class="btn btn-sm btn-primary" id="gDownloadBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Export CSV
+                            </button>
+                        </div>
+                        <p class="fbi-card-sub">All feedback entries across the team with ratings and open-ended responses</p>
+                        <div class="fb-table-wrap">
+                            <table class="fb-table fb-table-compact" id="gTable">
+                                <thead>
+                                    <tr>
+                                        <th class="fb-col-outlet">Outlet</th>
+                                        <th class="fb-col-q">Question</th>
+                                        <th class="fb-col-resp">Response &amp; Rating</th>
+                                        <th class="fb-col-media">Media</th>
+                                        <th class="fb-col-meta">Visit</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="fb-pagination" id="gPagination"></div>
+                        <div class="fb-table-empty hidden" id="gTableEmpty">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                             <p>No responses match the selected filters</p>
                         </div>

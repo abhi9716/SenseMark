@@ -321,6 +321,18 @@ async def get_feedback_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/feedback-data-all")
+async def get_feedback_data_all():
+    """All-user feedback rows for the Group Feedback (across users) view."""
+    if not os.path.exists(CSV_DATA_PATH):
+        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
+    try:
+        all_rows = _load_all_answers()
+        return {"data": all_rows, "total": len(all_rows)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/feedback-meta")
 async def get_feedback_meta():
     users_raw = _parse_csv_rows(USERS_CSV_PATH)
