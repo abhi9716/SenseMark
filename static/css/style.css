@@ -3642,21 +3642,42 @@ mark.fb-cloud-hl {
     .fb-hbar-label { flex: 0 0 70px; font-size: 0.65rem; }
 }
 
-/* ===== Outlet Buckets Chart ===== */
+/* ===== Outlet Buckets Pie Chart ===== */
 .fb-bucket-chart {
-    padding: 12px 0 4px;
+    padding: 8px 0 4px;
+}
+.fb-bucket-pie-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 10px;
+}
+.fb-pie-seg {
+    transition: opacity var(--transition-base);
+    cursor: pointer;
+}
+.fb-pie-seg:hover {
+    opacity: 0.75;
+    stroke-width: 38;
+}
+.fb-pie-total {
+    fill: var(--text);
+    dominant-baseline: central;
+}
+.fb-pie-label {
+    fill: var(--text-tertiary);
+    dominant-baseline: central;
 }
 .fb-bucket-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 14px;
-    margin-bottom: 14px;
+    gap: 6px 14px;
+    justify-content: center;
 }
 .fb-bucket-legend-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
 }
 .fb-bucket-dot {
     width: 10px;
@@ -3675,29 +3696,7 @@ mark.fb-cloud-hl {
 .fb-bucket-legend-pct {
     font-weight: 400;
     color: var(--text-tertiary);
-    font-size: 0.72rem;
-}
-.fb-stacked-bar {
-    display: flex;
-    height: 28px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--neutral-light);
-}
-.fb-stacked-seg {
-    height: 100%;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-}
-.fb-stacked-seg:hover {
-    filter: brightness(1.1);
-}
-.fb-bucket-total {
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    margin-top: 8px;
+    font-size: 0.7rem;
 }
 
 /* ===== Top Positive & Negative Issues ===== */

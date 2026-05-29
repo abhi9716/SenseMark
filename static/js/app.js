@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     // Sentiment lexicons shared by the verbatim summary and keyword cards
-    const FB_POS_WORDS = ['good','great','excellent','best','love','recommend','effective','helpful','satisfied','strong','improved','trust','impressed','reliable','working','build','opportunity'];
+    const FB_POS_WORDS = ['great','excellent','best','love','recommend','effective','helpful','satisfied','strong','improved','trust','impressed','reliable','working','build','opportunity'];
     const FB_NEG_WORDS = ['improvement','expensive','missing','lack','poor','difficult','stockout','issue','problem','slow','weak','limited','confusing','unavailable','empty'];
 
     // ---- Utilities ----
@@ -420,24 +420,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const colors = { '1': '#dc2626', '2-3': '#f97316', '3': '#eab308', '4-5': '#22c55e' };
         const bucketLabels = { '1': 'Avg 1', '2-3': 'Avg 2-3', '3': 'Avg 3', '4-5': 'Avg 4-5' };
         const bucketOrder = ['1', '2-3', '3', '4-5'];
-        let html = '<div class="fb-bucket-chart"><div class="fb-bucket-legend">';
+        const size = 180, cx = size / 2, cy = size / 2, r = 70, sw = 35;
+        const circ = 2 * Math.PI * r;
+        let svgArcs = '';
+        let offset = 0;
         bucketOrder.forEach(b => {
-            const pct = total ? ((buckets[b] / total) * 100) : 0;
-            html += `
-                <div class="fb-bucket-legend-item">
-                    <span class="fb-bucket-dot" style="background:${colors[b]}"></span>
-                    <span class="fb-bucket-legend-label">${bucketLabels[b]}</span>
-                    <span class="fb-bucket-legend-val">${buckets[b]} <span class="fb-bucket-legend-pct">(${pct.toFixed(0)}%)</span></span>
-                </div>`;
-        });
-        html += '</div><div class="fb-stacked-bar">';
-        bucketOrder.forEach(b => {
-            const pct = total ? ((buckets[b] / total) * 100) : 0;
+            const pct = total ? (buckets[b] / total) * 100 : 0;
             if (pct > 0) {
-                html += `<div class="fb-stacked-seg" style="width:${pct}%;background:${colors[b]}" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"></div>`;
+                const dash = (pct / 100) * circ;
+                svgArcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[b]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90, ${cx}, ${cy})" class="fb-pie-seg" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"/>`;
+                offset += dash;
             }
         });
-        html += '</div><div class="fb-bucket-total">' + total + ' outlets</div></div>';
+        let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"/>
+            ${svgArcs}
+            <text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">outlets</text>
+        </svg></div><div class="fb-bucket-legend">`;
+        bucketOrder.forEach(b => {
+            const pct = total ? ((buckets[b] / total) * 100) : 0;
+            if (buckets[b] > 0) {
+                html += `
+                    <div class="fb-bucket-legend-item">
+                        <span class="fb-bucket-dot" style="background:${colors[b]}"></span>
+                        <span class="fb-bucket-legend-label">${bucketLabels[b]}</span>
+                        <span class="fb-bucket-legend-val">${buckets[b]} <span class="fb-bucket-legend-pct">(${pct.toFixed(0)}%)</span></span>
+                    </div>`;
+            }
+        });
+        html += '</div></div>';
         el.innerHTML = html;
     }
 
