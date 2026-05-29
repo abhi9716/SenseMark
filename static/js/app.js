@@ -377,9 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const q = _fbQuestionsById[parseInt(qid)];
             const rawText = q ? q.question_text || '' : '';
             const qno = q ? q.question_no || `Q${qid}` : `Q${qid}`;
-            const displayText = rawText.length > 42 ? rawText.slice(0, 39) + '…' : rawText;
-            const label = displayText ? `${qno}: ${displayText}` : `Q${qid}`;
-            return { qid: parseInt(qid), label, avg, count: ratings.length, text: rawText };
+            return { qid: parseInt(qid), qno, text: rawText, avg, count: ratings.length };
         }).sort((a, b) => a.avg - b.avg);
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
@@ -388,9 +386,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const pct = (q.avg / maxAvg) * 100;
             const color = q.avg <= 2 ? '#dc2626' : q.avg <= 3 ? '#f97316' : q.avg <= 4 ? '#84cc16' : '#22c55e';
             html += `
-                <div class="fb-hbar-row" title="${escapeHtml(q.text)}">
-                    <div class="fb-hbar-label">${escapeHtml(q.label)}</div>
-                    <div class="fb-hbar-track">
+                <div class="fb-hbar-row">
+                    <div class="fb-hbar-label">
+                        <span class="fb-hbar-qno">${escapeHtml(q.qno)}</span>
+                        ${q.text ? `<span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>` : ''}
+                    </div>
+                    <div class="fb-hbar-track" title="${escapeHtml(q.qno)}: ${escapeHtml(q.text)}">
                         <div class="fb-hbar-fill" style="width:${pct}%;background:${color}">
                             <span class="fb-hbar-val">${q.avg.toFixed(1)}</span>
                         </div>
