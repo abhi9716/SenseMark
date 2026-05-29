@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Dashboard ----
     function renderEmptyDashboard(msg) {
-        ['fbKpiRow', 'fbRatingDist', 'fbAiSummary', 'fbTableBody']
+        ['fbKpiRow', 'fbQuestionAvgRating', 'fbOutletBuckets', 'fbRatingDist', 'fbAiSummary', 'fbTableBody']
             .forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = `<div class="fbi-empty">${msg || 'No data available'}</div>`;
@@ -294,6 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
             outlets: uniqueOutlets.size,
             feedbacks: uniqueVisits.size,
         });
+        renderQuestionAvgRating(data, 'fbQuestionAvgRating');
+        renderOutletBuckets(data, 'fbOutletBuckets');
         renderRatingDist(ratingsDist, totalRatings);
         renderVerbatimSummary(data);
         renderResponsesTable(data, 'fb');
@@ -346,11 +348,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let barsHtml = '';
         for (let i = 1; i <= 5; i++) {
             const count = dist[i] || 0;
-            const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+            const pctOfMax = maxCount > 0 ? (count / maxCount) * 100 : 0;
+            const pctOfTotal = total > 0 ? (count / total) * 100 : 0;
             barsHtml += `
                 <div class="fb-rating-bar-wrap">
-                    <div class="fb-rating-count">${count}</div>
-                    <div class="fb-rating-bar" style="height:${Math.max(4, pct)}%;background:${colors[i]}" title="${labels[i]}: ${count} responses"></div>
+                    <div class="fb-rating-count">${count} <span class="fb-rating-pct">(${pctOfTotal.toFixed(0)}%)</span></div>
+                    <div class="fb-rating-bar" style="height:${Math.max(4, pctOfMax)}%;background:${colors[i]}" title="${labels[i]}: ${count} responses (${pctOfTotal.toFixed(0)}% of total)"></div>
                     <div class="fb-rating-label">${i}<br><span style="font-size:0.65rem;font-weight:400;color:var(--text-tertiary)">${labels[i]}</span></div>
                 </div>`;
         }
@@ -358,6 +361,112 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="fb-rating-dist">${barsHtml}</div>
             <div class="fb-rating-total">${total}</div>
             <div class="fb-rating-total-label">Total Ratings Collected</div>`;
+    }
+
+    function renderQuestionAvgRating(data, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const qRatings = {};
+        data.forEach(r => {
+            if (r.rating == null || r.question_id == null) return;
+            if (!qRatings[r.question_id]) qRatings[r.question_id] = [];
+            qRatings[r.question_id].push(r.rating);
+        });
+        const qAverages = Object.entries(qRatings).map(([qid, ratings]) => {
+            const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+            const q = _fbQuestionsById[parseInt(qid)];
+            return { qid: parseInt(qid), label: questionShort(parseInt(qid)), avg, count: ratings.length, text: q ? q.question_text || '' : '' };
+        }).sort((a, b) => a.avg - b.avg);
+        if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
+        const maxAvg = 5;
+        let html = '<div class="fb-hbar-chart">';
+        qAverages.forEach(q => {
+            const pct = (q.avg / maxAvg) * 100;
+            const color = q.avg <= 2 ? '#dc2626' : q.avg <= 3 ? '#f97316' : q.avg <= 4 ? '#84cc16' : '#22c55e';
+            html += `
+                <div class="fb-hbar-row" title="${escapeHtml(q.text)}">
+                    <div class="fb-hbar-label">${escapeHtml(q.label)}</div>
+                    <div class="fb-hbar-track">
+                        <div class="fb-hbar-fill" style="width:${pct}%;background:${color}">
+                            <span class="fb-hbar-val">${q.avg.toFixed(1)}</span>
+                        </div>
+                    </div>
+                    <div class="fb-hbar-count">${q.count}</div>
+                </div>`;
+        });
+        html += '</div>';
+        el.innerHTML = html;
+    }
+
+    function renderOutletBuckets(data, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const outletRatings = {};
+        data.forEach(r => {
+            if (r.rating == null || r.outlet_id == null) return;
+            if (!outletRatings[r.outlet_id]) outletRatings[r.outlet_id] = [];
+            outletRatings[r.outlet_id].push(r.rating);
+        });
+        const outletAvgs = Object.values(outletRatings).map(ratings => ratings.reduce((a, b) => a + b, 0) / ratings.length);
+        if (!outletAvgs.length) { el.innerHTML = '<div class="fbi-empty">No outlet data available</div>'; return; }
+        const buckets = { '1': 0, '2-3': 0, '3': 0, '4-5': 0 };
+        outletAvgs.forEach(avg => {
+            if (avg <= 1.5) buckets['1']++;
+            else if (avg < 2.5) buckets['2-3']++;
+            else if (avg <= 3.5) buckets['3']++;
+            else buckets['4-5']++;
+        });
+        const total = outletAvgs.length;
+        const colors = { '1': '#dc2626', '2-3': '#f97316', '3': '#eab308', '4-5': '#22c55e' };
+        const bucketLabels = { '1': 'Avg 1', '2-3': 'Avg 2-3', '3': 'Avg 3', '4-5': 'Avg 4-5' };
+        const bucketOrder = ['1', '2-3', '3', '4-5'];
+        let html = '<div class="fb-bucket-chart"><div class="fb-bucket-legend">';
+        bucketOrder.forEach(b => {
+            const pct = total ? ((buckets[b] / total) * 100) : 0;
+            html += `
+                <div class="fb-bucket-legend-item">
+                    <span class="fb-bucket-dot" style="background:${colors[b]}"></span>
+                    <span class="fb-bucket-legend-label">${bucketLabels[b]}</span>
+                    <span class="fb-bucket-legend-val">${buckets[b]} <span class="fb-bucket-legend-pct">(${pct.toFixed(0)}%)</span></span>
+                </div>`;
+        });
+        html += '</div><div class="fb-stacked-bar">';
+        bucketOrder.forEach(b => {
+            const pct = total ? ((buckets[b] / total) * 100) : 0;
+            if (pct > 0) {
+                html += `<div class="fb-stacked-seg" style="width:${pct}%;background:${colors[b]}" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"></div>`;
+            }
+        });
+        html += '</div><div class="fb-bucket-total">' + total + ' outlets</div></div>';
+        el.innerHTML = html;
+    }
+
+    function renderTopIssues(data, elId) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const texts = getOpenEndedResponses(data);
+        if (!texts.length) {
+            el.innerHTML = '<div class="fbi-empty">No open-ended responses for this selection</div>';
+            return;
+        }
+        const all = texts.join(' ').toLowerCase();
+        const countWord = (w) => (all.match(new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+        const pos = FB_POS_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const neg = FB_NEG_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const chips = (list) => list.length
+            ? list.map(([w, c]) => `<span class="fb-ti-chip">${escapeHtml(w)}<span class="fb-ti-count">${c}</span></span>`).join('')
+            : '<span class="fbi-empty" style="padding:4px 0">None detected</span>';
+        el.innerHTML = `
+            <div class="fb-ti-grid">
+                <div class="fb-ti-col positive">
+                    <span class="fb-ti-col-head">Top Positive</span>
+                    <div class="fb-ti-list">${chips(pos)}</div>
+                </div>
+                <div class="fb-ti-col negative">
+                    <span class="fb-ti-col-head">Top Negative</span>
+                    <div class="fb-ti-list">${chips(neg)}</div>
+                </div>
+            </div>`;
     }
 
     function getOpenEndedResponses(data) {
@@ -1094,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderGroupDashboard();
         } catch (e) {
             console.warn('Could not load group feedback data:', e);
-            ['gKpiRow', 'gRatingDist', 'gAiSummary', 'gWordCloud', 'gKeywords', 'gTableBody']
+            ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues', 'gTableBody']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.innerHTML = '<div class="fbi-empty">Failed to load team feedback data.</div>';
@@ -1212,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderGroupDashboard() {
         const data = _gFiltered;
         if (!data.length) {
-            ['gKpiRow', 'gRatingDist', 'gAiSummary', 'gWordCloud', 'gKeywords']
+            ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues']
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.innerHTML = '<div class="fbi-empty">No team feedback for the current selection.</div>';
@@ -1237,9 +1346,11 @@ document.addEventListener('DOMContentLoaded', () => {
             outlets: uniqueOutlets.size,
             feedbacks: uniqueVisits.size,
         }, 'gKpiRow', { label: 'Respondents', sub: 'respondents contributing feedback' });
+        renderQuestionAvgRating(data, 'gQuestionAvgRating');
+        renderOutletBuckets(data, 'gOutletBuckets');
         renderRatingDist(ratingsDist, totalRatings, 'gRatingDist');
         renderVerbatimSummary(data, { elId: 'gAiSummary', scopeElId: 'gVerbatimScope' });
-        renderWordCloud(data, 'gWordCloud');
+        renderTopIssues(data, 'gTopIssues');
         renderResponsesTable(data, 'g');
     }
 

@@ -3578,6 +3578,172 @@ mark.fb-cloud-hl {
     max-width: 140px;
 }
 
+/* Rating percentage label */
+.fb-rating-pct {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-tertiary);
+}
+
+/* ===== Horizontal Bar Chart (Question-wise Avg Rating) ===== */
+.fb-hbar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0 4px;
+}
+.fb-hbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fb-hbar-label {
+    flex: 0 0 100px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fb-hbar-track {
+    flex: 1;
+    height: 22px;
+    background: var(--neutral-light);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+.fb-hbar-fill {
+    height: 100%;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 32px;
+}
+.fb-hbar-val {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.fb-hbar-count {
+    flex: 0 0 28px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-align: left;
+}
+@media (max-width: 540px) {
+    .fb-hbar-label { flex: 0 0 70px; font-size: 0.65rem; }
+}
+
+/* ===== Outlet Buckets Chart ===== */
+.fb-bucket-chart {
+    padding: 12px 0 4px;
+}
+.fb-bucket-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-bottom: 14px;
+}
+.fb-bucket-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+}
+.fb-bucket-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.fb-bucket-legend-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.fb-bucket-legend-val {
+    font-weight: 500;
+    color: var(--text);
+}
+.fb-bucket-legend-pct {
+    font-weight: 400;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+}
+.fb-stacked-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--neutral-light);
+}
+.fb-stacked-seg {
+    height: 100%;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+.fb-stacked-seg:hover {
+    filter: brightness(1.1);
+}
+.fb-bucket-total {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+}
+
+/* ===== Top Positive & Negative Issues ===== */
+.fb-ti-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding-top: 6px;
+}
+@media (max-width: 540px) { .fb-ti-grid { grid-template-columns: 1fr; gap: 12px; } }
+.fb-ti-col { display: flex; flex-direction: column; gap: 8px; }
+.fb-ti-col-head {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.fb-ti-col.positive .fb-ti-col-head { color: #047857; }
+.fb-ti-col.negative .fb-ti-col-head { color: #b91c1c; }
+.fb-ti-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.fb-ti-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px 5px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: 1px solid transparent;
+}
+.fb-ti-col.positive .fb-ti-chip { background: #f0fdf4; border-color: #a7f3d0; color: #047857; }
+.fb-ti-col.negative .fb-ti-chip { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.fb-ti-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: rgba(0,0,0,0.06);
+}
+
 /* ===== Group Feedback: Positive / Negative keyword chips ===== */
 .fb-keywords {
     display: grid;
