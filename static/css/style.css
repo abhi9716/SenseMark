@@ -3598,8 +3598,8 @@ mark.fb-cloud-hl {
     gap: 8px;
 }
 .fb-hbar-label {
-    flex: 0 0 100px;
-    font-size: 0.72rem;
+    flex: 0 0 170px;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-align: right;
@@ -3626,20 +3626,20 @@ mark.fb-cloud-hl {
     min-width: 32px;
 }
 .fb-hbar-val {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .fb-hbar-count {
     flex: 0 0 28px;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 500;
     color: var(--text-tertiary);
     text-align: left;
 }
-@media (max-width: 540px) {
-    .fb-hbar-label { flex: 0 0 70px; font-size: 0.65rem; }
+@media (max-width: 640px) {
+    .fb-hbar-label { flex: 0 0 110px; font-size: 0.62rem; }
 }
 
 /* ===== Outlet Buckets Pie Chart ===== */
@@ -3742,6 +3742,21 @@ mark.fb-cloud-hl {
     font-weight: 700;
     background: rgba(0,0,0,0.06);
 }
+.fb-ti-chip {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.fb-ti-chip.active {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+    transform: translateY(-1px) scale(1.04);
+}
+.fb-ti-verbatim {
+    margin-top: 14px;
+    border-top: 1px solid var(--border, #e5e7eb);
+    padding-top: 12px;
+}
+.fb-ti-verbatim.hidden { display: none; }
 
 /* ===== Group Feedback: Positive / Negative keyword chips ===== */
 .fb-keywords {

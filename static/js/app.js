@@ -375,7 +375,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const qAverages = Object.entries(qRatings).map(([qid, ratings]) => {
             const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
             const q = _fbQuestionsById[parseInt(qid)];
-            return { qid: parseInt(qid), label: questionShort(parseInt(qid)), avg, count: ratings.length, text: q ? q.question_text || '' : '' };
+            const rawText = q ? q.question_text || '' : '';
+            const qno = q ? q.question_no || `Q${qid}` : `Q${qid}`;
+            const displayText = rawText.length > 42 ? rawText.slice(0, 39) + '…' : rawText;
+            const label = displayText ? `${qno}: ${displayText}` : `Q${qid}`;
+            return { qid: parseInt(qid), label, avg, count: ratings.length, text: rawText };
         }).sort((a, b) => a.avg - b.avg);
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
@@ -422,22 +426,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const bucketOrder = ['1', '2-3', '3', '4-5'];
         const size = 180, cx = size / 2, cy = size / 2, r = 70, sw = 35;
         const circ = 2 * Math.PI * r;
-        let svgArcs = '';
-        let offset = 0;
+        let svg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"/>`;
+        let cumAngle = -90;
         bucketOrder.forEach(b => {
             const pct = total ? (buckets[b] / total) * 100 : 0;
             if (pct > 0) {
                 const dash = (pct / 100) * circ;
-                svgArcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[b]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90, ${cx}, ${cy})" class="fb-pie-seg" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"/>`;
-                offset += dash;
+                svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[b]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ}" transform="rotate(${cumAngle}, ${cx}, ${cy})" class="fb-pie-seg" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"/>`;
+                cumAngle += (pct / 100) * 360;
             }
         });
-        let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"/>
-            ${svgArcs}
-            <text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
-            <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">outlets</text>
-        </svg></div><div class="fb-bucket-legend">`;
+        svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">outlets</text>`;
+        let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svg}</svg></div><div class="fb-bucket-legend">`;
         bucketOrder.forEach(b => {
             const pct = total ? ((buckets[b] / total) * 100) : 0;
             if (buckets[b] > 0) {
@@ -461,24 +462,114 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = '<div class="fbi-empty">No open-ended responses for this selection</div>';
             return;
         }
-        const all = texts.join(' ').toLowerCase();
-        const countWord = (w) => (all.match(new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
-        const pos = FB_POS_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const neg = FB_NEG_WORDS.map(w => [w, countWord(w)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        const posThemes = [
+            { pat: 'good|great|excellent|best|love|positive', label: 'Overall positive feedback' },
+            { pat: 'working well|effective|benefit|help|relief|working', label: 'Product effectiveness' },
+            { pat: 'visibility|display|shelf|standee|showcase|visible', label: 'In-store visibility' },
+            { pat: 'offtake|sales|sell|selling|demand|rush|moving', label: 'Healthy offtake & demand' },
+            { pat: 'sensodyne', label: 'Sensodyne brand traction' },
+            { pat: 'panadol', label: 'Panadol consumer pull' },
+            { pat: 'centrum', label: 'Centrum uptake' },
+            { pat: 'voltaren', label: 'Voltaren efficacy' },
+            { pat: 'otrivin|recharge|eno', label: 'Key Haleon brand strength' },
+            { pat: 'recommend|prescribe|advocacy|suggest|advise', label: 'HCP recommendation' },
+            { pat: 'quality|reliable|trust|confidence', label: 'Quality & trust perception' },
+            { pat: 'sample|trial|sampling', label: 'Sampling & trial success' },
+            { pat: 'visit|call|interaction|engagement', label: 'Field engagement' },
+            { pat: 'satisfied|happy|impressed|value', label: 'Stakeholder satisfaction' },
+        ];
+        const negThemes = [
+            { pat: 'no visit|not visited|no call|not called|never visit|never call', label: 'Insufficient MR visits' },
+            { pat: 'broken|gap|fix|need to|must|requires|should', label: 'Process / system gaps' },
+            { pat: 'competitor|competition|duplicate|enshine|colgate|himalaya|proctor', label: 'Competitive activity' },
+            { pat: 'empty|emptied|replenish|stock|out of stock|shortage', label: 'Stock & availability gaps' },
+            { pat: 'don\'t know|not aware|unaware|not sure|don\'t understand', label: 'Training / awareness gaps' },
+            { pat: 'limited|less|not enough|inadequate|insufficient', label: 'Limited product availability' },
+            { pat: 'complaint|issue|challenge|difficult|tough|problem', label: 'Operational challenges' },
+            { pat: 'missing|absent|no show|didn\'t|lost|missed', label: 'Coverage / service gaps' },
+            { pat: 'price|pricing|cost|margin|expensive|costly', label: 'Pricing sensitivity' },
+            { pat: 'counterfeit|fake|spurious|duplicate brand', label: 'Counterfeit / duplicate risk' },
+        ];
+
+        const countResponses = (pat) => texts.filter(t => new RegExp(pat, 'i').test(t)).length;
+
+        const pos = posThemes.map(t => [t.label, countResponses(t.pat), t.pat]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const neg = negThemes.map(t => [t.label, countResponses(t.pat), t.pat]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
         const chips = (list) => list.length
-            ? list.map(([w, c]) => `<span class="fb-ti-chip">${escapeHtml(w)}<span class="fb-ti-count">${c}</span></span>`).join('')
-            : '<span class="fbi-empty" style="padding:4px 0">None detected</span>';
+            ? list.map(([l, c, p]) => `<span class="fb-ti-chip" data-theme-pat="${escapeHtml(p)}" data-theme-label="${escapeHtml(l)}">${escapeHtml(l)}<span class="fb-ti-count">${c}</span></span>`).join('')
+            : '<span class="fbi-empty" style="padding:4px 0">No issues detected in this dataset</span>';
+
         el.innerHTML = `
             <div class="fb-ti-grid">
                 <div class="fb-ti-col positive">
-                    <span class="fb-ti-col-head">Top Positive</span>
+                    <span class="fb-ti-col-head">Top Positive Themes</span>
                     <div class="fb-ti-list">${chips(pos)}</div>
                 </div>
                 <div class="fb-ti-col negative">
-                    <span class="fb-ti-col-head">Top Negative</span>
+                    <span class="fb-ti-col-head">Areas for Improvement</span>
                     <div class="fb-ti-list">${chips(neg)}</div>
                 </div>
+            </div>
+            <div class="fb-ti-verbatim hidden"></div>`;
+
+        el.querySelectorAll('.fb-ti-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const pat = chip.dataset.themePat;
+                const label = chip.dataset.themeLabel;
+                const panel = el.querySelector('.fb-ti-verbatim');
+                if (!panel || !pat) return;
+                const isActive = chip.classList.contains('active');
+                el.querySelectorAll('.fb-ti-chip.active').forEach(c => c.classList.remove('active'));
+                if (isActive) {
+                    panel.classList.add('hidden');
+                    panel.innerHTML = '';
+                    return;
+                }
+                chip.classList.add('active');
+                showThemeVerbatim(pat, label, data, panel);
+            });
+        });
+    }
+
+    function showThemeVerbatim(pat, label, data, panel) {
+        const re = new RegExp(pat, 'i');
+        const matches = data.filter(r =>
+            re.test(r.answer_text || '') || re.test(r.voice_text || '')
+        );
+        const headCount = matches.length;
+        const rows = matches.slice(0, 12);
+        const quotesHtml = rows.length ? rows.map(r => {
+            const raw = (r.answer_text || r.voice_text || '').trim();
+            const safe = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const highlighted = safe.replace(
+                new RegExp('(' + pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'),
+                '<mark class="fb-cloud-hl">$1</mark>'
+            );
+            const rep = escapeHtml(userName(r.user_id));
+            const outl = escapeHtml(outletName(r.outlet_id));
+            const date = escapeHtml(formatDateShort(r.created_at));
+            return `<div class="fb-cloud-verbatim-quote">
+                <p class="fb-cloud-verbatim-text">${highlighted}</p>
+                <div class="fb-cloud-verbatim-meta">${rep} · ${outl} · ${date}</div>
             </div>`;
+        }).join('') : '<p class="fbi-empty" style="padding:8px 0">No verbatim responses found.</p>';
+        panel.innerHTML = `
+            <div class="fb-cloud-verbatim-inner">
+                <div class="fb-cloud-verbatim-head">
+                    <span><strong>${headCount}</strong> response${headCount===1?'':'s'}: <strong>${escapeHtml(label)}</strong></span>
+                    <button class="fb-cloud-verbatim-close" type="button" aria-label="Close">&times;</button>
+                </div>
+                <div class="fb-cloud-verbatim-quotes">${quotesHtml}</div>
+            </div>`;
+        panel.classList.remove('hidden');
+        panel.querySelector('.fb-cloud-verbatim-close')?.addEventListener('click', () => {
+            panel.classList.add('hidden');
+            panel.innerHTML = '';
+            panel.closest('.card')?.querySelectorAll('.fb-ti-chip.active').forEach(c => c.classList.remove('active'));
+        });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function getOpenEndedResponses(data) {
