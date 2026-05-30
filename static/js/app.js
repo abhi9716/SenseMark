@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
             </div>`;
-        const scrollSel = scope === 'g' ? '#view-group .fb-responses-card' : '#view-dashboard .fb-responses-card';
+        const scrollSel = scope === 'g' ? '#view-group .fb-responses-card' : scope === 'ov' ? '#view-overall .fb-responses-card' : '#view-dashboard .fb-responses-card';
         pager.querySelectorAll('[data-page-action]').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (btn.dataset.pageAction === 'prev' && _tablePages[scope] > 1) _tablePages[scope]--;
@@ -1301,14 +1301,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====================================================================
     async function loadGroupData() {
         try {
-            const res = await fetch('/api/feedback-data-all');
-            if (!res.ok) throw new Error('Failed to load group feedback data');
-            const json = await res.json();
-            _gAllData = json.data || [];
-            _gData = _gAllData.filter(r => {
-                const u = _fbUsersById[r.user_id];
-                return u && String(u.group) === '2';
-            });
+            const [allRes, groupRes] = await Promise.all([
+                fetch('/api/feedback-data-all'),
+                fetch('/api/feedback-data-group/2'),
+            ]);
+            if (!allRes.ok) throw new Error('Failed to load overall feedback data');
+            const [allJson, groupJson] = await Promise.all([allRes.json(), groupRes.json()]);
+            _gAllData = allJson.data || [];
+            _gData = groupRes.ok ? (groupJson.data || []) : [];
             _gFiltered = [..._gData];
             _ovFiltered = [..._gAllData];
             populateGroupFilterDropdowns();

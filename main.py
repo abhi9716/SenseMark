@@ -323,12 +323,35 @@ async def get_feedback_data():
 
 @app.get("/api/feedback-data-all")
 async def get_feedback_data_all():
-    """All-user feedback rows for the Group Feedback (across users) view."""
+    """All-user feedback rows for the Overall Feedback (all respondents) view."""
     if not os.path.exists(CSV_DATA_PATH):
         raise HTTPException(status_code=404, detail="Feedback data CSV not found")
     try:
         all_rows = _load_all_answers()
         return {"data": all_rows, "total": len(all_rows)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/feedback-data-group/{group_id}")
+async def get_feedback_data_group(group_id: str):
+    """Feedback rows scoped to users belonging to a specific group."""
+    if not os.path.exists(CSV_DATA_PATH):
+        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
+    try:
+        users_raw = _parse_csv_rows(USERS_CSV_PATH)
+        group_user_ids = set()
+        for u in users_raw:
+            g = u.get("group", "") or ""
+            if g.strip() == group_id:
+                try:
+                    uid = int(u["id"])
+                    group_user_ids.add(uid)
+                except (ValueError, TypeError):
+                    pass
+        all_rows = _load_all_answers()
+        rows = [r for r in all_rows if r.get("user_id") in group_user_ids]
+        return {"data": rows, "total": len(rows), "group_id": group_id, "user_ids": sorted(group_user_ids)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
