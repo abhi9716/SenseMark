@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let _fbData = [];
     let _fbFiltered = [];
     // Group Feedback (across users) — separate dataset + filtered view
-    let _gData = [];
+    let _gAllData = [];   // all rows, unfiltered (used by All Respondents tab)
+    let _gData = [];      // group-2-scoped rows
     let _gFiltered = [];
     // Question filter + table page are tracked per scope ('fb' = single-user, 'g' = group)
     const _qFilter = { fb: 'all', g: 'all' };
@@ -1301,10 +1302,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/feedback-data-all');
             if (!res.ok) throw new Error('Failed to load group feedback data');
             const json = await res.json();
-            _gData = json.data || [];
+            _gAllData = json.data || [];
+            _gData = _gAllData.filter(r => {
+                const u = _fbUsersById[r.user_id];
+                return u && String(u.group) === '2';
+            });
             _gFiltered = [..._gData];
             populateGroupFilterDropdowns();
             renderGroupDashboard();
+            renderAllRespondentsView();
         } catch (e) {
             console.warn('Could not load group feedback data:', e);
             ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues', 'gTableBody']
@@ -1640,6 +1646,67 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gDownloadBtn')?.addEventListener('click', () => {
         exportCsv(_gFiltered, 'group_feedback_responses.csv');
     });
+
+    // ====================================================================
+    //  ALL RESPONDENTS TAB
+    // ====================================================================
+    function renderAllRespondentsView() {
+        const tbody = document.getElementById('allRespondentsTableBody');
+        const emptyEl = document.getElementById('allRespondentsTableEmpty');
+        const countEl = document.getElementById('allRespondentsCount');
+        if (!tbody) return;
+
+        const byUser = new Map();
+        _gAllData.forEach(r => {
+            const uid = r.user_id;
+            if (uid == null) return;
+            if (!byUser.has(uid)) byUser.set(uid, { visits: new Set(), responses: 0, ratings: [], lastDate: null });
+            const s = byUser.get(uid);
+            if (r.visit_id != null) s.visits.add(r.visit_id);
+            s.responses++;
+            if (r.rating != null) s.ratings.push(r.rating);
+            if (r.created_at) {
+                const d = new Date(r.created_at);
+                if (!s.lastDate || d > s.lastDate) s.lastDate = d;
+            }
+        });
+
+        if (!byUser.size) {
+            tbody.innerHTML = '';
+            emptyEl?.classList.remove('hidden');
+            if (countEl) countEl.textContent = '0 respondents';
+            return;
+        }
+        emptyEl?.classList.add('hidden');
+        if (countEl) countEl.textContent = `${byUser.size} respondent${byUser.size === 1 ? '' : 's'}`;
+
+        const rows = [...byUser.entries()]
+            .map(([uid, s]) => {
+                const u = _fbUsersById[uid] || {};
+                const name = u.user_name || `User #${uid}`;
+                const group = u.group ? `Group ${u.group}` : '—';
+                const avgR = s.ratings.length
+                    ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)
+                    : '—';
+                const last = s.lastDate ? formatDateShort(s.lastDate.toISOString()) : '—';
+                const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+                return { uid, name, group, visits: s.visits.size, responses: s.responses, avgR, last, initials };
+            })
+            .sort((a, b) => b.visits - a.visits);
+
+        tbody.innerHTML = rows.map(r => `
+            <tr>
+                <td><div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-50);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${escapeHtml(r.initials)}</div>
+                    ${escapeHtml(r.name)}
+                </div></td>
+                <td>${escapeHtml(r.group)}</td>
+                <td>${r.visits}</td>
+                <td>${r.responses}</td>
+                <td>${r.avgR}</td>
+                <td>${escapeHtml(r.last)}</td>
+            </tr>`).join('');
+    }
 
     // Bootstrap
     (async () => {

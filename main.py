@@ -353,6 +353,7 @@ async def get_feedback_meta():
             "email": u.get("email"),
             "designation": u.get("designation"),
             "visit_type": u.get("visit_type"),
+            "group": u.get("group") or None,
         })
 
     questions = []

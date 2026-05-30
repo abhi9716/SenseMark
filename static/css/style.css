@@ -803,6 +803,11 @@ body {
     color: var(--text-tertiary);
 }
 
+.sidebar-nav-tag--group {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
 .sidebar-spacer { flex: 1; min-height: 8px; }
 
 .sidebar-datasource {

@@ -53,10 +53,15 @@
                 <button class="sidebar-nav-item" data-view="group">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     Group Feedback
+                    <span class="sidebar-nav-tag sidebar-nav-tag--group">Grp 2</span>
                 </button>
                 <button class="sidebar-nav-item" data-view="visits">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-7L11 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
                     Visits
+                </button>
+                <button class="sidebar-nav-item" data-view="all-respondents">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                    All Respondents
                 </button>
                 <button class="sidebar-nav-item" disabled title="Coming soon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
@@ -326,6 +331,48 @@
                         <div class="fb-table-empty hidden" id="gTableEmpty">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                             <p>No responses match the selected filters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== VIEW: All Respondents ===== -->
+                <div class="app-view" id="view-all-respondents">
+                    <div class="tab-title-bar haleon-title-bar">
+                        <div class="tab-title-story">
+                            <div>
+                                <div class="tab-story-step">Respondent Overview</div>
+                                <h2>All Respondents</h2>
+                                <p>All field reps who have submitted at least one feedback response</p>
+                            </div>
+                            <div class="tab-story-icon">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card fb-responses-card">
+                        <div class="fb-responses-header">
+                            <h3>Respondents with Feedback</h3>
+                            <span class="fb-responses-count" id="allRespondentsCount">0 respondents</span>
+                        </div>
+                        <p class="fbi-card-sub">Every field rep with at least one submitted feedback — visits, ratings, and last activity</p>
+                        <div class="fb-table-wrap">
+                            <table class="fb-table" id="allRespondentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Respondent</th>
+                                        <th>Group</th>
+                                        <th>Visits</th>
+                                        <th>Responses</th>
+                                        <th>Avg Rating</th>
+                                        <th>Last Active</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allRespondentsTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="fb-table-empty hidden" id="allRespondentsTableEmpty">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <p>No respondents with feedback found</p>
                         </div>
                     </div>
                 </div>
