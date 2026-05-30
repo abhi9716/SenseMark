@@ -4,12 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let _fbData = [];
     let _fbFiltered = [];
     // Group Feedback (across users) — separate dataset + filtered view
-    let _gAllData = [];   // all rows, unfiltered (used by All Respondents tab)
+    let _gAllData = [];   // all rows, unfiltered (used by Overall tab)
     let _gData = [];      // group-2-scoped rows
     let _gFiltered = [];
-    // Question filter + table page are tracked per scope ('fb' = single-user, 'g' = group)
-    const _qFilter = { fb: 'all', g: 'all' };
-    const _tablePages = { fb: 1, g: 1 };
+    let _ovFiltered = []; // Overall tab filtered slice
+    // Question filter + table page are tracked per scope ('fb' = individual, 'g' = group-2, 'ov' = overall)
+    const _qFilter = { fb: 'all', g: 'all', ov: 'all' };
+    const _tablePages = { fb: 1, g: 1, ov: 1 };
     const FB_PAGE_SIZE = 10;
     let _fbUsersById = {};
     let _fbQuestionsById = {};
@@ -685,6 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const TABLE_SCOPES = {
         fb: { body: 'fbTableBody', empty: 'fbTableEmpty', wrap: '#view-dashboard .fb-table-wrap', pager: 'fbPagination', showUser: false },
         g:  { body: 'gTableBody',  empty: 'gTableEmpty',  wrap: '#view-group .fb-table-wrap',     pager: 'gPagination',  showUser: true  },
+        ov: { body: 'ovTableBody', empty: 'ovTableEmpty', wrap: '#view-overall .fb-table-wrap',   pager: 'ovPagination', showUser: true  },
     };
 
     function userName(uid) {
@@ -951,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateQuestionDropdown(scopedData, scope) {
         scope = scope || 'fb';
-        const sel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : 'fbFilterQuestion');
+        const sel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : scope === 'ov' ? 'ovFilterQuestion' : 'fbFilterQuestion');
         if (!sel) return;
         const ids = getQuestionIdsInData(scopedData);
 
@@ -1308,9 +1310,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return u && String(u.group) === '2';
             });
             _gFiltered = [..._gData];
+            _ovFiltered = [..._gAllData];
             populateGroupFilterDropdowns();
             renderGroupDashboard();
-            renderAllRespondentsView();
+            populateOverallFilterDropdowns();
+            renderOverallDashboard();
         } catch (e) {
             console.warn('Could not load group feedback data:', e);
             ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues', 'gTableBody']
@@ -1648,65 +1652,184 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ====================================================================
-    //  ALL RESPONDENTS TAB
+    //  OVERALL FEEDBACK TAB (all respondents, replica of group tab)
     // ====================================================================
-    function renderAllRespondentsView() {
-        const tbody = document.getElementById('allRespondentsTableBody');
-        const emptyEl = document.getElementById('allRespondentsTableEmpty');
-        const countEl = document.getElementById('allRespondentsCount');
-        if (!tbody) return;
-
-        const byUser = new Map();
+    function populateOverallFilterDropdowns() {
+        const outlets = new Set();
+        const users = new Set();
         _gAllData.forEach(r => {
-            const uid = r.user_id;
-            if (uid == null) return;
-            if (!byUser.has(uid)) byUser.set(uid, { visits: new Set(), responses: 0, ratings: [], lastDate: null });
-            const s = byUser.get(uid);
-            if (r.visit_id != null) s.visits.add(r.visit_id);
-            s.responses++;
-            if (r.rating != null) s.ratings.push(r.rating);
-            if (r.created_at) {
-                const d = new Date(r.created_at);
-                if (!s.lastDate || d > s.lastDate) s.lastDate = d;
-            }
+            if (r.outlet_id != null) outlets.add(String(r.outlet_id));
+            if (r.user_id != null) users.add(String(r.user_id));
         });
+        const outletSel = document.getElementById('ovFilterOutlet');
+        if (outletSel) {
+            outletSel.innerHTML = '<option value="all">All Outlets</option>';
+            [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o; opt.textContent = outletName(parseInt(o));
+                outletSel.appendChild(opt);
+            });
+        }
+        const userSel = document.getElementById('ovFilterUser');
+        if (userSel) {
+            userSel.innerHTML = '<option value="all">All Respondents</option>';
+            [...users]
+                .sort((a, b) => userName(parseInt(a)).localeCompare(userName(parseInt(b))))
+                .forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u; opt.textContent = userName(parseInt(u));
+                    userSel.appendChild(opt);
+                });
+        }
+        populateQuestionDropdown(_gAllData, 'ov');
+    }
 
-        if (!byUser.size) {
-            tbody.innerHTML = '';
-            emptyEl?.classList.remove('hidden');
-            if (countEl) countEl.textContent = '0 respondents';
+    function applyOverallFilters() {
+        const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
+        const user = document.getElementById('ovFilterUser')?.value || 'all';
+        const outlet = document.getElementById('ovFilterOutlet')?.value || 'all';
+        const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
+
+        const levelScoped = level !== 'all' ? _gAllData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _gAllData;
+        populateQuestionDropdown(levelScoped, 'ov');
+
+        let filtered = [..._gAllData];
+        if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
+        if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
+        if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
+        if (_qFilter.ov !== 'all') {
+            const qSet = new Set(String(_qFilter.ov).split(',').map(s => s.trim()));
+            filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        }
+        if (dateRange !== 'all') {
+            const now = new Date('2026-05-21');
+            const cutoff = new Date(now);
+            const days = parseInt(dateRange);
+            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
+            filtered = filtered.filter(r => {
+                if (!r.created_at) return true;
+                return new Date(r.created_at) >= cutoff;
+            });
+        }
+
+        _ovFiltered = filtered;
+        _tablePages.ov = 1;
+
+        const badge = document.getElementById('ovFilterBadge');
+        const badgeText = document.getElementById('ovFilterBadgeText');
+        const anyActive = level !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.ov !== 'all';
+        if (anyActive && badge && badgeText) {
+            const parts = [];
+            if (level !== 'all') parts.push(level.toUpperCase());
+            if (user !== 'all') parts.push(userName(parseInt(user)));
+            if (_qFilter.ov !== 'all') {
+                const firstQid = parseInt(String(_qFilter.ov).split(',')[0]);
+                const q = _fbQuestionsById[firstQid];
+                const qno = q ? (q.question_no || `Q${firstQid}`) : `Q${firstQid}`;
+                const text = q && q.question_text ? q.question_text : '';
+                const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
+                parts.push(text ? `${qno} — ${cap}` : qno);
+            }
+            if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
+            if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
+            const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
+            const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
+            badgeText.textContent = `${prefix}${uniqueVisitCount} feedback${uniqueVisitCount === 1 ? '' : 's'}`;
+            badge.classList.remove('hidden');
+        } else if (badge) {
+            badge.classList.add('hidden');
+        }
+
+        updateOverallFiltersCount();
+        renderOverallDashboard();
+    }
+
+    function updateOverallFiltersCount() {
+        const countEl = document.getElementById('ovFiltersCount');
+        if (!countEl) return;
+        const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
+        const user = document.getElementById('ovFilterUser')?.value || 'all';
+        const outlet = document.getElementById('ovFilterOutlet')?.value || 'all';
+        const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
+        let n = 0;
+        if (level !== 'all') n++;
+        if (user !== 'all') n++;
+        if (outlet !== 'all') n++;
+        if (dateRange !== 'all') n++;
+        if (_qFilter.ov !== 'all') n++;
+        if (n > 0) { countEl.textContent = n; countEl.classList.add('is-active'); }
+        else { countEl.textContent = ''; countEl.classList.remove('is-active'); }
+    }
+
+    function renderOverallDashboard() {
+        const data = _ovFiltered;
+        if (!data.length) {
+            ['ovKpiRow', 'ovQuestionAvgRating', 'ovOutletBuckets', 'ovRatingDist', 'ovAiSummary', 'ovTopIssues']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<div class="fbi-empty">No feedback for the current selection.</div>';
+                });
+            renderResponsesTable([], 'ov');
             return;
         }
-        emptyEl?.classList.add('hidden');
-        if (countEl) countEl.textContent = `${byUser.size} respondent${byUser.size === 1 ? '' : 's'}`;
 
-        const rows = [...byUser.entries()]
-            .map(([uid, s]) => {
-                const u = _fbUsersById[uid] || {};
-                const name = u.user_name || `User #${uid}`;
-                const group = u.group ? `Group ${u.group}` : '—';
-                const avgR = s.ratings.length
-                    ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)
-                    : '—';
-                const last = s.lastDate ? formatDateShort(s.lastDate.toISOString()) : '—';
-                const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-                return { uid, name, group, visits: s.visits.size, responses: s.responses, avgR, last, initials };
-            })
-            .sort((a, b) => b.visits - a.visits);
+        const ratings = data.filter(r => r.rating != null).map(r => r.rating);
+        const ratingsDist = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+        ratings.forEach(r => { if (ratingsDist[r] != null) ratingsDist[r]++; });
+        const totalRatings = ratings.length;
+        const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        tbody.innerHTML = rows.map(r => `
-            <tr>
-                <td><div style="display:flex;align-items:center;gap:8px">
-                    <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-50);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${escapeHtml(r.initials)}</div>
-                    ${escapeHtml(r.name)}
-                </div></td>
-                <td>${escapeHtml(r.group)}</td>
-                <td>${r.visits}</td>
-                <td>${r.responses}</td>
-                <td>${r.avgR}</td>
-                <td>${escapeHtml(r.last)}</td>
-            </tr>`).join('');
+        const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const uniqueVisits = new Set(data.map(r => r.visit_id));
+        const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
+
+        renderKpis({
+            avgRating, totalRatings,
+            respondents: uniqueUsers.size,
+            outlets: uniqueOutlets.size,
+            feedbacks: uniqueVisits.size,
+        }, 'ovKpiRow', { label: 'Respondents', sub: 'respondents contributing feedback' });
+        renderQuestionAvgRating(data, 'ovQuestionAvgRating');
+        renderOutletBuckets(data, 'ovOutletBuckets');
+        renderRatingDist(ratingsDist, totalRatings, 'ovRatingDist');
+        renderVerbatimSummary(data, { elId: 'ovAiSummary', scopeElId: 'ovVerbatimScope' });
+        renderTopIssues(data, 'ovTopIssues');
+        renderResponsesTable(data, 'ov');
     }
+
+    // ---- Overall event wiring ----
+    document.querySelectorAll('.ov-level-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ov-level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyOverallFilters();
+        });
+    });
+    document.getElementById('ovFilterUser')?.addEventListener('change', applyOverallFilters);
+    document.getElementById('ovFilterOutlet')?.addEventListener('change', applyOverallFilters);
+    document.getElementById('ovFilterDate')?.addEventListener('change', applyOverallFilters);
+    document.getElementById('ovFilterQuestion')?.addEventListener('change', (e) => {
+        _qFilter.ov = e.target.value || 'all';
+        applyOverallFilters();
+    });
+    const ovFiltersToggle = document.getElementById('ovFiltersToggle');
+    const ovFiltersGroup = document.getElementById('ovFiltersGroup');
+    ovFiltersToggle?.addEventListener('click', () => {
+        const open = ovFiltersGroup?.classList.toggle('is-open');
+        ovFiltersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.getElementById('ovFilterClearBtn')?.addEventListener('click', () => {
+        document.querySelectorAll('.ov-level-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.ov-level-btn[data-level="all"]')?.classList.add('active');
+        ['ovFilterUser','ovFilterOutlet','ovFilterDate','ovFilterQuestion'].forEach(id => {
+            const e = document.getElementById(id); if (e) e.value = 'all';
+        });
+        _qFilter.ov = 'all';
+        applyOverallFilters();
+    });
+    document.getElementById('ovDownloadBtn')?.addEventListener('click', () => {
+        exportCsv(_ovFiltered, 'overall_feedback_responses.csv');
+    });
 
     // Bootstrap
     (async () => {

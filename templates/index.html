@@ -48,22 +48,22 @@
             <nav class="sidebar-nav" id="sidebarNav">
                 <button class="sidebar-nav-item active" data-view="dashboard">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-                    Feedback Dashboard
+                    Individual
                 </button>
                 <button class="sidebar-nav-item" data-view="group">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Group Feedback
+                    Group
                     <span class="sidebar-nav-tag sidebar-nav-tag--group">Grp 2</span>
                 </button>
-                <button class="sidebar-nav-item" data-view="visits">
+                <button class="sidebar-nav-item" data-view="overall">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                    Overall Feedback
+                </button>
+                <button class="sidebar-nav-item" data-view="visits" style="display:none">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-7L11 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
                     Visits
                 </button>
-                <button class="sidebar-nav-item" data-view="all-respondents">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
-                    All Respondents
-                </button>
-                <button class="sidebar-nav-item" disabled title="Coming soon">
+                <button class="sidebar-nav-item" disabled title="Coming soon" style="display:none">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
                     Trends
                     <span class="sidebar-nav-tag">Soon</span>
@@ -335,44 +335,133 @@
                     </div>
                 </div>
 
-                <!-- ===== VIEW: All Respondents ===== -->
-                <div class="app-view" id="view-all-respondents">
-                    <div class="tab-title-bar haleon-title-bar">
-                        <div class="tab-title-story">
-                            <div>
-                                <div class="tab-story-step">Respondent Overview</div>
-                                <h2>All Respondents</h2>
-                                <p>All field reps who have submitted at least one feedback response</p>
+                <!-- ===== VIEW: Overall Feedback (all respondents) ===== -->
+                <div class="app-view" id="view-overall">
+                    <div class="fb-sticky-filter-area">
+                        <div class="tab-title-bar haleon-title-bar">
+                            <div class="tab-title-story">
+                                <div>
+                                    <div class="tab-story-step">Full Team Feedback</div>
+                                    <h2>Overall Feedback</h2>
+                                    <p>Aggregated feedback across all respondents — themes, sentiment, and ratings at a team level</p>
+                                </div>
+                                <div class="tab-story-icon">
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </div>
                             </div>
-                            <div class="tab-story-icon">
-                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div class="fb-level-selector" id="ovLevelSelector">
+                            <button class="fb-level-btn ov-level-btn active" data-level="all">All</button>
+                            <button class="fb-level-btn ov-level-btn" data-level="trade">Trade</button>
+                            <button class="fb-level-btn ov-level-btn" data-level="hcp">HCP</button>
+                            <button class="fb-level-btn ov-level-btn" data-level="consumer">Consumer</button>
+                        </div>
+
+                        <button class="fb-filters-toggle" id="ovFiltersToggle" type="button" aria-expanded="false" aria-controls="ovFiltersGroup">
+                            <span class="fb-filters-toggle-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            </span>
+                            <span class="fb-filters-toggle-label">Filters</span>
+                            <span class="fb-filters-toggle-count" id="ovFiltersCount"></span>
+                            <span class="fb-filters-toggle-chev">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                        </button>
+
+                        <div class="fb-filters-group" id="ovFiltersGroup">
+                            <div class="fb-filter-bar" id="ovFilterBar">
+                                <div class="fb-filter-group fb-filter-group-wide">
+                                    <label>Question</label>
+                                    <select id="ovFilterQuestion"><option value="all">All Questions</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Respondent</label>
+                                    <select id="ovFilterUser"><option value="all">All Respondents</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Outlet</label>
+                                    <select id="ovFilterOutlet"><option value="all">All Outlets</option></select>
+                                </div>
+                                <div class="fb-filter-group">
+                                    <label>Date Range</label>
+                                    <select id="ovFilterDate">
+                                        <option value="all">All Time</option>
+                                        <option value="7d">Last 7 Days</option>
+                                        <option value="14d">Last 14 Days</option>
+                                        <option value="30d">Last 30 Days</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="fbi-filter-badge hidden" id="ovFilterBadge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span id="ovFilterBadgeText">Filtered view</span>
+                        <button type="button" id="ovFilterClearBtn" aria-label="Clear filters">&times;</button>
+                    </div>
+
+                    <div class="fbi-kpi-row" id="ovKpiRow"></div>
+
+                    <div class="fb-dashboard-grid fb-dashboard-grid-2">
+                        <div class="card fb-card-span-1">
+                            <h3>Question-wise Average Rating</h3>
+                            <p class="fbi-card-sub">Avg rating per question across outlets to identify pain points</p>
+                            <div id="ovQuestionAvgRating"></div>
+                        </div>
+                        <div class="card fb-card-span-1">
+                            <h3>Outlet Rating Buckets</h3>
+                            <p class="fbi-card-sub">% of outlets grouped by average rating band</p>
+                            <div id="ovOutletBuckets"></div>
+                        </div>
+                    </div>
+
+                    <div class="fb-dashboard-grid fb-dashboard-grid-2">
+                        <div class="card fb-card-span-1">
+                            <h3>Rating Distribution</h3>
+                            <p class="fbi-card-sub">Distribution of scores across all respondents' responses</p>
+                            <div id="ovRatingDist"></div>
+                        </div>
+                        <div class="card fb-card-span-1">
+                            <h3>Verbatim Summary</h3>
+                            <p class="fbi-card-sub" id="ovVerbatimScope">Key themes from open-ended feedback</p>
+                            <div id="ovAiSummary"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Top Positive &amp; Negative Issues</h3>
+                        <p class="fbi-card-sub">Most frequently mentioned themes from open-ended feedback</p>
+                        <div id="ovTopIssues"></div>
+                    </div>
+
                     <div class="card fb-responses-card">
                         <div class="fb-responses-header">
-                            <h3>Respondents with Feedback</h3>
-                            <span class="fb-responses-count" id="allRespondentsCount">0 respondents</span>
+                            <h3>Complete Responses</h3>
+                            <button class="btn btn-sm btn-primary" id="ovDownloadBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Export CSV
+                            </button>
                         </div>
-                        <p class="fbi-card-sub">Every field rep with at least one submitted feedback — visits, ratings, and last activity</p>
+                        <p class="fbi-card-sub">All feedback entries across the full team with ratings and open-ended responses</p>
                         <div class="fb-table-wrap">
-                            <table class="fb-table" id="allRespondentsTable">
+                            <table class="fb-table fb-table-compact" id="ovTable">
                                 <thead>
                                     <tr>
-                                        <th>Respondent</th>
-                                        <th>Group</th>
-                                        <th>Visits</th>
-                                        <th>Responses</th>
-                                        <th>Avg Rating</th>
-                                        <th>Last Active</th>
+                                        <th class="fb-col-outlet">Outlet</th>
+                                        <th class="fb-col-q">Question</th>
+                                        <th class="fb-col-resp">Response &amp; Rating</th>
+                                        <th class="fb-col-media">Media</th>
+                                        <th class="fb-col-meta">Visit</th>
                                     </tr>
                                 </thead>
-                                <tbody id="allRespondentsTableBody"></tbody>
+                                <tbody id="ovTableBody"></tbody>
                             </table>
                         </div>
-                        <div class="fb-table-empty hidden" id="allRespondentsTableEmpty">
+                        <div class="fb-pagination" id="ovPagination"></div>
+                        <div class="fb-table-empty hidden" id="ovTableEmpty">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                            <p>No respondents with feedback found</p>
+                            <p>No responses match the selected filters</p>
                         </div>
                     </div>
                 </div>
