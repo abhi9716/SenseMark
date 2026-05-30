@@ -1,0 +1,143 @@
+"id","visit_id","user_id","outlet_id","visit_type","question_id","rating","answer_text","answer_number","created_at","status","voice_text","image_path","video_path","audio_path"
+"11","1","13","327",NULL,"1","5",NULL,NULL,"2026-05-21 06:26:02","draft",NULL,"/uploads/feedback/1779344761528-903052789.jpeg",NULL,NULL
+"12","1","13","327",NULL,"2","5",NULL,NULL,"2026-05-21 06:26:02","draft",NULL,NULL,NULL,NULL
+"13","1","13","327",NULL,"3",NULL,NULL,NULL,"2026-05-21 06:26:02","draft",NULL,NULL,NULL,NULL
+"14","1","13","327",NULL,"4",NULL,NULL,NULL,"2026-05-21 06:26:02","draft",NULL,NULL,NULL,NULL
+"15","1","13","327",NULL,"5",NULL,NULL,NULL,"2026-05-21 06:26:02","draft",NULL,NULL,NULL,NULL
+"16","4","10","192",NULL,"1",NULL,NULL,NULL,"2026-05-21 06:26:18","submitted",NULL,NULL,NULL,NULL
+"17","4","10","192",NULL,"2",NULL,NULL,NULL,"2026-05-21 06:26:18","submitted",NULL,NULL,NULL,NULL
+"18","4","10","192",NULL,"3",NULL,NULL,NULL,"2026-05-21 06:26:18","submitted",NULL,NULL,NULL,NULL
+"19","4","10","192",NULL,"4",NULL,NULL,NULL,"2026-05-21 06:26:18","submitted",NULL,NULL,NULL,NULL
+"20","4","10","192",NULL,"5",NULL,NULL,NULL,"2026-05-21 06:26:18","submitted",NULL,NULL,NULL,NULL
+"21","5","9","517",NULL,"29","5",NULL,NULL,"2026-05-21 06:27:12","submitted","Rajveer Singhji has been practicing for the last 40 years, has great confidence in GSK products, knows our brands. Of course, complains that there has been no visit by any of our medical representatives, while most of the other companies visit him once a week or less often, including Proctors, which visits him once a month. He, of course, loves the quality, consistency, good positive feedback on Eno jars. They've already finished one, and the second one has already been placed. We do need DL products to be made available through a seamless ordering system. Current demand capture on phone is only for consumer products. DL products have to be noted down, and they come through another sub-distributor who has a DL. So that's the broken chain. We got to be fixing it.","/uploads/feedback/1779344831338-667257424.jpeg",NULL,"/uploads/feedback/1779344831340-139907701.webm"
+"22","5","9","517",NULL,"30","1",NULL,NULL,"2026-05-21 06:27:12","submitted",NULL,NULL,NULL,NULL
+"23","5","9","517",NULL,"31","3",NULL,NULL,"2026-05-21 06:27:12","submitted",NULL,NULL,NULL,NULL
+"24","5","9","517",NULL,"32",NULL,NULL,NULL,"2026-05-21 06:27:12","submitted",NULL,NULL,NULL,NULL
+"25","5","9","517",NULL,"33",NULL,NULL,NULL,"2026-05-21 06:27:12","submitted","Multiple opportunities, more advocacy, better visits. We have to get this store and the HCP onto our visitations because some of our products could find way here.",NULL,NULL,"/uploads/feedback/1779344831347-583554758.webm"
+"26","6","10","190",NULL,"8",NULL,NULL,NULL,"2026-05-21 06:32:27","submitted","Recharge, ENo","/uploads/feedback/1779345147124-319592843.jpg",NULL,NULL
+"27","6","10","190",NULL,"9",NULL,NULL,NULL,"2026-05-21 06:32:27","submitted",NULL,NULL,NULL,NULL
+"28","6","10","190",NULL,"10",NULL,NULL,NULL,"2026-05-21 06:32:27","submitted",NULL,NULL,NULL,NULL
+"29","6","10","190",NULL,"11",NULL,NULL,NULL,"2026-05-21 06:32:27","submitted",NULL,NULL,NULL,NULL
+"30","6","10","190",NULL,"12",NULL,"Jeera taste, duplicate eno,  recharge taste is good. Aadmi ka recharge",NULL,"2026-05-21 06:32:27","submitted",NULL,NULL,"/uploads/feedback/1779345147124-559521567.webm",NULL
+"31","7","10","189",NULL,"8",NULL,NULL,NULL,"2026-05-21 06:48:04","submitted",NULL,"/uploads/feedback/1779346084185-461530980.jpg",NULL,NULL
+"32","7","10","189",NULL,"9",NULL,NULL,NULL,"2026-05-21 06:48:04","submitted",NULL,NULL,NULL,NULL
+"33","7","10","189",NULL,"10",NULL,NULL,NULL,"2026-05-21 06:48:04","submitted",NULL,NULL,NULL,NULL
+"34","7","10","189",NULL,"11",NULL,"Recharge sampling",NULL,"2026-05-21 06:48:04","submitted",NULL,NULL,NULL,NULL
+"35","7","10","189",NULL,"12",NULL,"Visibility outside.",NULL,"2026-05-21 06:48:04","submitted",NULL,NULL,"/uploads/feedback/1779346084186-600698026.webm",NULL
+"36","8","9","504",NULL,"8","4",NULL,NULL,"2026-05-21 06:52:36","submitted",NULL,NULL,NULL,NULL
+"37","8","9","504",NULL,"9","2",NULL,NULL,"2026-05-21 06:52:36","submitted",NULL,NULL,NULL,NULL
+"38","8","9","504",NULL,"10","4",NULL,NULL,"2026-05-21 06:52:36","submitted",NULL,NULL,NULL,NULL
+"39","8","9","504",NULL,"11",NULL,"Good sustained off take.",NULL,"2026-05-21 06:52:36","submitted",NULL,NULL,NULL,NULL
+"40","8","9","504",NULL,"12",NULL,NULL,NULL,"2026-05-21 06:52:36","submitted","We need to make recharge, Centrum recharge, explain to retailers by name recharge, so that it becomes part of the popular culture, common lexicon, and that will help them also sell the product to their consumers, because today they don't know how to sell this product. It looks attractive, it's visible, so it's selling, but they don't have a name for it. That's what we need to do. Rest, I think we've got it right. Visibility with each of our products should be integrated, because we need offtake, which comes from visibility.","/uploads/feedback/1779346355274-538781531.jpg",NULL,"/uploads/feedback/1779346355274-745539846.webm"
+"41","9","10","197",NULL,"1",NULL,NULL,NULL,"2026-05-21 07:04:28","submitted",NULL,NULL,NULL,NULL
+"42","9","10","197",NULL,"2",NULL,NULL,NULL,"2026-05-21 07:04:28","submitted",NULL,NULL,NULL,NULL
+"43","9","10","197",NULL,"3",NULL,NULL,NULL,"2026-05-21 07:04:28","submitted",NULL,NULL,NULL,NULL
+"44","9","10","197",NULL,"4",NULL,NULL,NULL,"2026-05-21 07:04:28","submitted",NULL,NULL,NULL,NULL
+"45","9","10","197",NULL,"5",NULL,"Jars, 3in1 and lemon both jars there gof there 2 jars...recharge offtakes there...recharge jjar connecting status",NULL,"2026-05-21 07:04:28","submitted",NULL,"/uploads/feedback/1779347067700-962790702.jpg",NULL,NULL
+"46","10","9","512",NULL,"1","4",NULL,NULL,"2026-05-21 07:09:53","submitted",NULL,NULL,NULL,NULL
+"47","10","9","512",NULL,"2",NULL,NULL,NULL,"2026-05-21 07:09:53","submitted",NULL,NULL,NULL,NULL
+"48","10","9","512",NULL,"3","3",NULL,NULL,"2026-05-21 07:09:53","submitted",NULL,NULL,NULL,NULL
+"49","10","9","512",NULL,"4",NULL,NULL,NULL,"2026-05-21 07:09:53","submitted",NULL,NULL,NULL,NULL
+"50","10","9","512",NULL,"5",NULL,NULL,NULL,"2026-05-21 07:09:53","submitted","We managed to replenish the full hangar, the visibility sleeve of Recharge with 24 units because the offtake was very good. The sleeve had been emptied out. So the thing that we need to fix for is the depth has to be built with jars coming in now, and we should do this rapidly. I also see another new brand called Enshine toothbrushes, which sells a combination of four or five SKUs in a shrink-wrapped standee. It's a secondary packaging, shelf-ready SRP, and that's working well too. And we need to do that for our Sensodyne toothbrushes.","/uploads/feedback/1779347392414-812099769.jpg",NULL,"/uploads/feedback/1779347392414-959111452.webm"
+"51","11","10","218",NULL,"8",NULL,NULL,NULL,"2026-05-21 16:57:18","submitted",NULL,NULL,NULL,NULL
+"52","11","10","218",NULL,"9",NULL,NULL,NULL,"2026-05-21 16:57:18","submitted",NULL,NULL,NULL,NULL
+"53","11","10","218",NULL,"10",NULL,NULL,NULL,"2026-05-21 16:57:18","submitted",NULL,NULL,NULL,NULL
+"54","11","10","218",NULL,"11",NULL,NULL,NULL,"2026-05-21 16:57:18","submitted",NULL,"/uploads/feedback/1779382638131-528108008.jpg",NULL,NULL
+"55","11","10","218",NULL,"12",NULL,NULL,NULL,"2026-05-21 16:57:18","submitted","Sanjeev General Store is selling one case of Centrum recharge every month. Also, they are selling good quantities of Rush. They are keeping cross care, they are keeping eco hangers, they are keeping 5 plus 1. Also, their stock of oral care is quite good. The best part about the outlet is it is getting serviced every three days and is directly connected with the sub-order.","/uploads/feedback/1779382638132-647926096.jpg",NULL,"/uploads/feedback/1779382638132-953048088.webm"
+"61","12","6","402",NULL,"8","4",NULL,NULL,"2026-05-28 06:17:27","submitted","The displays on Sensodyne brushes was good as compared to Colgate.",NULL,NULL,NULL
+"62","12","6","402",NULL,"9","4",NULL,NULL,"2026-05-28 06:17:27","submitted",NULL,NULL,NULL,NULL
+"63","12","6","402",NULL,"10",NULL,NULL,NULL,"2026-05-28 06:17:27","submitted",NULL,NULL,NULL,NULL
+"64","12","6","402",NULL,"11",NULL,"Salesman relationship with outlet.",NULL,"2026-05-28 06:17:27","submitted",NULL,NULL,NULL,NULL
+"65","12","6","402",NULL,"12",NULL,"We can cross centrum recharge and ENO",NULL,"2026-05-28 06:17:27","submitted",NULL,NULL,NULL,NULL
+"66","14","6","400",NULL,"8","4",NULL,NULL,"2026-05-28 06:18:50","submitted",NULL,NULL,NULL,NULL
+"67","14","6","400",NULL,"9",NULL,NULL,NULL,"2026-05-28 06:18:50","submitted",NULL,NULL,NULL,NULL
+"68","14","6","400",NULL,"10",NULL,NULL,NULL,"2026-05-28 06:18:50","submitted",NULL,NULL,NULL,NULL
+"69","14","6","400",NULL,"11",NULL,NULL,NULL,"2026-05-28 06:18:50","submitted",NULL,NULL,NULL,NULL
+"70","14","6","400",NULL,"12",NULL,NULL,NULL,"2026-05-28 06:18:50","submitted",NULL,NULL,NULL,NULL
+"71","15","6","1052",NULL,"8","4",NULL,NULL,"2026-05-28 06:19:50","submitted",NULL,NULL,NULL,NULL
+"72","15","6","1052",NULL,"9",NULL,NULL,NULL,"2026-05-28 06:19:50","submitted",NULL,NULL,NULL,NULL
+"73","15","6","1052",NULL,"10",NULL,NULL,NULL,"2026-05-28 06:19:50","submitted",NULL,NULL,NULL,NULL
+"74","15","6","1052",NULL,"11",NULL,"Centrum women is selling well.",NULL,"2026-05-28 06:19:50","submitted",NULL,NULL,NULL,NULL
+"75","15","6","1052",NULL,"12",NULL,NULL,NULL,"2026-05-28 06:19:50","submitted",NULL,NULL,NULL,NULL
+"76","16","6","401",NULL,"8","4",NULL,NULL,"2026-05-28 06:23:55","submitted",NULL,NULL,NULL,NULL
+"77","16","6","401",NULL,"9",NULL,NULL,NULL,"2026-05-28 06:23:55","submitted",NULL,NULL,NULL,NULL
+"78","16","6","401",NULL,"10","4",NULL,NULL,"2026-05-28 06:23:55","submitted",NULL,NULL,NULL,NULL
+"79","16","6","401",NULL,"11",NULL,NULL,NULL,"2026-05-28 06:23:55","submitted",NULL,NULL,NULL,NULL
+"80","16","6","401",NULL,"12",NULL,NULL,NULL,"2026-05-28 06:23:55","submitted",NULL,NULL,NULL,NULL
+"81","17","16","628",NULL,"8","3",NULL,NULL,"2026-05-28 06:34:40","submitted","تو اس کے ساتھ لیا گیا ہے","/uploads/feedback/1779950079324-932760927.jpg",NULL,"/uploads/feedback/1779950079325-410090244.webm"
+"82","17","16","628",NULL,"9","4",NULL,NULL,"2026-05-28 06:34:40","submitted","Good",NULL,"/uploads/feedback/1779950079327-879006553.webm","/uploads/feedback/1779950079333-648813032.webm"
+"83","17","16","628",NULL,"10","4",NULL,NULL,"2026-05-28 06:34:40","submitted","Good",NULL,NULL,NULL
+"84","17","16","628",NULL,"11",NULL,"Welll",NULL,"2026-05-28 06:34:40","submitted",NULL,"/uploads/feedback/1779950079334-957504475.png",NULL,NULL
+"85","17","16","628",NULL,"12",NULL,NULL,NULL,"2026-05-28 06:34:40","submitted","Ok",NULL,NULL,NULL
+"86","18","20","797",NULL,"8","3",NULL,NULL,"2026-05-28 10:10:35","submitted","Centrum visible , 25 % lower engagement",NULL,NULL,NULL
+"87","18","20","797",NULL,"9","2",NULL,NULL,"2026-05-28 10:10:35","submitted","25 % tech used for centrum",NULL,NULL,NULL
+"88","18","20","797",NULL,"10","3",NULL,NULL,"2026-05-28 10:10:35","submitted","only 25 % proactive recommendations observed",NULL,NULL,NULL
+"89","18","20","797",NULL,"11",NULL,"easy shelf access",NULL,"2026-05-28 10:10:35","submitted",NULL,NULL,NULL,NULL
+"90","18","20","797",NULL,"12",NULL,"10% sales uplift",NULL,"2026-05-28 10:10:35","submitted",NULL,NULL,NULL,NULL
+"91","19","20","798",NULL,"8",NULL,NULL,NULL,"2026-05-28 10:13:26","submitted","20% lower engagement vs nearby competitors.",NULL,NULL,NULL
+"92","19","20","798",NULL,"9",NULL,NULL,NULL,"2026-05-28 10:13:26","submitted","20% tech useage",NULL,NULL,NULL
+"93","19","20","798",NULL,"10",NULL,NULL,NULL,"2026-05-28 10:13:26","submitted","25% proactive recommandation",NULL,NULL,NULL
+"94","19","20","798",NULL,"11",NULL,NULL,NULL,"2026-05-28 10:13:26","submitted","100% stock availability",NULL,NULL,NULL
+"95","19","20","798",NULL,"12",NULL,"improve display",NULL,"2026-05-28 10:13:26","submitted",NULL,NULL,NULL,NULL
+"96","20","20","796",NULL,"1","4",NULL,NULL,"2026-05-28 10:16:35","submitted","ENO 60% higher engagement",NULL,NULL,NULL
+"97","20","20","796",NULL,"2","4",NULL,NULL,"2026-05-28 10:16:35","submitted","digital interaction available",NULL,NULL,NULL
+"98","20","20","796",NULL,"3","4",NULL,NULL,"2026-05-28 10:16:35","submitted",NULL,NULL,NULL,NULL
+"99","20","20","796",NULL,"4",NULL,"easy customer access",NULL,"2026-05-28 10:16:35","submitted",NULL,NULL,NULL,NULL
+"100","20","20","796",NULL,"5",NULL,"display could improve conversion by 20%",NULL,"2026-05-28 10:16:35","submitted",NULL,NULL,NULL,NULL
+"106","21","18","716",NULL,"8","4",NULL,NULL,"2026-05-28 10:26:54","submitted","Sensodyne in a sufficient way at market.",NULL,NULL,"/uploads/feedback/1779964001036-498915214.webm"
+"107","21","18","716",NULL,"9","4",NULL,NULL,"2026-05-28 10:26:54","submitted",NULL,"/uploads/feedback/1779964001037-503929447.jpg",NULL,NULL
+"108","21","18","716",NULL,"10","4",NULL,NULL,"2026-05-28 10:26:54","submitted",NULL,"/uploads/feedback/1779964001038-172191122.jpg",NULL,NULL
+"109","21","18","716",NULL,"11",NULL,"Yes it is working well",NULL,"2026-05-28 10:26:54","submitted",NULL,NULL,NULL,NULL
+"110","21","18","716",NULL,"12",NULL,"Scope is not so good",NULL,"2026-05-28 10:26:54","submitted",NULL,NULL,NULL,NULL
+"111","23","19","744",NULL,"29","3",NULL,NULL,"2026-05-28 10:31:28","submitted","I think I am very confident .",NULL,NULL,NULL
+"112","23","19","744",NULL,"30",NULL,NULL,NULL,"2026-05-28 10:31:28","submitted",NULL,NULL,NULL,NULL
+"113","23","19","744",NULL,"31",NULL,NULL,NULL,"2026-05-28 10:31:28","submitted",NULL,NULL,NULL,NULL
+"114","23","19","744",NULL,"32",NULL,NULL,NULL,"2026-05-28 10:31:28","submitted",NULL,NULL,NULL,NULL
+"115","23","19","744",NULL,"33",NULL,NULL,NULL,"2026-05-28 10:31:28","submitted",NULL,NULL,NULL,NULL
+"116","24","18","700",NULL,"29","1",NULL,NULL,"2026-05-28 10:55:07","submitted","Things are not working perfectly.",NULL,NULL,"/uploads/feedback/1779965706813-2107722.webm"
+"117","24","18","700",NULL,"30","5",NULL,NULL,"2026-05-28 10:55:07","submitted","Best",NULL,NULL,NULL
+"118","24","18","700",NULL,"31","1",NULL,NULL,"2026-05-28 10:55:07","submitted","Not so good",NULL,NULL,NULL
+"119","24","18","700",NULL,"32",NULL,"Nothing",NULL,"2026-05-28 10:55:07","submitted",NULL,NULL,NULL,NULL
+"120","24","18","700",NULL,"33",NULL,"Let's see",NULL,"2026-05-28 10:55:07","submitted",NULL,NULL,NULL,NULL
+"121","25","20","799",NULL,"8","5",NULL,NULL,"2026-05-28 10:57:02","submitted","Enoo poorly visible, 40% lower engagement than computers.",NULL,NULL,"/uploads/feedback/1779965821378-312489831.webm"
+"122","25","20","799",NULL,"9","4",NULL,NULL,"2026-05-28 10:57:02","submitted","60% digital support for Eno promotion.",NULL,NULL,"/uploads/feedback/1779965821379-26633749.webm"
+"123","25","20","799",NULL,"10","4",NULL,NULL,"2026-05-28 10:57:02","submitted","Forty percent",NULL,NULL,"/uploads/feedback/1779965821379-612273435.webm"
+"124","25","20","799",NULL,"11",NULL,"35% customer recall",NULL,"2026-05-28 10:57:02","submitted",NULL,NULL,NULL,NULL
+"125","25","20","799",NULL,"12",NULL,"Enhance retailer training",NULL,"2026-05-28 10:57:02","submitted",NULL,NULL,NULL,NULL
+"131","27","6","399",NULL,"8",NULL,NULL,NULL,"2026-05-28 13:07:19","submitted","Yes, the displays on Centrum were good, but there is an opportunity to improve the displays on Crossain and Iodex.",NULL,NULL,"/uploads/feedback/1779973638480-294117268.webm"
+"132","27","6","399",NULL,"9",NULL,NULL,NULL,"2026-05-28 13:07:19","submitted",NULL,NULL,NULL,NULL
+"133","27","6","399",NULL,"10",NULL,NULL,NULL,"2026-05-28 13:07:19","submitted",NULL,NULL,NULL,NULL
+"134","27","6","399",NULL,"11",NULL,NULL,NULL,"2026-05-28 13:07:19","submitted",NULL,NULL,NULL,NULL
+"135","27","6","399",NULL,"12",NULL,NULL,NULL,"2026-05-28 13:07:19","submitted",NULL,NULL,NULL,NULL
+"136","26","18","715",NULL,"8","5",NULL,NULL,"2026-05-28 15:46:55","submitted","The management is working well.",NULL,NULL,"/uploads/feedback/1779965957212-417736374.webm"
+"137","26","18","715",NULL,"9","5",NULL,NULL,"2026-05-28 15:46:55","submitted","Best combination.",NULL,NULL,"/uploads/feedback/1779965957212-730839042.webm"
+"138","26","18","715",NULL,"10","5",NULL,NULL,"2026-05-28 15:46:55","submitted","It is good",NULL,NULL,"/uploads/feedback/1779965957212-809717789.webm"
+"139","26","18","715",NULL,"11",NULL,NULL,NULL,"2026-05-28 15:46:55","submitted","Need more improvement.","/uploads/feedback/1779965957213-900100180.jpg","/uploads/feedback/1779965957215-624025072.webm","/uploads/feedback/1779965957216-266350536.webm"
+"140","26","18","715",NULL,"12",NULL,NULL,NULL,"2026-05-28 15:46:55","submitted",NULL,"/uploads/feedback/1779965957216-427306737.jpg",NULL,NULL
+"150","32","1","1055",NULL,"72",NULL,NULL,"2","2026-05-29 11:36:16","submitted","Hey, how are you? How many brands from Helion were being used in consumer household?",NULL,NULL,"/uploads/feedback/1780054574155-978335715.webm"
+"151","32","1","1055",NULL,"73",NULL,"done",NULL,"2026-05-29 11:36:16","submitted",NULL,NULL,NULL,NULL
+"152","32","1","1055",NULL,"74",NULL,"done",NULL,"2026-05-29 11:36:16","submitted",NULL,"/uploads/feedback/1780054574156-658513891.png","/uploads/feedback/1780054574161-911555020.webm",NULL
+"153","33","1","177",NULL,"51","4",NULL,NULL,"2026-05-29 12:04:40","submitted",NULL,"/uploads/feedback/1780056278409-200439488.png",NULL,NULL
+"154","33","1","177",NULL,"52",NULL,"done",NULL,"2026-05-29 12:04:40","submitted",NULL,NULL,NULL,NULL
+"155","33","1","177",NULL,"53",NULL,"done",NULL,"2026-05-29 12:04:40","submitted","This is Abhishek here.",NULL,NULL,"/uploads/feedback/1780056278409-202247843.webm"
+"159","30","1","170",NULL,"69","4",NULL,NULL,"2026-05-29 17:52:04","submitted","done","/uploads/feedback/1780077118201-113588682.png","/uploads/feedback/1780077118205-707778358.webm",NULL
+"160","30","1","170",NULL,"70","4",NULL,NULL,"2026-05-29 17:52:04","submitted",NULL,NULL,"/uploads/feedback/1780077118286-858769590.mp4",NULL
+"161","30","1","170",NULL,"71",NULL,"done",NULL,"2026-05-29 17:52:04","submitted",NULL,NULL,NULL,NULL
+"168","38","2","51",NULL,"57","5",NULL,NULL,"2026-05-30 04:19:17","submitted","All good execution to be more better.","/uploads/feedback/1780114756571-442403305.jpg",NULL,"/uploads/feedback/1780114756571-36253157.webm"
+"169","38","2","51",NULL,"58",NULL,NULL,NULL,"2026-05-30 04:19:17","submitted",NULL,NULL,"/uploads/feedback/1780114756572-762562004.webm",NULL
+"170","38","2","51",NULL,"59",NULL,"Ok",NULL,"2026-05-30 04:19:17","submitted",NULL,NULL,NULL,NULL
+"177","41","2","44",NULL,"72",NULL,NULL,"4","2026-05-30 04:36:54","submitted",NULL,NULL,NULL,NULL
+"178","41","2","44",NULL,"73",NULL,"Hkdjej",NULL,"2026-05-30 04:36:54","submitted",NULL,NULL,NULL,NULL
+"179","41","2","44",NULL,"74",NULL,"Teat",NULL,"2026-05-30 04:36:54","submitted",NULL,NULL,NULL,NULL
+"183","42","12","294",NULL,"69",NULL,NULL,NULL,"2026-05-30 04:39:45","draft",NULL,NULL,NULL,NULL
+"184","42","12","294",NULL,"70",NULL,NULL,NULL,"2026-05-30 04:39:45","draft",NULL,NULL,NULL,NULL
+"185","42","12","294",NULL,"71",NULL,NULL,NULL,"2026-05-30 04:39:45","draft",NULL,NULL,NULL,NULL
+"189","44","12","296",NULL,"69","5",NULL,NULL,"2026-05-30 04:48:19","draft",NULL,NULL,NULL,NULL
+"190","44","12","296",NULL,"70","5",NULL,NULL,"2026-05-30 04:48:19","draft",NULL,NULL,NULL,"/uploads/feedback/1780116498403-189818524.webm"
+"191","44","12","296",NULL,"71",NULL,NULL,NULL,"2026-05-30 04:48:19","draft",NULL,NULL,NULL,NULL
+"198","46","1","5",NULL,"69","4",NULL,NULL,"2026-05-30 04:58:38","submitted","How do you read?","/uploads/feedback/1780117095457-17327437.jpg","/uploads/feedback/1780117095457-973392092.webm","/uploads/feedback/1780117095458-790657554.webm"
+"199","46","1","5",NULL,"70","4",NULL,NULL,"2026-05-30 04:58:38","submitted","I am Abhishek, how do you rate the quality of recommendation?",NULL,NULL,"/uploads/feedback/1780117095459-978732.webm"
+"200","46","1","5",NULL,"71",NULL,"Haleon strengthen",NULL,"2026-05-30 04:58:38","submitted",NULL,NULL,NULL,NULL
+"201","49","1","176",NULL,"51","3",NULL,NULL,"2026-05-30 04:59:37","draft","Hello, hello, hello. This is the appreciated overall experience.",NULL,NULL,"/uploads/feedback/1780117176434-684160560.webm"
+"202","49","1","176",NULL,"52",NULL,"Done",NULL,"2026-05-30 04:59:37","draft",NULL,NULL,NULL,NULL
+"203","49","1","176",NULL,"53",NULL,"Done",NULL,"2026-05-30 04:59:37","draft",NULL,NULL,NULL,NULL
