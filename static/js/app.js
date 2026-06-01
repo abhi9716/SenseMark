@@ -253,7 +253,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const gSel = document.getElementById('gFilterGroup');
         if (gSel) gSel.value = group;
+        // Pre-select the chosen respondent in the group respondent filter
+        const gUserSel = document.getElementById('gFilterUser');
+        if (gUserSel) gUserSel.value = String(_selectedUserId);
         applyGroupFilters();
+    }
+
+    function updateOverallTabForSelectedUser() {
+        const ovUserSel = document.getElementById('ovFilterUser');
+        if (ovUserSel) ovUserSel.value = String(_selectedUserId);
+        applyOverallFilters();
     }
 
     async function loadFeedbackData() {
@@ -1378,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             populateGroupOptions('ovFilterGroup', 'all');
             updateGroupTabForSelectedUser();
             populateOverallFilterDropdowns();
-            applyOverallFilters();
+            updateOverallTabForSelectedUser();
         } catch (e) {
             console.warn('Could not load group feedback data:', e);
             ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues', 'gTableBody']
@@ -1991,6 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (profAvatar) profAvatar.textContent = ini;
         refreshIndividualData();
         updateGroupTabForSelectedUser();
+        updateOverallTabForSelectedUser();
     });
 
     // Bootstrap

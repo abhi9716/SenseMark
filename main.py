@@ -309,7 +309,12 @@ def _db_load_users():
 
 
 def _db_load_questions():
+    # Load both tables so old answer IDs (1-38) and new IDs (51-74) both resolve.
+    # New table comes second so it wins on overlapping IDs (51-54).
     return mysql_db.query("""
+        SELECT id, channel, channel_type, question_no, question_text, answer_type
+        FROM tbl_market_visit_feedback_questions
+        UNION ALL
         SELECT id, channel, channel_type, question_no, question_text, answer_type
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
