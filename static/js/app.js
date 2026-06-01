@@ -896,10 +896,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const levelScoped = level !== 'all' ? _fbData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _fbData;
         populateQuestionDropdown(levelScoped);
+        repopulateUserOutletDropdowns(levelScoped, null, 'fbFilterOutlet');
+        const outlet2 = document.getElementById('fbFilterOutlet')?.value || 'all';
 
         let filtered = [..._fbData];
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
+        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
         if (_qFilter.fb !== 'all') {
             const qSet = new Set(String(_qFilter.fb).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
@@ -922,7 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badge = document.getElementById('fbFilterBadge');
         const badgeText = document.getElementById('fbFilterBadgeText');
-        const anyFilterActive = level !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.fb !== 'all';
+        const anyFilterActive = level !== 'all' || outlet2 !== 'all' || dateRange !== 'all' || _qFilter.fb !== 'all';
         if (anyFilterActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
@@ -934,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
                 parts.push(text ? `${qno} — ${cap}` : qno);
             }
-            if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
+            if (outlet2 !== 'all') parts.push(outletName(parseInt(outlet2)));
             if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
             const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
             const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
@@ -1361,6 +1363,43 @@ document.addEventListener('DOMContentLoaded', () => {
         populateQuestionDropdown(_gAllData, 'g');
     }
 
+    function repopulateUserOutletDropdowns(data, userSelId, outletSelId) {
+        if (userSelId) {
+            const sel = document.getElementById(userSelId);
+            if (sel) {
+                const prev = sel.value;
+                const users = new Set();
+                data.forEach(r => { if (r.user_id != null) users.add(String(r.user_id)); });
+                sel.innerHTML = '<option value="all">All Respondents</option>';
+                [...users]
+                    .sort((a, b) => userName(parseInt(a)).localeCompare(userName(parseInt(b))))
+                    .forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u; opt.textContent = userName(parseInt(u));
+                        sel.appendChild(opt);
+                    });
+                sel.value = users.has(prev) ? prev : 'all';
+            }
+        }
+        if (outletSelId) {
+            const sel = document.getElementById(outletSelId);
+            if (sel) {
+                const prev = sel.value;
+                const outlets = new Set();
+                data.forEach(r => { if (r.outlet_id != null) outlets.add(String(r.outlet_id)); });
+                sel.innerHTML = '<option value="all">All Outlets</option>';
+                [...outlets]
+                    .sort((a, b) => Number(a) - Number(b))
+                    .forEach(o => {
+                        const opt = document.createElement('option');
+                        opt.value = o; opt.textContent = outletName(parseInt(o));
+                        sel.appendChild(opt);
+                    });
+                sel.value = outlets.has(prev) ? prev : 'all';
+            }
+        }
+    }
+
     function populateGroupOptions(selectId, defaultVal) {
         const sel = document.getElementById(selectId);
         if (!sel) return;
@@ -1398,9 +1437,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
         populateQuestionDropdown(levelScoped, 'g');
+        repopulateUserOutletDropdowns(levelScoped, 'gFilterUser', 'gFilterOutlet');
+        // Re-read after cascade repopulation (selection may have been reset)
+        const user2 = document.getElementById('gFilterUser')?.value || 'all';
+        const outlet2 = document.getElementById('gFilterOutlet')?.value || 'all';
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
-        if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
+        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
         if (_qFilter.g !== 'all') {
             const qSet = new Set(String(_qFilter.g).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
@@ -1421,12 +1464,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badge = document.getElementById('gFilterBadge');
         const badgeText = document.getElementById('gFilterBadgeText');
-        const anyActive = level !== 'all' || group !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.g !== 'all';
+        const anyActive = level !== 'all' || group !== 'all' || user2 !== 'all' || outlet2 !== 'all' || dateRange !== 'all' || _qFilter.g !== 'all';
         if (anyActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
             if (group !== 'all') parts.push(`Group ${group}`);
-            if (user !== 'all') parts.push(userName(parseInt(user)));
+            if (user2 !== 'all') parts.push(userName(parseInt(user2)));
             if (_qFilter.g !== 'all') {
                 const firstQid = parseInt(String(_qFilter.g).split(',')[0]);
                 const q = _fbQuestionsById[firstQid];
@@ -1435,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
                 parts.push(text ? `${qno} — ${cap}` : qno);
             }
-            if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
+            if (outlet2 !== 'all') parts.push(outletName(parseInt(outlet2)));
             if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
             const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
             const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
@@ -1736,9 +1779,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
         populateQuestionDropdown(levelScoped, 'ov');
+        repopulateUserOutletDropdowns(levelScoped, 'ovFilterUser', 'ovFilterOutlet');
+        const user2 = document.getElementById('ovFilterUser')?.value || 'all';
+        const outlet2 = document.getElementById('ovFilterOutlet')?.value || 'all';
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
-        if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
+        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
         if (_qFilter.ov !== 'all') {
             const qSet = new Set(String(_qFilter.ov).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
@@ -1759,12 +1805,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badge = document.getElementById('ovFilterBadge');
         const badgeText = document.getElementById('ovFilterBadgeText');
-        const anyActive = level !== 'all' || group !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.ov !== 'all';
+        const anyActive = level !== 'all' || group !== 'all' || user2 !== 'all' || outlet2 !== 'all' || dateRange !== 'all' || _qFilter.ov !== 'all';
         if (anyActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
             if (group !== 'all') parts.push(`Group ${group}`);
-            if (user !== 'all') parts.push(userName(parseInt(user)));
+            if (user2 !== 'all') parts.push(userName(parseInt(user2)));
             if (_qFilter.ov !== 'all') {
                 const firstQid = parseInt(String(_qFilter.ov).split(',')[0]);
                 const q = _fbQuestionsById[firstQid];
@@ -1773,7 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cap = text.length > 50 ? text.slice(0, 47) + '…' : text;
                 parts.push(text ? `${qno} — ${cap}` : qno);
             }
-            if (outlet !== 'all') parts.push(outletName(parseInt(outlet)));
+            if (outlet2 !== 'all') parts.push(outletName(parseInt(outlet2)));
             if (dateRange !== 'all') parts.push('Last ' + dateRange.replace('d', ' days'));
             const prefix = parts.length ? parts.join(' · ') + ' · ' : '';
             const uniqueVisitCount = new Set(filtered.map(r => r.visit_id)).size;
