@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let _fbQuestionsById = {};
     let _fbOutletsById = {};
     let _currentUser = null;
+    let _selectedUserId = null;
 
     const FB_STOP_WORDS = new Set([
         // Articles & determiners
@@ -193,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyCurrentUserToUi() {
         if (!_currentUser) return;
+        _selectedUserId = _currentUser.id;
         const name = _currentUser.user_name || 'User';
         const firstName = name.split(/\s+/)[0] || name;
         const ini = initials(name);
@@ -204,6 +206,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if (headerAvatar) headerAvatar.textContent = ini;
         if (profName) profName.textContent = name;
         if (profAvatar) profAvatar.textContent = ini;
+        populateGlobalUserSelect();
+    }
+
+    function populateGlobalUserSelect() {
+        const sel = document.getElementById('globalUserSelect');
+        if (!sel) return;
+        const prev = sel.value || String(_selectedUserId || '');
+        sel.innerHTML = '';
+        Object.values(_fbUsersById)
+            .sort((a, b) => (a.user_name || '').localeCompare(b.user_name || ''))
+            .forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.group ? `${u.user_name} (Grp ${u.group})` : u.user_name;
+                sel.appendChild(opt);
+            });
+        sel.value = prev || String(_selectedUserId || '');
+    }
+
+    function refreshIndividualData() {
+        if (!_gAllData.length) return;
+        _fbData = _gAllData.filter(r => r.user_id === _selectedUserId);
+        _fbFiltered = [..._fbData];
+        _tablePages.fb = 1;
+        _qFilter.fb = 'all';
+        document.querySelectorAll('.fb-level-btn').forEach(b => b.classList.toggle('active', b.dataset.level === 'all'));
+        ['fbFilterOutlet', 'fbFilterDate', 'fbFilterQuestion'].forEach(id => {
+            const e = document.getElementById(id); if (e) e.value = 'all';
+        });
+        applyFeedbackFilters();
+    }
+
+    function updateGroupTabForSelectedUser() {
+        const u = _fbUsersById[_selectedUserId];
+        const group = u && u.group ? String(u.group) : null;
+        if (!group) {
+            _gFiltered = [];
+            ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<div class="fbi-empty">Selected respondent is not part of any group.</div>';
+                });
+            renderResponsesTable([], 'g');
+            return;
+        }
+        const gSel = document.getElementById('gFilterGroup');
+        if (gSel) gSel.value = group;
+        applyGroupFilters();
     }
 
     async function loadFeedbackData() {
@@ -1317,10 +1367,16 @@ document.addEventListener('DOMContentLoaded', () => {
             _gAllData = json.data || [];
             _gData = [..._gAllData];
             _ovFiltered = [..._gAllData];
+            // Re-derive individual tab data for selected user
+            if (_selectedUserId != null) {
+                _fbData = _gAllData.filter(r => r.user_id === _selectedUserId);
+                _fbFiltered = [..._fbData];
+                applyFeedbackFilters();
+            }
             populateGroupFilterDropdowns();
-            populateGroupOptions('gFilterGroup', '2');
+            populateGroupOptions('gFilterGroup', 'all');
             populateGroupOptions('ovFilterGroup', 'all');
-            applyGroupFilters();
+            updateGroupTabForSelectedUser();
             populateOverallFilterDropdowns();
             applyOverallFilters();
         } catch (e) {
@@ -1921,6 +1977,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('ovDownloadBtn')?.addEventListener('click', () => {
         exportCsv(_ovFiltered, 'overall_feedback_responses.csv');
+    });
+
+    // ---- Global respondent filter ----
+    document.getElementById('globalUserSelect')?.addEventListener('change', e => {
+        _selectedUserId = parseInt(e.target.value);
+        const u = _fbUsersById[_selectedUserId] || {};
+        const name = u.user_name || `User #${_selectedUserId}`;
+        const ini = (name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()) || '?';
+        const profName = document.getElementById('sidebarProfileName');
+        const profAvatar = document.getElementById('sidebarProfileAvatar');
+        if (profName) profName.textContent = name;
+        if (profAvatar) profAvatar.textContent = ini;
+        refreshIndividualData();
+        updateGroupTabForSelectedUser();
     });
 
     // Bootstrap

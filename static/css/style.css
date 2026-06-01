@@ -699,6 +699,40 @@ body {
     min-width: 0;
 }
 
+.sidebar-user-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 2px 2px;
+}
+
+.sidebar-user-filter-label {
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-tertiary);
+    padding-left: 2px;
+}
+
+.sidebar-user-filter-select {
+    width: 100%;
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--neutral-light);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.sidebar-user-filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
 .sidebar-profile-avatar {
     width: 44px;
     height: 44px;
