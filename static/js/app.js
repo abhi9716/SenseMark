@@ -438,12 +438,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderQuestionAvgRating(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
-        // Group by normalised question text, only from the current questions table (is_current=1)
+        // Group by normalised question text (merges same question across sub-channels)
         const textRatings = {};
         data.forEach(r => {
             if (r.rating == null || r.question_id == null) return;
             const q = _fbQuestionsById[r.question_id];
-            if (!q || !q.question_text || !q.is_current) return;
+            if (!q || !q.question_text) return;
             const key = normaliseQuestionText(q.question_text);
             if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${r.question_id}`, text: q.question_text };
             textRatings[key].ratings.push(r.rating);
