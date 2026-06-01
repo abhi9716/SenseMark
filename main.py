@@ -259,14 +259,19 @@ CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # 9 = Kedar Lele
 #   HCP                                                                          -> hcp
 #   Consumer / Consumer1                                                         -> consumer
 QID_LEVEL_MAP = {}
-for qid in range(1, 6):   QID_LEVEL_MAP[qid] = "trade"     # Pharmacy Store
-for qid in range(8, 13):  QID_LEVEL_MAP[qid] = "trade"     # Grocery Store
-for qid in range(15, 20): QID_LEVEL_MAP[qid] = "trade"     # MT Store
-for qid in range(22, 29): QID_LEVEL_MAP[qid] = "trade"     # In-Market Activation
-for qid in range(29, 34): QID_LEVEL_MAP[qid] = "hcp"       # HCP
-for qid in range(36, 41): QID_LEVEL_MAP[qid] = "consumer"  # Consumer
-for qid in range(43, 48): QID_LEVEL_MAP[qid] = "trade"     # Dcommerce (retail-side)
-for qid in range(50, 55): QID_LEVEL_MAP[qid] = "consumer"  # Consumer1
+# Legacy question IDs (tbl_market_visit_feedback_questions, IDs 1-38)
+for qid in range(1, 6):   QID_LEVEL_MAP[qid] = "trade"
+for qid in range(8, 13):  QID_LEVEL_MAP[qid] = "trade"
+for qid in range(15, 20): QID_LEVEL_MAP[qid] = "trade"
+for qid in range(22, 29): QID_LEVEL_MAP[qid] = "trade"
+for qid in range(29, 34): QID_LEVEL_MAP[qid] = "hcp"
+for qid in range(36, 41): QID_LEVEL_MAP[qid] = "consumer"
+for qid in range(43, 48): QID_LEVEL_MAP[qid] = "trade"
+for qid in range(50, 55): QID_LEVEL_MAP[qid] = "consumer"
+# New question IDs (tbl_market_visit_feedback_questions_29_05_2026, IDs 51-74)
+for qid in range(51, 69): QID_LEVEL_MAP[qid] = "trade"     # Pharmacy/Grocery/MT/Activation/Dcommerce/Consumer1
+for qid in range(69, 72): QID_LEVEL_MAP[qid] = "hcp"       # HCP
+for qid in range(72, 75): QID_LEVEL_MAP[qid] = "consumer"  # Consumer
 
 
 # ---- DB-backed loaders (fall back to CSV on any error) ----
@@ -306,7 +311,7 @@ def _db_load_users():
 def _db_load_questions():
     return mysql_db.query("""
         SELECT id, channel, channel_type, question_no, question_text, answer_type
-        FROM tbl_market_visit_feedback_questions
+        FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
 
 
