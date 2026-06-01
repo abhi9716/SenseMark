@@ -1386,10 +1386,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('gFilterDate')?.value || 'all';
 
-        let filtered = [..._gAllData];
+        // Group tab always restricts to users who belong to any group
+        let filtered = _gAllData.filter(r => {
+            const u = _fbUsersById[r.user_id];
+            return u && u.group;
+        });
         if (group !== 'all') filtered = filtered.filter(r => {
             const u = _fbUsersById[r.user_id];
-            return u && String(u.group || '') === group;
+            return String(u.group) === group;
         });
 
         const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
