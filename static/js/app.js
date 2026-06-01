@@ -714,7 +714,13 @@ document.addEventListener('DOMContentLoaded', () => {
         wrap?.classList.remove('hidden');
         empty?.classList.add('hidden');
 
-        const sorted = [...data].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const sorted = [...data]
+            .filter(r => {
+                if (r.question_id == null) return false;
+                const q = _fbQuestionsById[r.question_id];
+                return q && q.question_text;
+            })
+            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         const totalPages = Math.max(1, Math.ceil(sorted.length / FB_PAGE_SIZE));
         if (_tablePages[scope] > totalPages) _tablePages[scope] = totalPages;
         if (_tablePages[scope] < 1) _tablePages[scope] = 1;
