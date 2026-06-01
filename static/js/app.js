@@ -899,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (dateRange !== 'all') {
-            const now = new Date('2026-05-21');
+            const now = new Date();
             const cutoff = new Date(now);
             const days = parseInt(dateRange);
             if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
@@ -960,12 +960,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Group by normalised question text. Fallback to per-qid when text missing.
         const groups = new Map(); // key -> { qids:[], label, qno }
         ids.forEach(id => {
-            const q = _fbQuestionsById[id] || {};
-            const text = q.question_text || '';
+            const q = _fbQuestionsById[id];
+            if (!q || !q.question_text) return; // skip orphan question_ids with no text
+            const text = q.question_text;
             const qno = q.question_no || `Q${id}`;
-            const key = text ? normaliseQuestionText(text) : `qid:${id}`;
+            const key = normaliseQuestionText(text);
             if (!groups.has(key)) {
-                groups.set(key, { qids: [], label: text ? `${qno} — ${text}` : qno, qno, text });
+                groups.set(key, { qids: [], label: `${qno} — ${text}`, qno, text });
             }
             groups.get(key).qids.push(id);
         });
@@ -1373,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
         if (dateRange !== 'all') {
-            const now = new Date('2026-05-21');
+            const now = new Date();
             const cutoff = new Date(now);
             const days = parseInt(dateRange);
             if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
@@ -1702,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
         if (dateRange !== 'all') {
-            const now = new Date('2026-05-21');
+            const now = new Date();
             const cutoff = new Date(now);
             const days = parseInt(dateRange);
             if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
