@@ -1302,20 +1302,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====================================================================
     async function loadGroupData() {
         try {
-            const [allRes, groupRes] = await Promise.all([
-                fetch('/api/feedback-data-all'),
-                fetch('/api/feedback-data-group/2'),
-            ]);
-            if (!allRes.ok) throw new Error('Failed to load overall feedback data');
-            const [allJson, groupJson] = await Promise.all([allRes.json(), groupRes.json()]);
-            _gAllData = allJson.data || [];
-            _gData = groupRes.ok ? (groupJson.data || []) : [];
-            _gFiltered = [..._gData];
+            const res = await fetch('/api/feedback-data-all');
+            if (!res.ok) throw new Error('Failed to load feedback data');
+            const json = await res.json();
+            _gAllData = json.data || [];
+            _gData = [..._gAllData];
             _ovFiltered = [..._gAllData];
             populateGroupFilterDropdowns();
-            renderGroupDashboard();
+            populateGroupOptions('gFilterGroup', '2');
+            populateGroupOptions('ovFilterGroup', 'all');
+            applyGroupFilters();
             populateOverallFilterDropdowns();
-            renderOverallDashboard();
+            applyOverallFilters();
         } catch (e) {
             console.warn('Could not load group feedback data:', e);
             ['gKpiRow', 'gQuestionAvgRating', 'gOutletBuckets', 'gRatingDist', 'gAiSummary', 'gTopIssues', 'gTableBody']
@@ -1353,19 +1351,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     userSel.appendChild(opt);
                 });
         }
-        populateQuestionDropdown(_gData, 'g');
+        populateQuestionDropdown(_gAllData, 'g');
+    }
+
+    function populateGroupOptions(selectId, defaultVal) {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
+        const groups = new Set();
+        Object.values(_fbUsersById).forEach(u => {
+            const g = u.group;
+            if (g) groups.add(String(g));
+        });
+        sel.innerHTML = '<option value="all">All Groups</option>';
+        [...groups].sort().forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = `Group ${g}`;
+            sel.appendChild(opt);
+        });
+        if (defaultVal && defaultVal !== 'all') sel.value = defaultVal;
     }
 
     function applyGroupFilters() {
         const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
+        const group = document.getElementById('gFilterGroup')?.value || 'all';
         const user = document.getElementById('gFilterUser')?.value || 'all';
         const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('gFilterDate')?.value || 'all';
 
-        const levelScoped = level !== 'all' ? _gData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _gData;
-        populateQuestionDropdown(levelScoped, 'g');
+        let filtered = [..._gAllData];
+        if (group !== 'all') filtered = filtered.filter(r => {
+            const u = _fbUsersById[r.user_id];
+            return u && String(u.group || '') === group;
+        });
 
-        let filtered = [..._gData];
+        const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
+        populateQuestionDropdown(levelScoped, 'g');
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
         if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
@@ -1389,10 +1410,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badge = document.getElementById('gFilterBadge');
         const badgeText = document.getElementById('gFilterBadgeText');
-        const anyActive = level !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.g !== 'all';
+        const anyActive = level !== 'all' || group !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.g !== 'all';
         if (anyActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
+            if (group !== 'all') parts.push(`Group ${group}`);
             if (user !== 'all') parts.push(userName(parseInt(user)));
             if (_qFilter.g !== 'all') {
                 const firstQid = parseInt(String(_qFilter.g).split(',')[0]);
@@ -1420,11 +1442,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const countEl = document.getElementById('gFiltersCount');
         if (!countEl) return;
         const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
+        const group = document.getElementById('gFilterGroup')?.value || 'all';
         const user = document.getElementById('gFilterUser')?.value || 'all';
         const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('gFilterDate')?.value || 'all';
         let n = 0;
         if (level !== 'all') n++;
+        if (group !== 'all') n++;
         if (user !== 'all') n++;
         if (outlet !== 'all') n++;
         if (dateRange !== 'all') n++;
@@ -1626,6 +1650,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyGroupFilters();
         });
     });
+    document.getElementById('gFilterGroup')?.addEventListener('change', applyGroupFilters);
     document.getElementById('gFilterUser')?.addEventListener('change', applyGroupFilters);
     document.getElementById('gFilterOutlet')?.addEventListener('change', applyGroupFilters);
     document.getElementById('gFilterDate')?.addEventListener('change', applyGroupFilters);
@@ -1642,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gFilterClearBtn')?.addEventListener('click', () => {
         document.querySelectorAll('.g-level-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.g-level-btn[data-level="all"]')?.classList.add('active');
-        ['gFilterUser','gFilterOutlet','gFilterDate','gFilterQuestion'].forEach(id => {
+        ['gFilterGroup','gFilterUser','gFilterOutlet','gFilterDate','gFilterQuestion'].forEach(id => {
             const e = document.getElementById(id); if (e) e.value = 'all';
         });
         _qFilter.g = 'all';
@@ -1687,14 +1712,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyOverallFilters() {
         const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
+        const group = document.getElementById('ovFilterGroup')?.value || 'all';
         const user = document.getElementById('ovFilterUser')?.value || 'all';
         const outlet = document.getElementById('ovFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
 
-        const levelScoped = level !== 'all' ? _gAllData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _gAllData;
-        populateQuestionDropdown(levelScoped, 'ov');
-
         let filtered = [..._gAllData];
+        if (group !== 'all') filtered = filtered.filter(r => {
+            const u = _fbUsersById[r.user_id];
+            return u && String(u.group || '') === group;
+        });
+
+        const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
+        populateQuestionDropdown(levelScoped, 'ov');
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (user !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user);
         if (outlet !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet);
@@ -1718,10 +1748,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const badge = document.getElementById('ovFilterBadge');
         const badgeText = document.getElementById('ovFilterBadgeText');
-        const anyActive = level !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.ov !== 'all';
+        const anyActive = level !== 'all' || group !== 'all' || user !== 'all' || outlet !== 'all' || dateRange !== 'all' || _qFilter.ov !== 'all';
         if (anyActive && badge && badgeText) {
             const parts = [];
             if (level !== 'all') parts.push(level.toUpperCase());
+            if (group !== 'all') parts.push(`Group ${group}`);
             if (user !== 'all') parts.push(userName(parseInt(user)));
             if (_qFilter.ov !== 'all') {
                 const firstQid = parseInt(String(_qFilter.ov).split(',')[0]);
@@ -1749,11 +1780,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const countEl = document.getElementById('ovFiltersCount');
         if (!countEl) return;
         const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
+        const group = document.getElementById('ovFilterGroup')?.value || 'all';
         const user = document.getElementById('ovFilterUser')?.value || 'all';
         const outlet = document.getElementById('ovFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
         let n = 0;
         if (level !== 'all') n++;
+        if (group !== 'all') n++;
         if (user !== 'all') n++;
         if (outlet !== 'all') n++;
         if (dateRange !== 'all') n++;
@@ -1806,6 +1839,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyOverallFilters();
         });
     });
+    document.getElementById('ovFilterGroup')?.addEventListener('change', applyOverallFilters);
     document.getElementById('ovFilterUser')?.addEventListener('change', applyOverallFilters);
     document.getElementById('ovFilterOutlet')?.addEventListener('change', applyOverallFilters);
     document.getElementById('ovFilterDate')?.addEventListener('change', applyOverallFilters);
@@ -1822,7 +1856,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ovFilterClearBtn')?.addEventListener('click', () => {
         document.querySelectorAll('.ov-level-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.ov-level-btn[data-level="all"]')?.classList.add('active');
-        ['ovFilterUser','ovFilterOutlet','ovFilterDate','ovFilterQuestion'].forEach(id => {
+        ['ovFilterGroup','ovFilterUser','ovFilterOutlet','ovFilterDate','ovFilterQuestion'].forEach(id => {
             const e = document.getElementById(id); if (e) e.value = 'all';
         });
         _qFilter.ov = 'all';
