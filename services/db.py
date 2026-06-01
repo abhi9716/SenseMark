@@ -9,11 +9,11 @@ def _make_pool():
     return pooling.MySQLConnectionPool(
         pool_name="sensemark",
         pool_size=5,
-        host=os.environ.get("DB_HOST", "178.156.218.239"),
+        host=os.environ["DB_HOST"],
         port=int(os.environ.get("DB_PORT", "3306")),
-        user=os.environ.get("DB_USER", "dashboard"),
-        password=os.environ.get("DB_PASSWORD", "cbdashxzjkbksntk"),
-        database=os.environ.get("DB_NAME", "marketpluse"),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
         connection_timeout=10,
         autocommit=True,
     )

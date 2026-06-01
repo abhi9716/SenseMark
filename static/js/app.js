@@ -15,8 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let _fbUsersById = {};
     let _fbQuestionsById = {};
     let _fbOutletsById = {};
-    let _currentUser = null;
-    let _selectedUserId = null;
+    // Pre-init from server session — no wait for API round-trip
+    let _currentUser = window.__sessionUser ? {
+        id:          window.__sessionUser.id,
+        user_name:   window.__sessionUser.user_name,
+        designation: window.__sessionUser.designation,
+        group:       window.__sessionUser.group || null,
+        role:        window.__sessionUser.role || 'rep',
+    } : null;
+    let _selectedUserId = _currentUser ? _currentUser.id : null;
 
     const FB_STOP_WORDS = new Set([
         // Articles & determiners
@@ -187,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             (meta.outlets || []).forEach(o => { _fbOutletsById[o.id] = o; });
             _currentUser = meta.current_user || null;
             applyCurrentUserToUi();
+            applyRoleUi(_currentUser?.role);
         } catch (e) {
             console.warn('Could not load feedback meta:', e);
         }
@@ -207,6 +215,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (profName) profName.textContent = name;
         if (profAvatar) profAvatar.textContent = ini;
         populateGlobalUserSelect();
+    }
+
+    function applyRoleUi(role) {
+        // role: 'admin' | 'manager' | 'rep'
+        const hasGroup = !!(_currentUser && _currentUser.group);
+        // CSS already hides elements at paint time; this syncs the JS state
+        document.documentElement.dataset.role = role;
+        document.documentElement.dataset.hasGroup = hasGroup ? '1' : '0';
+
+        // Update role badge in sidebar
+        const profileRole = document.querySelector('.sidebar-profile-role');
+        if (profileRole) {
+            const roleLabel = role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Field Rep';
+            const parts = profileRole.textContent.split('·');
+            profileRole.textContent = (parts[0] || '').trim() + ' · ' + roleLabel;
+        }
     }
 
     function populateGlobalUserSelect() {
@@ -278,7 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadFeedbackData() {
         try {
-            const res = await fetch('/api/feedback-data');
+            const uid = _selectedUserId && _selectedUserId !== 'admin' ? `?user_id=${_selectedUserId}` : '';
+            const res = await fetch(`/api/feedback-data${uid}`);
             if (!res.ok) throw new Error('Failed to load feedback data');
             const json = await res.json();
             _fbData = json.data || [];
@@ -438,8 +463,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderQuestionAvgRating(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
-        // Group by normalised question text (merges same question across sub-channels)
+        // Pre-seed all current questions so they always appear even with no answers
         const textRatings = {};
+        Object.values(_fbQuestionsById).forEach(q => {
+            if (!q || !q.question_text) return;
+            const key = normaliseQuestionText(q.question_text);
+            if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${q.id}`, text: q.question_text };
+        });
+        // Fill in ratings from answer data
         data.forEach(r => {
             if (r.rating == null || r.question_id == null) return;
             const q = _fbQuestionsById[r.question_id];
@@ -448,10 +479,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${r.question_id}`, text: q.question_text };
             textRatings[key].ratings.push(r.rating);
         });
-        const qAverages = Object.entries(textRatings).map(([, v]) => {
-            const avg = v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length;
-            return { qno: v.qno, text: v.text, avg, count: v.ratings.length };
-        }).sort((a, b) => a.avg - b.avg);
+        const qAverages = Object.entries(textRatings)
+            .map(([, v]) => {
+                const avg = v.ratings.length ? v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length : null;
+                return { qno: v.qno, text: v.text, avg, count: v.ratings.length };
+            })
+            .filter(q => q.count > 0)
+            .sort((a, b) => a.avg - b.avg);
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
         let html = '<div class="fb-hbar-chart">';
@@ -1381,8 +1415,12 @@ document.addEventListener('DOMContentLoaded', () => {
         exportCsv(_fbFiltered, 'feedback_responses.csv');
     });
 
-    document.getElementById('sidebarLogout')?.addEventListener('click', () => {
-        showNotice('Logout is a placeholder in this UAT build.', 'info');
+    document.getElementById('sidebarLogout')?.addEventListener('click', async () => {
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+        } finally {
+            window.location.href = '/login';
+        }
     });
 
     // ====================================================================
@@ -1392,7 +1430,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====================================================================
     async function loadGroupData() {
         try {
-            const res = await fetch('/api/feedback-data-all');
+            const role = _currentUser?.role;
+            const group = _currentUser?.group;
+            let url = '/api/feedback-data-all';
+            if (role !== 'admin' && group) {
+                url = `/api/feedback-data-group/${encodeURIComponent(group)}`;
+            }
+            const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to load feedback data');
             const json = await res.json();
             _gAllData = json.data || [];
@@ -2027,10 +2071,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOverallTabForSelectedUser();
     });
 
-    // Bootstrap
+    // Bootstrap — fire all 3 in parallel; _currentUser pre-seeded from session
     (async () => {
-        await loadFeedbackMeta();
-        loadFeedbackData();
-        loadGroupData();
+        // Apply UI immediately with pre-seeded session user (no flash, no wait)
+        applyCurrentUserToUi();
+        applyRoleUi(_currentUser?.role || 'rep');
+        await Promise.all([
+            loadFeedbackMeta(),
+            loadFeedbackData(),
+            loadGroupData(),
+        ]);
     })();
 });

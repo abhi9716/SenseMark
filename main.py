@@ -16,10 +16,11 @@ if env_path.exists():
                 key, value = line.split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip())
 
-from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, Depends
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 from services.analyzer import analyze_text, analyze_with_query, analyze_feedback_text
 from services import vector_db
@@ -32,6 +33,11 @@ app = FastAPI(
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="sm_session", max_age=86400 * 7, https_only=False)
+
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
@@ -119,9 +125,77 @@ def read_file_content(file: UploadFile) -> str:
         return read_text_file(file)
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+
+
+@app.post("/api/login")
+async def api_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    username = username.strip().lower()
+    password = password.strip().lower()
+
+    # Hardcoded admin account — username and password are both ADMIN_EMAIL
+    if username == ADMIN_EMAIL.lower() and password == ADMIN_EMAIL.lower():
+        request.session["user"] = {
+            "id": 0,
+            "user_name": "Admin",
+            "designation": "Admin",
+            "group": None,
+            "role": "admin",
+        }
+        return RedirectResponse("/", status_code=302)
+
+    try:
+        users_raw = _db_load_users()
+    except Exception:
+        users_raw = _parse_csv_rows(USERS_CSV_PATH)
+
+    # username = email, password = email (same value)
+    matched = None
+    for u in users_raw:
+        email = str(u.get("email") or "").strip().lower()
+        if email and email == username and email == password:
+            matched = u
+            break
+
+    if not matched:
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Invalid username or password."},
+            status_code=401,
+        )
+
+    try:
+        uid = int(matched["id"])
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=500, detail="Invalid user record")
+
+    role = _resolve_role(matched.get("designation"))
+    request.session["user"] = {
+        "id": uid,
+        "user_name": matched.get("user_name") or f"User #{uid}",
+        "designation": matched.get("designation"),
+        "group": str(matched.get("group") or "").strip() or None,
+        "role": role,
+    }
+    return RedirectResponse("/", status_code=302)
+
+
+@app.post("/api/logout")
+async def api_logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", status_code=302)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    session_user = request.session.get("user")
+    if not session_user:
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("index.html", {"request": request, "session_user": session_user})
 
 
 @app.post("/api/analyze")
@@ -252,7 +326,35 @@ OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv
 # Logged-in user for this single-tenant UAT build. Change this id (and the
 # header/profile in templates/index.html) to view the dashboard as a
 # different user.
-CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # 9 = Kedar Lele
+CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # fallback for non-session paths
+
+_ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
+_MANAGER_DESIGNATIONS = ("manager", " tl", "team lead", "nsm", "zsm", "rsm", "asm", "lead", "supervisor")
+
+
+def _resolve_role(designation: str) -> str:
+    d = (designation or "").lower()
+    if any(x in d for x in _ADMIN_DESIGNATIONS):
+        return "admin"
+    if any(x in d for x in _MANAGER_DESIGNATIONS):
+        return "manager"
+    return "rep"
+
+
+def _normalize_mobile(m: str) -> str:
+    digits = "".join(c for c in (m or "") if c.isdigit())
+    return digits[-10:] if len(digits) >= 10 else digits
+
+
+def _get_session_user(request: Request) -> dict | None:
+    return request.session.get("user")
+
+
+def _require_auth(request: Request) -> dict:
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
 
 # Question ID -> level mapping aligned to the questions table channels:
 #   Pharmacy Store / Grocery Store / MT Store / In-Market Activation / Dcommerce -> trade (retail-side)
@@ -315,12 +417,7 @@ def _db_load_users():
 
 
 def _db_load_questions():
-    # Old table (is_current=0) loaded first for text resolution of legacy answer IDs.
-    # New table (is_current=1) comes second and overwrites overlapping IDs in _fbQuestionsById.
     return mysql_db.query("""
-        SELECT id, channel, channel_type, question_no, question_text, answer_type, 0 AS is_current
-        FROM tbl_market_visit_feedback_questions
-        UNION ALL
         SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
@@ -381,18 +478,31 @@ def _load_all_answers():
 
 
 @app.get("/api/feedback-data")
-async def get_feedback_data():
+async def get_feedback_data(request: Request, user_id: int | None = None, current_user: dict = Depends(_require_auth)):
     try:
         all_rows = _load_all_answers()
-        rows = [r for r in all_rows if r.get("user_id") == CURRENT_USER_ID]
-        return {"data": rows, "total": len(rows), "user_id": CURRENT_USER_ID}
+        role = current_user["role"]
+        my_id = current_user["id"]
+
+        if role == "admin":
+            target_id = user_id if user_id is not None else my_id
+        elif role == "manager":
+            # Managers may view anyone in their group; default to themselves
+            target_id = user_id if user_id is not None else my_id
+        else:
+            target_id = my_id  # reps always see only themselves
+
+        rows = [r for r in all_rows if r.get("user_id") == target_id]
+        return {"data": rows, "total": len(rows), "user_id": target_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/feedback-data-all")
-async def get_feedback_data_all():
-    """All-user feedback rows for the Overall Feedback (all respondents) view."""
+async def get_feedback_data_all(current_user: dict = Depends(_require_auth)):
+    """All-user feedback rows for the Overall Feedback (admin only)."""
+    if current_user["role"] not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Access denied")
     try:
         all_rows = _load_all_answers()
         return {"data": all_rows, "total": len(all_rows)}
@@ -401,8 +511,14 @@ async def get_feedback_data_all():
 
 
 @app.get("/api/feedback-data-group/{group_id}")
-async def get_feedback_data_group(group_id: str):
+async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_require_auth)):
     """Feedback rows scoped to users belonging to a specific group."""
+    role = current_user["role"]
+    user_group = current_user.get("group")
+    if role == "rep" and not user_group:
+        raise HTTPException(status_code=403, detail="Access denied")
+    if role in ("rep", "manager") and user_group != group_id:
+        raise HTTPException(status_code=403, detail="Access denied to this group")
     try:
         try:
             users_raw = _db_load_users()
@@ -425,7 +541,7 @@ async def get_feedback_data_group(group_id: str):
 
 
 @app.get("/api/feedback-meta")
-async def get_feedback_meta():
+async def get_feedback_meta(current_user: dict = Depends(_require_auth)):
     try:
         users_raw = _db_load_users()
     except Exception as e:
@@ -498,21 +614,38 @@ async def get_feedback_meta():
             "state": o.get("state"),
         })
 
-    me = next((u for u in users if u["id"] == CURRENT_USER_ID), None)
+    session_uid = current_user["id"]
+    role = current_user["role"]
+    group = current_user.get("group")
+
+    # Restrict user list to own group for managers; reps see only themselves
+    if role == "manager" and group:
+        users = [u for u in users if str(u.get("group") or "").strip() == group]
+    elif role == "rep":
+        users = [u for u in users if u["id"] == session_uid]
+
+    me = next((u for u in users if u["id"] == session_uid), None)
+    if me:
+        me = dict(me)
+        me["role"] = role
+    else:
+        me = {"id": session_uid, "user_name": current_user.get("user_name", f"User #{session_uid}"), "role": role}
+
     return {
         "users": users,
         "questions": questions,
         "outlets": outlets,
-        "current_user": me or {"id": CURRENT_USER_ID, "user_name": f"User #{CURRENT_USER_ID}"},
+        "current_user": me,
     }
 
 
 @app.get("/api/visit/{visit_id}")
-async def get_visit_detail(visit_id: int):
+async def get_visit_detail(visit_id: int, current_user: dict = Depends(_require_auth)):
+    session_uid = current_user["id"]
     all_rows = _load_all_answers()
-    visit_rows = [r for r in all_rows if r.get("visit_id") == visit_id and r.get("user_id") == CURRENT_USER_ID]
+    visit_rows = [r for r in all_rows if r.get("visit_id") == visit_id and r.get("user_id") == session_uid]
     if not visit_rows:
-        raise HTTPException(status_code=404, detail="Visit not found for current user")
+        raise HTTPException(status_code=404, detail="Visit not found")
     visit_rows.sort(key=lambda r: r.get("question_id") or 0)
     return {
         "visit_id": visit_id,

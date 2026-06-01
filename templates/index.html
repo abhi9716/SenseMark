@@ -8,6 +8,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        // Runs before first paint — prevents role-gating flash
+        (function() {
+            var u = {{ session_user | tojson }};
+            window.__sessionUser = u;
+            var el = document.documentElement;
+            el.dataset.role = u.role || 'rep';
+            el.dataset.hasGroup = u.group ? '1' : '0';
+        })();
+    </script>
+    <style>
+        /* Rep with no group: hide Group nav */
+        html[data-role="rep"][data-has-group="0"] [data-view="group"] { display: none !important; }
+        /* Rep: hide Overall and user-switcher */
+        html[data-role="rep"] [data-view="overall"] { display: none !important; }
+        html[data-role="rep"] .sidebar-user-filter { display: none !important; }
+        /* Manager: hide Overall */
+        html[data-role="manager"] [data-view="overall"] { display: none !important; }
+        html[data-role="manager"] .sidebar-user-filter { display: none !important; }
+    </style>
 </head>
 <body>
     <header class="app-header" id="appHeader">
@@ -23,7 +43,7 @@
             </div>
             <div class="header-right">
                 <div class="header-user" id="headerUser">
-                    <div class="header-user-avatar" id="headerUserAvatar" aria-hidden="true">KL</div>
+                    <div class="header-user-avatar" id="headerUserAvatar" aria-hidden="true">{% set _p = session_user.user_name.split() %}{{ (_p[0][0] + (_p[-1][0] if _p|length > 1 else ''))|upper }}</div>
                 </div>
             </div>
         </div>
@@ -34,9 +54,9 @@
     <div class="app-layout" id="appLayout">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-profile">
-                <div class="sidebar-profile-avatar" id="sidebarProfileAvatar">KL</div>
+                <div class="sidebar-profile-avatar" id="sidebarProfileAvatar">{% set _p = session_user.user_name.split() %}{{ (_p[0][0] + (_p[-1][0] if _p|length > 1 else ''))|upper }}</div>
                 <div class="sidebar-profile-meta">
-                    <span class="sidebar-profile-name" id="sidebarProfileName">Kedar Lele</span>
+                    <span class="sidebar-profile-name" id="sidebarProfileName">{{ session_user.user_name }}</span>
                     <span class="sidebar-profile-role">Market Insights · Haleon</span>
                 </div>
             </div>
