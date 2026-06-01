@@ -48,6 +48,7 @@ SMTP_HOST     = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT     = int(os.environ.get("SMTP_PORT", "587"))
 OTP_EXPIRY    = 600   # seconds (10 min)
 OTP_RESEND_COOLDOWN = 60   # seconds
+DEBUG         = os.environ.get("DEBUG", "false").lower() == "true"
 
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="sm_session", max_age=86400 * 7, https_only=False)
 
@@ -247,14 +248,17 @@ async def api_send_otp(request: Request, email: str = Form(...)):
 
     otp = str(secrets.randbelow(900000) + 100000)  # 6-digit, never starts with 0
 
-    try:
-        _send_otp_email(email, otp, user_name)
-    except Exception as e:
-        print(f"[SMTP] OTP send failed: {e}")
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": "Could not send code. Please try again.",
-        }, status_code=500)
+    if DEBUG:
+        print(f"[DEBUG] OTP for {email}: {otp}", flush=True)
+    else:
+        try:
+            _send_otp_email(email, otp, user_name)
+        except Exception as e:
+            print(f"[SMTP] OTP send failed: {e}")
+            return templates.TemplateResponse("login.html", {
+                "request": request,
+                "error": "Could not send code. Please try again.",
+            }, status_code=500)
 
     request.session["otp_email"]    = email
     request.session["otp_code"]     = otp
