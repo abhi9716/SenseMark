@@ -19,7 +19,8 @@ if env_path.exists():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
-                os.environ.setdefault(key.strip(), value.strip())
+                value = value.strip().strip('"').strip("'")
+                os.environ.setdefault(key.strip(), value)
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
