@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sel = document.getElementById('globalUserSelect');
         if (!sel) return;
         const prev = sel.value || String(_selectedUserId || '');
-        sel.innerHTML = '';
+        sel.innerHTML = '<option value="admin">Admin (All Data)</option>';
         Object.values(_fbUsersById)
             .sort((a, b) => (a.user_name || '').localeCompare(b.user_name || ''))
             .forEach(u => {
@@ -227,7 +227,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function refreshIndividualData() {
         if (!_gAllData.length) return;
-        _fbData = _gAllData.filter(r => r.user_id === _selectedUserId);
+        // Admin (null) sees all data; regular user sees their own data
+        _fbData = _selectedUserId != null
+            ? _gAllData.filter(r => r.user_id === _selectedUserId)
+            : [..._gAllData];
         _fbFiltered = [..._fbData];
         _tablePages.fb = 1;
         _qFilter.fb = 'all';
@@ -239,6 +242,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateGroupTabForSelectedUser() {
+        if (_selectedUserId === null) {
+            // Admin: show all groups, clear respondent filter
+            const gSel = document.getElementById('gFilterGroup');
+            if (gSel) gSel.value = 'all';
+            const gUserSel = document.getElementById('gFilterUser');
+            if (gUserSel) gUserSel.value = 'all';
+            applyGroupFilters();
+            return;
+        }
         const u = _fbUsersById[_selectedUserId];
         const group = u && u.group ? String(u.group) : null;
         if (!group) {
@@ -253,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const gSel = document.getElementById('gFilterGroup');
         if (gSel) gSel.value = group;
-        // Pre-select the chosen respondent in the group respondent filter
         const gUserSel = document.getElementById('gFilterUser');
         if (gUserSel) gUserSel.value = String(_selectedUserId);
         applyGroupFilters();
@@ -261,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateOverallTabForSelectedUser() {
         const ovUserSel = document.getElementById('ovFilterUser');
-        if (ovUserSel) ovUserSel.value = String(_selectedUserId);
+        if (ovUserSel) ovUserSel.value = _selectedUserId != null ? String(_selectedUserId) : 'all';
         applyOverallFilters();
     }
 
@@ -1468,13 +1479,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateGroupOptions(selectId, defaultVal) {
         const sel = document.getElementById(selectId);
         if (!sel) return;
-        const groups = new Set();
-        Object.values(_fbUsersById).forEach(u => {
-            const g = u.group;
-            if (g) groups.add(String(g));
+        // Only show groups that have at least one submitted answer
+        const groupsWithData = new Set();
+        _gAllData.forEach(r => {
+            const u = _fbUsersById[r.user_id];
+            if (u && u.group) groupsWithData.add(String(u.group));
         });
         sel.innerHTML = '<option value="all">All Groups</option>';
-        [...groups].sort().forEach(g => {
+        [...groupsWithData].sort().forEach(g => {
             const opt = document.createElement('option');
             opt.value = g;
             opt.textContent = `Group ${g}`;
@@ -1990,10 +2002,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Global respondent filter ----
     document.getElementById('globalUserSelect')?.addEventListener('change', e => {
-        _selectedUserId = parseInt(e.target.value);
-        const u = _fbUsersById[_selectedUserId] || {};
-        const name = u.user_name || `User #${_selectedUserId}`;
-        const ini = (name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()) || '?';
+        const val = e.target.value;
+        const isAdmin = val === 'admin';
+        _selectedUserId = isAdmin ? null : parseInt(val);
+        const name = isAdmin ? 'Admin View' : (_fbUsersById[_selectedUserId]?.user_name || `User #${_selectedUserId}`);
+        const ini = isAdmin ? 'AD' : (name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?');
         const profName = document.getElementById('sidebarProfileName');
         const profAvatar = document.getElementById('sidebarProfileAvatar');
         if (profName) profName.textContent = name;
