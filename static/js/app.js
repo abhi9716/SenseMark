@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         group:       window.__sessionUser.group || null,
         role:        window.__sessionUser.role || 'rep',
     } : null;
-    let _selectedUserId = _currentUser ? _currentUser.id : null;
+    let _selectedUserId = (_currentUser && _currentUser.role !== 'admin') ? _currentUser.id : null;
 
     const FB_STOP_WORDS = new Set([
         // Articles & determiners
@@ -202,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyCurrentUserToUi() {
         if (!_currentUser) return;
-        _selectedUserId = _currentUser.id;
+        const isAdmin = _currentUser.role === 'admin';
+        _selectedUserId = isAdmin ? null : _currentUser.id;
         const name = _currentUser.user_name || 'User';
         const firstName = name.split(/\s+/)[0] || name;
         const ini = initials(name);
@@ -211,10 +212,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const profName = document.getElementById('sidebarProfileName');
         const profAvatar = document.getElementById('sidebarProfileAvatar');
         if (headerName) { headerName.textContent = firstName; headerName.title = name; }
-        if (headerAvatar) headerAvatar.textContent = ini;
-        if (profName) profName.textContent = name;
-        if (profAvatar) profAvatar.textContent = ini;
+        if (headerAvatar) headerAvatar.textContent = isAdmin ? 'AD' : ini;
+        if (profName) profName.textContent = isAdmin ? 'Admin' : name;
+        if (profAvatar) profAvatar.textContent = isAdmin ? 'AD' : ini;
         populateGlobalUserSelect();
+        // Default select to "Admin (All Data)" for admin role
+        const sel = document.getElementById('globalUserSelect');
+        if (sel && isAdmin) sel.value = 'admin';
     }
 
     function applyRoleUi(role) {
@@ -1534,14 +1538,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateGroupOptions(selectId, defaultVal) {
         const sel = document.getElementById(selectId);
         if (!sel) return;
-        // Only show groups that have at least one submitted answer
-        const groupsWithData = new Set();
+        // Groups from all known users (from meta) — not just those with answers
+        const allGroups = new Set();
+        Object.values(_fbUsersById).forEach(u => {
+            if (u && u.group) allGroups.add(String(u.group));
+        });
+        // Also catch any groups only visible in answer data
         _gAllData.forEach(r => {
             const u = _fbUsersById[r.user_id];
-            if (u && u.group) groupsWithData.add(String(u.group));
+            if (u && u.group) allGroups.add(String(u.group));
         });
         sel.innerHTML = '<option value="all">All Groups</option>';
-        [...groupsWithData].sort().forEach(g => {
+        [...allGroups].sort((a, b) => Number(a) - Number(b)).forEach(g => {
             const opt = document.createElement('option');
             opt.value = g;
             opt.textContent = `Group ${g}`;
@@ -2076,10 +2084,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply UI immediately with pre-seeded session user (no flash, no wait)
         applyCurrentUserToUi();
         applyRoleUi(_currentUser?.role || 'rep');
-        await Promise.all([
-            loadFeedbackMeta(),
-            loadFeedbackData(),
-            loadGroupData(),
-        ]);
+        // meta + individual data in parallel; loadGroupData waits for meta
+        // because populateGroupOptions needs _fbUsersById (populated by meta)
+        await Promise.all([loadFeedbackMeta(), loadFeedbackData()]);
+        await loadGroupData();
     })();
 });
