@@ -380,7 +380,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawText = q ? q.question_text || '' : '';
             const qno = q ? q.question_no || `Q${qid}` : `Q${qid}`;
             return { qid: parseInt(qid), qno, text: rawText, avg, count: ratings.length };
-        }).sort((a, b) => a.avg - b.avg);
+        }).filter(q => q.text) // skip orphan question_ids with no question text
+          .sort((a, b) => a.avg - b.avg);
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
         let html = '<div class="fb-hbar-chart">';
