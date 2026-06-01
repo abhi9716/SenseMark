@@ -438,20 +438,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderQuestionAvgRating(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
-        const qRatings = {};
+        // Group by normalised question text, only from the current questions table (is_current=1)
+        const textRatings = {};
         data.forEach(r => {
             if (r.rating == null || r.question_id == null) return;
-            if (!qRatings[r.question_id]) qRatings[r.question_id] = [];
-            qRatings[r.question_id].push(r.rating);
+            const q = _fbQuestionsById[r.question_id];
+            if (!q || !q.question_text || !q.is_current) return;
+            const key = normaliseQuestionText(q.question_text);
+            if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${r.question_id}`, text: q.question_text };
+            textRatings[key].ratings.push(r.rating);
         });
-        const qAverages = Object.entries(qRatings).map(([qid, ratings]) => {
-            const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-            const q = _fbQuestionsById[parseInt(qid)];
-            const rawText = q ? q.question_text || '' : '';
-            const qno = q ? q.question_no || `Q${qid}` : `Q${qid}`;
-            return { qid: parseInt(qid), qno, text: rawText, avg, count: ratings.length };
-        }).filter(q => q.text) // skip orphan question_ids with no question text
-          .sort((a, b) => a.avg - b.avg);
+        const qAverages = Object.entries(textRatings).map(([, v]) => {
+            const avg = v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length;
+            return { qno: v.qno, text: v.text, avg, count: v.ratings.length };
+        }).sort((a, b) => a.avg - b.avg);
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
         let html = '<div class="fb-hbar-chart">';
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="fb-hbar-row">
                     <div class="fb-hbar-label">
                         <span class="fb-hbar-qno">${escapeHtml(q.qno)}</span>
-                        ${q.text ? `<span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>` : ''}
+                        <span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>
                     </div>
                     <div class="fb-hbar-track" title="${escapeHtml(q.qno)}: ${escapeHtml(q.text)}">
                         <div class="fb-hbar-fill" style="width:${pct}%;background:${color}">

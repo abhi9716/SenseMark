@@ -276,25 +276,35 @@ for qid in range(72, 75): QID_LEVEL_MAP[qid] = "consumer"  # Consumer
 
 # ---- DB-backed loaders (fall back to CSV on any error) ----
 
+_CHANNEL_TYPE_LEVEL = {'trade': 'trade', 'hcp': 'hcp', 'consumer': 'consumer'}
+
+
 def _db_load_answers():
     rows_raw = mysql_db.query("""
-        SELECT id, visit_id, user_id, outlet_id, visit_type, question_id,
-               rating, answer_text, answer_number, created_at, status,
-               voice_text, image_path, video_path, audio_path
-        FROM tbl_market_visit_feedback_answers
-        WHERE status = 'submitted'
-        ORDER BY created_at
+        SELECT a.id, a.visit_id, a.user_id, a.outlet_id, a.visit_type, a.question_id,
+               a.rating, a.answer_text, a.answer_number, a.created_at, a.status,
+               a.voice_text, a.image_path, a.video_path, a.audio_path,
+               LOWER(COALESCE(q.channel_type, '')) AS _q_level
+        FROM tbl_market_visit_feedback_answers a
+        LEFT JOIN (
+            SELECT id, channel_type FROM tbl_market_visit_feedback_questions_29_05_2026
+            UNION
+            SELECT id, channel_type FROM tbl_market_visit_feedback_questions
+        ) q ON a.question_id = q.id
+        WHERE a.status = 'submitted'
+        ORDER BY a.created_at
     """)
     rows = []
     for r in rows_raw:
         row = dict(r)
+        q_level_raw = row.pop('_q_level', '') or ''
         for k in ("id", "visit_id", "user_id", "outlet_id", "question_id", "rating", "answer_number"):
             if row.get(k) is not None:
                 try:
                     row[k] = int(row[k])
                 except (ValueError, TypeError):
                     row[k] = None
-        row["level"] = QID_LEVEL_MAP.get(row.get("question_id"))
+        row["level"] = _CHANNEL_TYPE_LEVEL.get(q_level_raw) or QID_LEVEL_MAP.get(row.get("question_id"))
         rows.append(row)
     return rows
 
@@ -309,13 +319,13 @@ def _db_load_users():
 
 
 def _db_load_questions():
-    # Load both tables so old answer IDs (1-38) and new IDs (51-74) both resolve.
-    # New table comes second so it wins on overlapping IDs (51-54).
+    # Old table first (is_current=0), new table second (is_current=1).
+    # JS iterates in order so new table entries overwrite old for duplicate IDs.
     return mysql_db.query("""
-        SELECT id, channel, channel_type, question_no, question_text, answer_type
+        SELECT id, channel, channel_type, question_no, question_text, answer_type, 0 AS is_current
         FROM tbl_market_visit_feedback_questions
         UNION ALL
-        SELECT id, channel, channel_type, question_no, question_text, answer_type
+        SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
 
@@ -468,6 +478,7 @@ async def get_feedback_meta():
             "question_no": q.get("question_no"),
             "question_text": q.get("question_text"),
             "answer_type": q.get("answer_type"),
+            "is_current": int(q.get("is_current") or 0),
         })
 
     outlets = []
