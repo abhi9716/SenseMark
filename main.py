@@ -199,7 +199,7 @@ async def index(request: Request):
 
 
 @app.post("/api/analyze")
-async def analyze(file: UploadFile = File(...), model: str = Form(default="big-pickle")):
+async def analyze(file: UploadFile = File(...), model: str = Form(default="big-pickle"), current_user: dict = Depends(_require_auth)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
@@ -232,7 +232,7 @@ async def analyze(file: UploadFile = File(...), model: str = Form(default="big-p
 
 
 @app.post("/api/query")
-async def query_analysis(request: Request):
+async def query_analysis(request: Request, current_user: dict = Depends(_require_auth)):
     try:
         body = await request.json()
         collection_id = body.get("collection_id", "")
@@ -263,7 +263,7 @@ async def query_analysis(request: Request):
 
 
 @app.post("/api/analyze-feedback")
-async def analyze_feedback(request: Request):
+async def analyze_feedback(request: Request, current_user: dict = Depends(_require_auth)):
     try:
         body = await request.json()
         text = body.get("text", "")
@@ -296,7 +296,7 @@ async def analyze_feedback(request: Request):
 
 
 @app.post("/api/clear-vector-db")
-async def clear_vector_db(request: Request):
+async def clear_vector_db(request: Request, current_user: dict = Depends(_require_auth)):
     try:
         body = await request.json()
         collection_id = body.get("collection_id", "")
@@ -308,7 +308,7 @@ async def clear_vector_db(request: Request):
 
 
 @app.get("/api/default-session")
-async def get_default_session():
+async def get_default_session(current_user: dict = Depends(_require_auth)):
     if not os.path.exists(DEFAULT_SESSION_CACHE):
         raise HTTPException(status_code=404, detail="Default sample analysis not available")
     try:
@@ -323,11 +323,6 @@ USERS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_users.csv")
 QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions.csv")
 OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv")
 
-# Logged-in user for this single-tenant UAT build. Change this id (and the
-# header/profile in templates/index.html) to view the dashboard as a
-# different user.
-CURRENT_USER_ID = int(os.environ.get("CURRENT_USER_ID", "9"))  # fallback for non-session paths
-
 _ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
 _MANAGER_DESIGNATIONS = ("manager", " tl", "team lead", "nsm", "zsm", "rsm", "asm", "lead", "supervisor")
 
@@ -339,11 +334,6 @@ def _resolve_role(designation: str) -> str:
     if any(x in d for x in _MANAGER_DESIGNATIONS):
         return "manager"
     return "rep"
-
-
-def _normalize_mobile(m: str) -> str:
-    digits = "".join(c for c in (m or "") if c.isdigit())
-    return digits[-10:] if len(digits) >= 10 else digits
 
 
 def _get_session_user(request: Request) -> dict | None:
@@ -485,12 +475,15 @@ async def get_feedback_data(request: Request, user_id: int | None = None, curren
         my_id = current_user["id"]
 
         if role == "admin":
-            target_id = user_id if user_id is not None else my_id
+            if user_id is not None:
+                rows = [r for r in all_rows if r.get("user_id") == user_id]
+                return {"data": rows, "total": len(rows), "user_id": user_id}
+            else:
+                return {"data": all_rows, "total": len(all_rows), "user_id": None}
         elif role == "manager":
-            # Managers may view anyone in their group; default to themselves
             target_id = user_id if user_id is not None else my_id
         else:
-            target_id = my_id  # reps always see only themselves
+            target_id = my_id
 
         rows = [r for r in all_rows if r.get("user_id") == target_id]
         return {"data": rows, "total": len(rows), "user_id": target_id}
