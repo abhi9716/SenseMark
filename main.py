@@ -166,11 +166,15 @@ def _send_otp_email(to_email: str, otp: str, user_name: str = "") -> None:
     </body></html>
     """
     msg.attach(MIMEText(html, "html"))
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.ehlo()
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+    raw = msg.as_string()
+
+    def _do_send():
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, raw)
+    _do_send()
 
 
 _ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
@@ -252,7 +256,7 @@ async def api_send_otp(request: Request, email: str = Form(...)):
         print(f"[DEBUG] OTP for {email}: {otp}", flush=True)
     else:
         try:
-            _send_otp_email(email, otp, user_name)
+            await asyncio.to_thread(_send_otp_email, email, otp, user_name)
         except Exception as e:
             print(f"[SMTP] OTP send failed: {e}")
             return templates.TemplateResponse("login.html", {
