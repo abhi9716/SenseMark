@@ -1415,12 +1415,12 @@ document.addEventListener('DOMContentLoaded', () => {
         exportCsv(_fbFiltered, 'feedback_responses.csv');
     });
 
-    document.getElementById('sidebarLogout')?.addEventListener('click', async () => {
-        try {
-            await fetch('/api/logout', { method: 'POST' });
-        } finally {
-            window.location.href = '/login';
-        }
+    document.getElementById('sidebarLogout')?.addEventListener('click', () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/logout';
+        document.body.appendChild(form);
+        form.submit();
     });
 
     // ====================================================================
