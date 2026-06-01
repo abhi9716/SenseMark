@@ -41,7 +41,6 @@ app = FastAPI(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SECRET_KEY    = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
-ADMIN_EMAIL   = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
 SMTP_EMAIL    = os.environ.get("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 SMTP_HOST     = os.environ.get("SMTP_HOST", "smtp.gmail.com")
@@ -230,10 +229,18 @@ async def api_send_otp(request: Request, email: str = Form(...)):
             "error": f"Please wait {remaining}s before requesting another code.",
         }, status_code=429)
 
-    # Validate email exists
-    is_admin = email == ADMIN_EMAIL.lower()
-    user_name = "Admin"
-    if not is_admin:
+    # Check admins table first, then regular users
+    user_name = ""
+    try:
+        admins_raw = _db_load_admins()
+    except Exception:
+        admins_raw = []
+    is_admin = any(str(a.get("email") or "").strip().lower() == email for a in admins_raw)
+
+    if is_admin:
+        admin_rec = next(a for a in admins_raw if str(a.get("email") or "").strip().lower() == email)
+        user_name = admin_rec.get("name") or "Admin"
+    else:
         try:
             users_raw = _db_load_users()
         except Exception:
@@ -306,8 +313,20 @@ async def api_verify_otp(request: Request, otp: str = Form(...)):
     for k in ("otp_email", "otp_code", "otp_expires", "otp_sent_at", "otp_attempts"):
         request.session.pop(k, None)
 
-    if otp_email == ADMIN_EMAIL.lower():
-        request.session["user"] = {"id": 0, "user_name": "Admin", "designation": "Admin", "group": None, "role": "admin"}
+    # Check admins table first
+    try:
+        admins_raw = _db_load_admins()
+    except Exception:
+        admins_raw = []
+    admin_rec = next((a for a in admins_raw if str(a.get("email") or "").strip().lower() == otp_email), None)
+    if admin_rec:
+        request.session["user"] = {
+            "id": int(admin_rec["id"]),
+            "user_name": admin_rec.get("name") or "Admin",
+            "designation": "Admin",
+            "group": None,
+            "role": "admin",
+        }
         return RedirectResponse("/", status_code=302)
 
     try:
@@ -524,6 +543,14 @@ def _db_load_answers():
         row["level"] = _CHANNEL_TYPE_LEVEL.get(q_level_raw) or QID_LEVEL_MAP.get(row.get("question_id"))
         rows.append(row)
     return rows
+
+
+def _db_load_admins():
+    return mysql_db.query("""
+        SELECT id, name, email, mobile_number, status
+        FROM tbl_market_visit_feedback_admins
+        WHERE status = 1
+    """)
 
 
 def _db_load_users():
