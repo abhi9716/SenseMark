@@ -315,7 +315,12 @@ def _db_load_users():
 
 
 def _db_load_questions():
+    # Old table (is_current=0) loaded first for text resolution of legacy answer IDs.
+    # New table (is_current=1) comes second and overwrites overlapping IDs in _fbQuestionsById.
     return mysql_db.query("""
+        SELECT id, channel, channel_type, question_no, question_text, answer_type, 0 AS is_current
+        FROM tbl_market_visit_feedback_questions
+        UNION ALL
         SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)

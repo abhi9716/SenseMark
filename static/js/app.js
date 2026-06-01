@@ -1034,20 +1034,25 @@ document.addEventListener('DOMContentLoaded', () => {
         scope = scope || 'fb';
         const sel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : scope === 'ov' ? 'ovFilterQuestion' : 'fbFilterQuestion');
         if (!sel) return;
-        const ids = getQuestionIdsInData(scopedData);
 
-        // Group by normalised question text. Fallback to per-qid when text missing.
-        const groups = new Map(); // key -> { qids:[], label, qno }
-        ids.forEach(id => {
-            const q = _fbQuestionsById[id];
-            if (!q || !q.question_text) return; // skip orphan question_ids with no text
+        // Determine active level for channel_type filtering
+        const levelBtnSel = scope === 'g' ? '.g-level-btn.active' : scope === 'ov' ? '.ov-level-btn.active' : '.fb-level-btn.active';
+        const activeLevel = document.querySelector(levelBtnSel)?.dataset?.level || 'all';
+        const levelChannelMap = { trade: 'Trade', hcp: 'HCP', consumer: 'Consumer' };
+        const activeChannelType = levelChannelMap[activeLevel] || null;
+
+        // Source questions from _fbQuestionsById (is_current=1 only) — always shows new questions
+        const groups = new Map();
+        Object.values(_fbQuestionsById).forEach(q => {
+            if (!q || !q.question_text || !q.is_current) return;
+            if (activeChannelType && (q.channel_type || '').toLowerCase() !== activeChannelType.toLowerCase()) return;
             const text = q.question_text;
-            const qno = q.question_no || `Q${id}`;
+            const qno = q.question_no || `Q${q.id}`;
             const key = normaliseQuestionText(text);
             if (!groups.has(key)) {
                 groups.set(key, { qids: [], label: `${qno} — ${text}`, qno, text });
             }
-            groups.get(key).qids.push(id);
+            groups.get(key).qids.push(q.id);
         });
 
         const options = [...groups.values()].sort((a, b) => a.qno.localeCompare(b.qno, undefined, { numeric: true }));
