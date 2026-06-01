@@ -286,11 +286,7 @@ def _db_load_answers():
                a.voice_text, a.image_path, a.video_path, a.audio_path,
                LOWER(COALESCE(q.channel_type, '')) AS _q_level
         FROM tbl_market_visit_feedback_answers a
-        LEFT JOIN (
-            SELECT id, channel_type FROM tbl_market_visit_feedback_questions_29_05_2026
-            UNION
-            SELECT id, channel_type FROM tbl_market_visit_feedback_questions
-        ) q ON a.question_id = q.id
+        LEFT JOIN tbl_market_visit_feedback_questions_29_05_2026 q ON a.question_id = q.id
         WHERE a.status = 'submitted'
         ORDER BY a.created_at
     """)
@@ -319,12 +315,7 @@ def _db_load_users():
 
 
 def _db_load_questions():
-    # Old table first (is_current=0), new table second (is_current=1).
-    # JS iterates in order so new table entries overwrite old for duplicate IDs.
     return mysql_db.query("""
-        SELECT id, channel, channel_type, question_no, question_text, answer_type, 0 AS is_current
-        FROM tbl_market_visit_feedback_questions
-        UNION ALL
         SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
