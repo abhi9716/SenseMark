@@ -23,6 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from services.analyzer import analyze_text, analyze_with_query, analyze_feedback_text
 from services import vector_db
+from services import db as mysql_db
 
 app = FastAPI(
     title="SenseMark Market Intelligence Platform",
@@ -268,6 +269,57 @@ for qid in range(43, 48): QID_LEVEL_MAP[qid] = "trade"     # Dcommerce (retail-s
 for qid in range(50, 55): QID_LEVEL_MAP[qid] = "consumer"  # Consumer1
 
 
+# ---- DB-backed loaders (fall back to CSV on any error) ----
+
+def _db_load_answers():
+    rows_raw = mysql_db.query("""
+        SELECT id, visit_id, user_id, outlet_id, visit_type, question_id,
+               rating, answer_text, answer_number, created_at, status,
+               voice_text, image_path, video_path, audio_path
+        FROM tbl_market_visit_feedback_answers
+        WHERE status = 'submitted'
+        ORDER BY created_at
+    """)
+    rows = []
+    for r in rows_raw:
+        row = dict(r)
+        for k in ("id", "visit_id", "user_id", "outlet_id", "question_id", "rating", "answer_number"):
+            if row.get(k) is not None:
+                try:
+                    row[k] = int(row[k])
+                except (ValueError, TypeError):
+                    row[k] = None
+        row["level"] = QID_LEVEL_MAP.get(row.get("question_id"))
+        rows.append(row)
+    return rows
+
+
+def _db_load_users():
+    return mysql_db.query("""
+        SELECT id, user_name, mobile_number, email, employee_code, designation,
+               visit_type, store_name, outlet_id, city, state, `group`,
+               created_at, updated_at
+        FROM tbl_market_visit_feedback_users
+    """)
+
+
+def _db_load_questions():
+    return mysql_db.query("""
+        SELECT id, channel, channel_type, question_no, question_text, answer_type
+        FROM tbl_market_visit_feedback_questions
+    """)
+
+
+def _db_load_outlets():
+    return mysql_db.query("""
+        SELECT id, outlet_code, outlet_name, owner_name,
+               mobile_number AS mobile,
+               channel, channel_option AS channel_type,
+               address, city, state
+        FROM tbl_market_visit_feedback_outlets
+    """)
+
+
 def _parse_csv_rows(path):
     rows = []
     if not os.path.exists(path):
@@ -286,6 +338,10 @@ def _parse_csv_rows(path):
 
 
 def _load_all_answers():
+    try:
+        return _db_load_answers()
+    except Exception as e:
+        print(f"[DB] answers: falling back to CSV ({e})")
     rows = []
     if not os.path.exists(CSV_DATA_PATH):
         return rows
@@ -310,11 +366,8 @@ def _load_all_answers():
 
 @app.get("/api/feedback-data")
 async def get_feedback_data():
-    if not os.path.exists(CSV_DATA_PATH):
-        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
     try:
         all_rows = _load_all_answers()
-        # Scope to logged-in user only
         rows = [r for r in all_rows if r.get("user_id") == CURRENT_USER_ID]
         return {"data": rows, "total": len(rows), "user_id": CURRENT_USER_ID}
     except Exception as e:
@@ -324,8 +377,6 @@ async def get_feedback_data():
 @app.get("/api/feedback-data-all")
 async def get_feedback_data_all():
     """All-user feedback rows for the Overall Feedback (all respondents) view."""
-    if not os.path.exists(CSV_DATA_PATH):
-        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
     try:
         all_rows = _load_all_answers()
         return {"data": all_rows, "total": len(all_rows)}
@@ -336,14 +387,15 @@ async def get_feedback_data_all():
 @app.get("/api/feedback-data-group/{group_id}")
 async def get_feedback_data_group(group_id: str):
     """Feedback rows scoped to users belonging to a specific group."""
-    if not os.path.exists(CSV_DATA_PATH):
-        raise HTTPException(status_code=404, detail="Feedback data CSV not found")
     try:
-        users_raw = _parse_csv_rows(USERS_CSV_PATH)
+        try:
+            users_raw = _db_load_users()
+        except Exception:
+            users_raw = _parse_csv_rows(USERS_CSV_PATH)
         group_user_ids = set()
         for u in users_raw:
-            g = u.get("group", "") or ""
-            if g.strip() == group_id:
+            g = str(u.get("group") or "").strip()
+            if g == group_id:
                 try:
                     uid = int(u["id"])
                     group_user_ids.add(uid)
@@ -358,9 +410,21 @@ async def get_feedback_data_group(group_id: str):
 
 @app.get("/api/feedback-meta")
 async def get_feedback_meta():
-    users_raw = _parse_csv_rows(USERS_CSV_PATH)
-    questions_raw = _parse_csv_rows(QUESTIONS_CSV_PATH)
-    outlets_raw = _parse_csv_rows(OUTLETS_CSV_PATH)
+    try:
+        users_raw = _db_load_users()
+    except Exception as e:
+        print(f"[DB] users meta fallback to CSV: {e}")
+        users_raw = _parse_csv_rows(USERS_CSV_PATH)
+    try:
+        questions_raw = _db_load_questions()
+    except Exception as e:
+        print(f"[DB] questions meta fallback to CSV: {e}")
+        questions_raw = _parse_csv_rows(QUESTIONS_CSV_PATH)
+    try:
+        outlets_raw = _db_load_outlets()
+    except Exception as e:
+        print(f"[DB] outlets meta fallback to CSV: {e}")
+        outlets_raw = _parse_csv_rows(OUTLETS_CSV_PATH)
 
     users = []
     for u in users_raw:
