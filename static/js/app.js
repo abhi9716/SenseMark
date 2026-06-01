@@ -1425,11 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('sidebarLogout')?.addEventListener('click', () => {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/api/logout';
-        document.body.appendChild(form);
-        form.submit();
+        window.location.href = '/api/logout';
     });
 
     // ====================================================================
@@ -1441,6 +1437,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const role = _currentUser?.role;
             const group = _currentUser?.group;
+            // Reps with no group have no group/overall data — skip fetch
+            if (role === 'rep' && !group) return;
             let url = '/api/feedback-data-all';
             if (role !== 'admin' && group) {
                 url = `/api/feedback-data-group/${encodeURIComponent(group)}`;

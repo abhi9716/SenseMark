@@ -335,7 +335,7 @@ async def api_verify_otp(request: Request, otp: str = Form(...)):
     return RedirectResponse("/", status_code=302)
 
 
-@app.post("/api/logout")
+@app.get("/api/logout")
 async def api_logout(request: Request):
     request.session.clear()
     return RedirectResponse("/login", status_code=302)
