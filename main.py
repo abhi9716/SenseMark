@@ -2,7 +2,12 @@ import asyncio
 import json
 import os
 import csv
+import secrets
+import smtplib
 import subprocess
+import time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 from io import BytesIO
 
@@ -34,8 +39,15 @@ app = FastAPI(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
+SECRET_KEY    = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
+ADMIN_EMAIL   = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
+SMTP_EMAIL    = os.environ.get("SMTP_EMAIL", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+SMTP_HOST     = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT     = int(os.environ.get("SMTP_PORT", "587"))
+OTP_EXPIRY    = 600   # seconds (10 min)
+OTP_RESEND_COOLDOWN = 60   # seconds
+
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="sm_session", max_age=86400 * 7, https_only=False)
 
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
@@ -125,6 +137,40 @@ def read_file_content(file: UploadFile) -> str:
         return read_text_file(file)
 
 
+def _send_otp_email(to_email: str, otp: str, user_name: str = "") -> None:
+    greeting = f"Hi {user_name}," if user_name else "Hello,"
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"{otp} is your Market Sense login code"
+    msg["From"] = f"Market Sense <{SMTP_EMAIL}>"
+    msg["To"] = to_email
+    html = f"""
+    <html><body style="margin:0;padding:0;background:#f0f2f8;font-family:'Segoe UI',sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px;">
+    <table width="480" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+      <tr><td style="background:linear-gradient(135deg,#6c7cff,#a78bfa);padding:28px 32px;">
+        <h1 style="margin:0;color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.5px">Market Sense</h1>
+        <p style="margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:13px">IQlytics Solutions Pvt Ltd</p>
+      </td></tr>
+      <tr><td style="padding:32px;">
+        <p style="margin:0 0 8px;color:#333;font-size:15px">{greeting}</p>
+        <p style="margin:0 0 24px;color:#555;font-size:14px;line-height:1.6">Use the code below to sign in to your Market Sense dashboard. This code expires in <strong>10 minutes</strong>.</p>
+        <div style="background:#f0f0ff;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+          <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#6c7cff">{otp}</span>
+        </div>
+        <p style="margin:0;color:#999;font-size:12px;line-height:1.6">If you did not request this code, you can safely ignore this email. Do not share this code with anyone.</p>
+      </td></tr>
+    </table>
+    </td></tr></table>
+    </body></html>
+    """
+    msg.attach(MIMEText(html, "html"))
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.ehlo()
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+
+
 _ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
 _MANAGER_DESIGNATIONS = ("manager", " tl", "team lead", "nsm", "zsm", "rsm", "asm", "lead", "supervisor")
 
@@ -156,20 +202,107 @@ async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "error": None})
 
 
-@app.post("/api/login")
-async def api_login(request: Request, username: str = Form(...), password: str = Form(...)):
-    username = username.strip().lower()
-    password = password.strip().lower()
+@app.get("/login/verify", response_class=HTMLResponse)
+async def login_verify_page(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse("/", status_code=302)
+    if not request.session.get("otp_email"):
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("login_verify.html", {
+        "request": request,
+        "email": request.session["otp_email"],
+        "error": None,
+    })
 
-    # Hardcoded admin account — username and password are both ADMIN_EMAIL
-    if username == ADMIN_EMAIL.lower() and password == ADMIN_EMAIL.lower():
-        request.session["user"] = {
-            "id": 0,
-            "user_name": "Admin",
-            "designation": "Admin",
-            "group": None,
-            "role": "admin",
-        }
+
+@app.post("/api/send-otp")
+async def api_send_otp(request: Request, email: str = Form(...)):
+    email = email.strip().lower()
+
+    # Rate-limit resends
+    last_sent = request.session.get("otp_sent_at", 0)
+    if time.time() - last_sent < OTP_RESEND_COOLDOWN:
+        remaining = int(OTP_RESEND_COOLDOWN - (time.time() - last_sent))
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": f"Please wait {remaining}s before requesting another code.",
+        }, status_code=429)
+
+    # Validate email exists
+    is_admin = email == ADMIN_EMAIL.lower()
+    user_name = "Admin"
+    if not is_admin:
+        try:
+            users_raw = _db_load_users()
+        except Exception:
+            users_raw = _parse_csv_rows(USERS_CSV_PATH)
+        matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == email), None)
+        if not matched:
+            return templates.TemplateResponse("login.html", {
+                "request": request,
+                "error": "Email not registered. Please use your work email.",
+            }, status_code=401)
+        user_name = matched.get("user_name") or ""
+
+    otp = str(secrets.randbelow(900000) + 100000)  # 6-digit, never starts with 0
+
+    try:
+        _send_otp_email(email, otp, user_name)
+    except Exception as e:
+        print(f"[SMTP] OTP send failed: {e}")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Could not send code. Please try again.",
+        }, status_code=500)
+
+    request.session["otp_email"]    = email
+    request.session["otp_code"]     = otp
+    request.session["otp_expires"]  = time.time() + OTP_EXPIRY
+    request.session["otp_sent_at"]  = time.time()
+    request.session["otp_attempts"] = 0
+    return RedirectResponse("/login/verify", status_code=302)
+
+
+@app.post("/api/verify-otp")
+async def api_verify_otp(request: Request, otp: str = Form(...)):
+    otp_email  = request.session.get("otp_email")
+    stored_otp = request.session.get("otp_code")
+    expires    = request.session.get("otp_expires", 0)
+    attempts   = request.session.get("otp_attempts", 0)
+
+    def _otp_err(msg, status=401):
+        return templates.TemplateResponse("login_verify.html", {
+            "request": request, "email": otp_email, "error": msg,
+        }, status_code=status)
+
+    if not otp_email or not stored_otp:
+        return RedirectResponse("/login", status_code=302)
+
+    if time.time() > expires:
+        request.session.clear()
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Code expired. Please request a new one.",
+        }, status_code=401)
+
+    if attempts >= 3:
+        request.session.clear()
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Too many incorrect attempts. Please request a new code.",
+        }, status_code=401)
+
+    if otp.strip() != stored_otp:
+        request.session["otp_attempts"] = attempts + 1
+        left = 2 - attempts
+        return _otp_err(f"Incorrect code. {left} attempt{'s' if left != 1 else ''} remaining.")
+
+    # OTP valid — clear OTP state
+    for k in ("otp_email", "otp_code", "otp_expires", "otp_sent_at", "otp_attempts"):
+        request.session.pop(k, None)
+
+    if otp_email == ADMIN_EMAIL.lower():
+        request.session["user"] = {"id": 0, "user_name": "Admin", "designation": "Admin", "group": None, "role": "admin"}
         return RedirectResponse("/", status_code=302)
 
     try:
@@ -177,20 +310,9 @@ async def api_login(request: Request, username: str = Form(...), password: str =
     except Exception:
         users_raw = _parse_csv_rows(USERS_CSV_PATH)
 
-    # username = email, password = email (same value)
-    matched = None
-    for u in users_raw:
-        email = str(u.get("email") or "").strip().lower()
-        if email and email == username and email == password:
-            matched = u
-            break
-
+    matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == otp_email), None)
     if not matched:
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Invalid username or password."},
-            status_code=401,
-        )
+        return templates.TemplateResponse("login.html", {"request": request, "error": "User not found."}, status_code=401)
 
     try:
         uid = int(matched["id"])

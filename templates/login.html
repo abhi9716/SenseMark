@@ -245,7 +245,7 @@
     </div>
 
     <h2>Welcome back</h2>
-    <p class="subtitle">Sign in with your employee credentials to access the dashboard.</p>
+    <p class="subtitle">Enter your work email to receive a one-time login code.</p>
 
     {% if error %}
     <div class="error-box">
@@ -254,23 +254,12 @@
     </div>
     {% endif %}
 
-    <form method="post" action="/api/login" id="loginForm">
+    <form method="post" action="/api/send-otp" id="loginForm">
         <div class="form-group">
-            <label for="username">Username (Email)</label>
-            <input type="text" id="username" name="username" placeholder="your.email@domain.com" autocomplete="username" required>
+            <label for="email">Work Email</label>
+            <input type="email" id="email" name="email" placeholder="your.email@company.com" autocomplete="email" required autofocus>
         </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <div class="input-wrapper">
-                <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password" tabindex="-1">
-                    <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <button class="btn-login" type="submit" id="submitBtn">Sign In</button>
+        <button class="btn-login" type="submit" id="submitBtn">Send Code</button>
     </form>
 
     <div class="divider"></div>
@@ -298,23 +287,9 @@
 <script>
     document.getElementById('loginForm').addEventListener('submit', function() {
         const btn = document.getElementById('submitBtn');
-        btn.textContent = 'Signing in…';
+        btn.textContent = 'Sending code…';
         btn.classList.add('loading');
         btn.disabled = true;
-    });
-
-    const pwInput = document.getElementById('password');
-    const toggleBtn = document.getElementById('togglePw');
-    const eyeIcon = document.getElementById('eyeIcon');
-
-    const eyeOpen  = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-    const eyeSlash = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
-
-    toggleBtn.addEventListener('click', () => {
-        const show = pwInput.type === 'password';
-        pwInput.type = show ? 'text' : 'password';
-        eyeIcon.innerHTML = show ? eyeSlash : eyeOpen;
-        toggleBtn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
     });
 </script>
 </body>

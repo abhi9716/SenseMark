@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Code — Market Sense</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f1117; --surface: #181c27; --surface-2: #1f2535;
+            --border: rgba(255,255,255,0.08); --border-focus: #6c7cff;
+            --text: #e8eaf6; --text-muted: #7b829a;
+            --accent: #6c7cff; --accent-glow: rgba(108,124,255,0.18);
+            --error: #ff5c5c; --error-bg: rgba(255,92,92,0.1);
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; display: flex; align-items: center;
+            justify-content: center; padding: 24px;
+            background-image: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(108,124,255,0.12) 0%, transparent 70%);
+        }
+        .login-card {
+            width: 100%; max-width: 420px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 40px 36px;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+        }
+        .brand { text-align: center; margin-bottom: 32px; }
+        .brand-logo {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, #6c7cff 0%, #a78bfa 100%);
+            border-radius: 14px; margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(108,124,255,0.3);
+        }
+        .brand-logo svg { width: 26px; height: 26px; color: #fff; }
+        .brand-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .brand-title span { color: var(--accent); }
+        .brand-byline { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+        .email-badge {
+            display: inline-block; background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 4px 12px; font-size: 13px; font-weight: 600;
+            color: var(--accent); margin-bottom: 24px;
+        }
+        .error-box {
+            background: var(--error-bg); border: 1px solid rgba(255,92,92,0.25);
+            border-radius: 10px; padding: 12px 14px; font-size: 13px;
+            color: var(--error); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-group { margin-bottom: 18px; }
+        label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: var(--text-muted); text-transform: uppercase;
+            letter-spacing: 0.6px; margin-bottom: 7px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%; background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 14px 16px; font-size: 22px; font-family: inherit;
+            font-weight: 700; color: var(--text); outline: none;
+            letter-spacing: 6px; text-align: center;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+        input::placeholder { color: var(--text-muted); font-weight: 400; letter-spacing: 2px; font-size: 16px; }
+        .btn-login {
+            width: 100%; background: linear-gradient(135deg, #6c7cff 0%, #a78bfa 100%);
+            color: #fff; border: none; border-radius: 10px;
+            padding: 13px; font-size: 14px; font-weight: 700;
+            font-family: inherit; cursor: pointer; margin-top: 8px;
+            transition: opacity 0.18s, transform 0.12s;
+            box-shadow: 0 4px 18px rgba(108,124,255,0.35);
+        }
+        .btn-login:hover { opacity: 0.92; transform: translateY(-1px); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login.loading { opacity: 0.7; cursor: not-allowed; }
+        .resend-row {
+            text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);
+        }
+        .resend-row a {
+            color: var(--accent); text-decoration: none; font-weight: 600;
+        }
+        .resend-row a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="brand">
+        <div class="brand-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+            </svg>
+        </div>
+        <div class="brand-title">Market <span>Sense</span></div>
+        <div class="brand-byline">IQlytics Solutions Pvt Ltd</div>
+    </div>
+
+    <h2>Check your email</h2>
+    <p class="subtitle">We sent a 6-digit code to</p>
+    <div class="email-badge">{{ email }}</div>
+
+    {% if error %}
+    <div class="error-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/api/verify-otp" id="verifyForm">
+        <div class="form-group">
+            <label for="otp">6-digit code</label>
+            <input type="text" id="otp" name="otp" placeholder="000000"
+                   inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                   autocomplete="one-time-code" required autofocus>
+        </div>
+        <button class="btn-login" type="submit" id="submitBtn">Verify & Sign In</button>
+    </form>
+
+    <div class="resend-row">
+        Didn't receive it? <a href="/login">Use a different email</a> or
+        <a href="#" id="resendLink">resend code</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('verifyForm').addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = 'Verifying…';
+        btn.classList.add('loading');
+        btn.disabled = true;
+    });
+
+    // Auto-submit when 6 digits entered
+    document.getElementById('otp').addEventListener('input', function() {
+        if (this.value.replace(/\D/g, '').length === 6) {
+            this.value = this.value.replace(/\D/g, '');
+            document.getElementById('verifyForm').submit();
+        }
+    });
+
+    // Resend: POST to send-otp with same email
+    document.getElementById('resendLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/send-otp';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'email';
+        input.value = '{{ email }}';
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
+</body>
+</html>
