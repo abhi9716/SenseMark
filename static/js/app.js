@@ -240,9 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateGlobalUserSelect() {
         const sel = document.getElementById('globalUserSelect');
         if (!sel) return;
-        const prev = sel.value || String(_selectedUserId || '');
+        const prev = sel.value || (_selectedUserId != null ? String(_selectedUserId) : 'admin');
+        // Only show users who have at least one answer in the loaded data
+        const uidsWithData = _gAllData.length
+            ? new Set(_gAllData.map(r => r.user_id).filter(id => id != null))
+            : null;
         sel.innerHTML = '<option value="admin">Admin (All Data)</option>';
         Object.values(_fbUsersById)
+            .filter(u => !uidsWithData || uidsWithData.has(u.id))
             .sort((a, b) => (a.user_name || '').localeCompare(b.user_name || ''))
             .forEach(u => {
                 const opt = document.createElement('option');
@@ -250,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 opt.textContent = u.group ? `${u.user_name} (Grp ${u.group})` : u.user_name;
                 sel.appendChild(opt);
             });
-        sel.value = prev || String(_selectedUserId || '');
+        sel.value = prev;
     }
 
     function refreshIndividualData() {
@@ -1446,12 +1451,12 @@ document.addEventListener('DOMContentLoaded', () => {
             _gAllData = json.data || [];
             _gData = [..._gAllData];
             _ovFiltered = [..._gAllData];
-            // Re-derive individual tab data for selected user
-            if (_selectedUserId != null) {
-                _fbData = _gAllData.filter(r => r.user_id === _selectedUserId);
-                _fbFiltered = [..._fbData];
-                applyFeedbackFilters();
-            }
+            // Refresh individual tab: admin null = all data, user = their own data
+            refreshIndividualData();
+            // Re-populate "Viewing as" filtered to only users who have answers
+            populateGlobalUserSelect();
+            const sel = document.getElementById('globalUserSelect');
+            if (sel && _currentUser?.role === 'admin') sel.value = 'admin';
             populateGroupFilterDropdowns();
             populateGroupOptions('gFilterGroup', 'all');
             populateGroupOptions('ovFilterGroup', 'all');
