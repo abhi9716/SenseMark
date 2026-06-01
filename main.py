@@ -125,6 +125,30 @@ def read_file_content(file: UploadFile) -> str:
         return read_text_file(file)
 
 
+_ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
+_MANAGER_DESIGNATIONS = ("manager", " tl", "team lead", "nsm", "zsm", "rsm", "asm", "lead", "supervisor")
+
+
+def _resolve_role(designation: str) -> str:
+    d = (designation or "").lower()
+    if any(x in d for x in _ADMIN_DESIGNATIONS):
+        return "admin"
+    if any(x in d for x in _MANAGER_DESIGNATIONS):
+        return "manager"
+    return "rep"
+
+
+def _get_session_user(request: Request) -> dict | None:
+    return request.session.get("user")
+
+
+def _require_auth(request: Request) -> dict:
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if request.session.get("user"):
@@ -323,28 +347,6 @@ USERS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_users.csv")
 QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions.csv")
 OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv")
 
-_ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
-_MANAGER_DESIGNATIONS = ("manager", " tl", "team lead", "nsm", "zsm", "rsm", "asm", "lead", "supervisor")
-
-
-def _resolve_role(designation: str) -> str:
-    d = (designation or "").lower()
-    if any(x in d for x in _ADMIN_DESIGNATIONS):
-        return "admin"
-    if any(x in d for x in _MANAGER_DESIGNATIONS):
-        return "manager"
-    return "rep"
-
-
-def _get_session_user(request: Request) -> dict | None:
-    return request.session.get("user")
-
-
-def _require_auth(request: Request) -> dict:
-    user = request.session.get("user")
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user
 
 # Question ID -> level mapping aligned to the questions table channels:
 #   Pharmacy Store / Grocery Store / MT Store / In-Market Activation / Dcommerce -> trade (retail-side)
