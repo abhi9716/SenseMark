@@ -1041,18 +1041,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const levelChannelMap = { trade: 'Trade', hcp: 'HCP', consumer: 'Consumer' };
         const activeChannelType = levelChannelMap[activeLevel] || null;
 
-        // Source questions from _fbQuestionsById (is_current=1 only) — always shows new questions
+        // Combine: all is_current=1 questions + any question that has answers in current data
+        const allIds = new Set([
+            ...Object.values(_fbQuestionsById).filter(q => q && q.is_current).map(q => q.id),
+            ...getQuestionIdsInData(scopedData),
+        ]);
+
         const groups = new Map();
-        Object.values(_fbQuestionsById).forEach(q => {
-            if (!q || !q.question_text || !q.is_current) return;
+        allIds.forEach(id => {
+            const q = _fbQuestionsById[id];
+            if (!q || !q.question_text) return;
             if (activeChannelType && (q.channel_type || '').toLowerCase() !== activeChannelType.toLowerCase()) return;
             const text = q.question_text;
-            const qno = q.question_no || `Q${q.id}`;
+            const qno = q.question_no || `Q${id}`;
             const key = normaliseQuestionText(text);
             if (!groups.has(key)) {
                 groups.set(key, { qids: [], label: `${qno} — ${text}`, qno, text });
             }
-            groups.get(key).qids.push(q.id);
+            groups.get(key).qids.push(id);
         });
 
         const options = [...groups.values()].sort((a, b) => a.qno.localeCompare(b.qno, undefined, { numeric: true }));
