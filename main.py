@@ -3,11 +3,8 @@ import json
 import os
 import csv
 import secrets
-import smtplib
 import subprocess
 import time
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 from io import BytesIO
 
@@ -42,10 +39,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SECRET_KEY    = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
 ADMIN_EMAIL   = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
-SMTP_EMAIL    = os.environ.get("SMTP_EMAIL", "")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-SMTP_HOST     = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT     = int(os.environ.get("SMTP_PORT", "587"))
+RESEND_KEY    = os.environ.get("RESEND_KEY", "")
+FROM_EMAIL    = os.environ.get("FROM_EMAIL", "onboarding@resend.dev")
 OTP_EXPIRY    = 600   # seconds (10 min)
 OTP_RESEND_COOLDOWN = 60   # seconds
 DEBUG         = os.environ.get("DEBUG", "false").lower() == "true"
@@ -139,12 +134,8 @@ def read_file_content(file: UploadFile) -> str:
         return read_text_file(file)
 
 
-def _send_otp_email(to_email: str, otp: str, user_name: str = "") -> None:
+async def _send_otp_email(to_email: str, otp: str, user_name: str = "") -> None:
     greeting = f"Hi {user_name}," if user_name else "Hello,"
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{otp} is your Market Sense login code"
-    msg["From"] = f"Market Sense <{SMTP_EMAIL}>"
-    msg["To"] = to_email
     html = f"""
     <html><body style="margin:0;padding:0;background:#f0f2f8;font-family:'Segoe UI',sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px;">
@@ -165,21 +156,15 @@ def _send_otp_email(to_email: str, otp: str, user_name: str = "") -> None:
     </td></tr></table>
     </body></html>
     """
-    msg.attach(MIMEText(html, "html"))
-    raw = msg.as_string()
-
-    def _do_send():
-        if SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15) as server:
-                server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                server.sendmail(SMTP_EMAIL, to_email, raw)
-        else:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                server.sendmail(SMTP_EMAIL, to_email, raw)
-    _do_send()
+    import httpx
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {RESEND_KEY}", "Content-Type": "application/json"},
+            json={"from": f"Market Sense <{FROM_EMAIL}>", "to": [to_email],
+                  "subject": f"{otp} is your Market Sense login code", "html": html},
+        )
+        resp.raise_for_status()
 
 
 _ADMIN_DESIGNATIONS = ("admin", "director", "head", "cxo", "ceo", "coo", "cto")
@@ -261,7 +246,7 @@ async def api_send_otp(request: Request, email: str = Form(...)):
         print(f"[DEBUG] OTP for {email}: {otp}", flush=True)
     else:
         try:
-            await asyncio.to_thread(_send_otp_email, email, otp, user_name)
+            await _send_otp_email(email, otp, user_name)
         except Exception as e:
             print(f"[SMTP] OTP send failed: {e}")
             return templates.TemplateResponse("login.html", {
