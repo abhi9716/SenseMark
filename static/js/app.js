@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Question filter + table page are tracked per scope ('fb' = individual, 'g' = group-2, 'ov' = overall)
     const _qFilter = { fb: 'all', g: 'all', ov: 'all' };
     const _ratingFilter = { fb: null, g: null, ov: null };
+    const _bucketFilter = { fb: null, g: null, ov: null }; // outlet rating bucket filter
     const _tablePages = { fb: 1, g: 1, ov: 1 };
     const FB_PAGE_SIZE = 10;
     let _fbUsersById = {};
@@ -158,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function outletName(oid) {
         if (oid == null) return '—';
         const o = _fbOutletsById[oid];
-        return o && o.outlet_name ? o.outlet_name : `Outlet #${oid}`;
+        return o && o.outlet_name ? o.outlet_name : (oid != null ? `Visit #${oid}` : '—');
     }
 
     function outletCode(oid) {
@@ -426,8 +427,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
             },
             {
-                label: 'Outlets', value: stats.outlets,
-                sub: `points of sale covered`, cls: 'fbi-kpi-amber',
+                label: (() => { const s = (elId||'fb').startsWith('g') ? 'g' : (elId||'fb').startsWith('ov') ? 'ov' : 'fb'; return _entityLabel(_getScopeLevel(s)) + 's'; })(),
+                value: stats.outlets,
+                sub: `points covered`, cls: 'fbi-kpi-amber',
                 icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg>`,
             },
             {
@@ -487,6 +489,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const _ctPrefix = ct => ({ 'Trade': 'TRA', 'trade': 'TRA', 'HCP': 'HCP', 'hcp': 'HCP', 'Consumer': 'CON', 'consumer': 'CON' })[ct] || (ct || 'Q').substring(0, 3).toUpperCase();
     const _ctOrder  = ct => ({ 'Trade': 0, 'trade': 0, 'HCP': 1, 'hcp': 1, 'Consumer': 2, 'consumer': 2 })[ct] ?? 3;
 
+    function _getScopeLevel(scope) {
+        const sel = scope === 'g' ? '.g-level-btn.active' : scope === 'ov' ? '.ov-level-btn.active' : '.fb-level-btn.active';
+        return document.querySelector(sel)?.dataset?.level || 'all';
+    }
+    function _entityLabel(level) {
+        if (level === 'hcp') return 'HCP';
+        if (level === 'consumer') return 'Consumer';
+        return 'Outlet';
+    }
+
     function renderQuestionAvgRating(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
@@ -528,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = q.avg <= 2 ? '#dc2626' : q.avg <= 3 ? '#f97316' : q.avg <= 4 ? '#84cc16' : '#22c55e';
             const lbl = q.label || q.qno;
             html += `
-                <div class="fb-hbar-row">
+                <div class="fb-hbar-row" data-qno="${escapeHtml(q.qno)}" style="cursor:pointer" title="Click to filter by ${escapeHtml(lbl)}">
                     <div class="fb-hbar-label">
                         <span class="fb-hbar-qno">${escapeHtml(lbl)}</span>
                         <span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>
@@ -543,6 +555,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         html += '</div>';
         el.innerHTML = html;
+
+        // Click a bar → filter by that question_no across the current scope
+        const scope = elId === 'gQuestionAvgRating' ? 'g' : elId === 'ovQuestionAvgRating' ? 'ov' : 'fb';
+        const filterFnQ = scope === 'g' ? applyGroupFilters : scope === 'ov' ? applyOverallFilters : applyFeedbackFilters;
+        const renderFnQ = scope === 'g' ? renderGroupDashboard : scope === 'ov' ? renderOverallDashboard : renderDashboard;
+        el.querySelectorAll('.fb-hbar-row[data-qno]').forEach(row => {
+            row.addEventListener('click', () => {
+                const qno = row.dataset.qno;
+                const matchIds = Object.values(_fbQuestionsById)
+                    .filter(q => q && (q.question_no || `Q${q.id}`) === qno)
+                    .map(q => String(q.id));
+                const qSel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : scope === 'ov' ? 'ovFilterQuestion' : 'fbFilterQuestion');
+                if (qSel) {
+                    const current = qSel.value;
+                    const joined = matchIds.join(',');
+                    qSel.value = (current === joined) ? 'all' : joined;
+                    _qFilter[scope] = qSel.value;
+                } else {
+                    _qFilter[scope] = _qFilter[scope] === matchIds.join(',') ? 'all' : matchIds.join(',');
+                }
+                filterFnQ(); renderFnQ();
+            });
+        });
     }
 
     function renderOutletBuckets(data, elId) {
@@ -554,15 +589,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!outletRatings[r.outlet_id]) outletRatings[r.outlet_id] = [];
             outletRatings[r.outlet_id].push(r.rating);
         });
-        const outletAvgs = Object.values(outletRatings).map(ratings => ratings.reduce((a, b) => a + b, 0) / ratings.length);
-        if (!outletAvgs.length) { el.innerHTML = '<div class="fbi-empty">No outlet data available</div>'; return; }
+        if (!Object.keys(outletRatings).length) { el.innerHTML = '<div class="fbi-empty">No outlet data available</div>'; return; }
         const buckets = { '1': 0, '2-3': 0, '3': 0, '4-5': 0 };
-        outletAvgs.forEach(avg => {
-            if (avg <= 1.5) buckets['1']++;
-            else if (avg < 2.5) buckets['2-3']++;
-            else if (avg <= 3.5) buckets['3']++;
-            else buckets['4-5']++;
+        const outletsByBucket = { '1': new Set(), '2-3': new Set(), '3': new Set(), '4-5': new Set() };
+        Object.entries(outletRatings).forEach(([oid, ratings]) => {
+            const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+            const b = avg <= 1.5 ? '1' : avg < 2.5 ? '2-3' : avg <= 3.5 ? '3' : '4-5';
+            buckets[b]++;
+            outletsByBucket[b].add(String(oid));
         });
+        const outletAvgs = Object.values(outletRatings).map(ratings => ratings.reduce((a, b) => a + b, 0) / ratings.length);
         const total = outletAvgs.length;
         const colors = { '1': '#dc2626', '2-3': '#f97316', '3': '#eab308', '4-5': '#22c55e' };
         const bucketLabels = { '1': 'Avg 1', '2-3': 'Avg 2-3', '3': 'Avg 3', '4-5': 'Avg 4-5' };
@@ -582,12 +618,15 @@ document.addEventListener('DOMContentLoaded', () => {
         svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
             <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">visits</text>`;
         let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svg}</svg></div><div class="fb-bucket-legend">`;
+        const bScope = elId === 'gOutletBuckets' ? 'g' : elId === 'ovOutletBuckets' ? 'ov' : 'fb';
+        const activeBucket = _bucketFilter[bScope] ? bucketOrder.find(b => outletsByBucket[b] === _bucketFilter[bScope] || [...outletsByBucket[b]].every(id => _bucketFilter[bScope].has(id))) : null;
         bucketOrder.forEach(b => {
             const pct = total ? ((buckets[b] / total) * 100) : 0;
             if (buckets[b] > 0) {
+                const isActive = activeBucket === b;
                 html += `
-                    <div class="fb-bucket-legend-item">
-                        <span class="fb-bucket-dot" style="background:${colors[b]}"></span>
+                    <div class="fb-bucket-legend-item" data-bucket="${b}" style="cursor:pointer;opacity:${_bucketFilter[bScope] && !isActive ? 0.4 : 1};${isActive ? 'font-weight:700' : ''}">
+                        <span class="fb-bucket-dot" style="background:${colors[b]};${isActive ? 'box-shadow:0 0 0 2px #fff,0 0 0 3px ' + colors[b] : ''}"></span>
                         <span class="fb-bucket-legend-label">${bucketLabels[b]}</span>
                         <span class="fb-bucket-legend-val">${buckets[b]} <span class="fb-bucket-legend-pct">(${pct.toFixed(0)}%)</span></span>
                     </div>`;
@@ -595,6 +634,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         html += '</div></div>';
         el.innerHTML = html;
+
+        const bFilterFn = bScope === 'g' ? applyGroupFilters : bScope === 'ov' ? applyOverallFilters : applyFeedbackFilters;
+        const bRenderFn = bScope === 'g' ? renderGroupDashboard : bScope === 'ov' ? renderOverallDashboard : renderDashboard;
+        el.querySelectorAll('.fb-bucket-legend-item[data-bucket]').forEach(item => {
+            item.addEventListener('click', () => {
+                const b = item.dataset.bucket;
+                _bucketFilter[bScope] = (_bucketFilter[bScope] && [...outletsByBucket[b]].every(id => _bucketFilter[bScope].has(id))) ? null : outletsByBucket[b];
+                bFilterFn(); bRenderFn();
+            });
+        });
     }
 
     function renderTopIssues(data, elId) {
@@ -877,8 +926,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const qText = q && q.question_text ? q.question_text : '';
             const oName = outletName(r.outlet_id);
             const oCode = outletCode(r.outlet_id);
+            const _eLabel = _entityLabel(_getScopeLevel(scope));
             return `<tr>
-                <td class="fb-cell-outlet" data-label="Outlet">
+                <td class="fb-cell-outlet" data-label="${_eLabel}">
                     <div class="fb-cell-outlet-stack">
                         <span class="fb-cell-outlet-name">${escapeHtml(oName)}</span>
                         <div class="fb-cell-outlet-meta">
@@ -1059,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.fb != null) filtered = filtered.filter(r => r.rating === _ratingFilter.fb);
+        if (_bucketFilter.fb) filtered = filtered.filter(r => _bucketFilter.fb.has(String(r.outlet_id)));
         _fbFiltered = filtered;
         _tablePages.fb = 1;
 
@@ -1164,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         _fbData.forEach(r => { if (r.outlet_id != null) outlets.add(String(r.outlet_id)); });
         const outletSel = document.getElementById('fbFilterOutlet');
         if (outletSel) {
-            outletSel.innerHTML = '<option value="all">All Outlets</option>';
+            outletSel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel('fb'))}s</option>`;
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
                 const opt = document.createElement('option');
                 opt.value = o; opt.textContent = outletName(parseInt(o));
@@ -1507,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const outletSel = document.getElementById('gFilterOutlet');
         if (outletSel) {
-            outletSel.innerHTML = '<option value="all">All Outlets</option>';
+            outletSel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel('g'))}s</option>`;
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
                 const opt = document.createElement('option');
                 opt.value = o; opt.textContent = outletName(parseInt(o));
@@ -1552,7 +1603,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prev = sel.value;
                 const outlets = new Set();
                 data.forEach(r => { if (r.outlet_id != null) outlets.add(String(r.outlet_id)); });
-                sel.innerHTML = '<option value="all">All Outlets</option>';
+                const _s = (outletSelId||'').startsWith('g') ? 'g' : (outletSelId||'').startsWith('ov') ? 'ov' : 'fb';
+                sel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel(_s))}s</option>`;
                 [...outlets]
                     .sort((a, b) => Number(a) - Number(b))
                     .forEach(o => {
@@ -1630,6 +1682,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.g != null) filtered = filtered.filter(r => r.rating === _ratingFilter.g);
+        if (_bucketFilter.g) filtered = filtered.filter(r => _bucketFilter.g.has(String(r.outlet_id)));
         _gFiltered = filtered;
         _tablePages.g = 1;
 
@@ -1914,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const outletSel = document.getElementById('ovFilterOutlet');
         if (outletSel) {
-            outletSel.innerHTML = '<option value="all">All Outlets</option>';
+            outletSel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel('ov'))}s</option>`;
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
                 const opt = document.createElement('option');
                 opt.value = o; opt.textContent = outletName(parseInt(o));
@@ -1972,6 +2025,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.ov != null) filtered = filtered.filter(r => r.rating === _ratingFilter.ov);
+        if (_bucketFilter.ov) filtered = filtered.filter(r => _bucketFilter.ov.has(String(r.outlet_id)));
         _ovFiltered = filtered;
         _tablePages.ov = 1;
 
