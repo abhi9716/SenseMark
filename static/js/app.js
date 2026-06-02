@@ -392,10 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const _fbLevel = _getScopeLevel('fb');
-        const uniqueOutlets = _fbLevel === 'hcp' || _fbLevel === 'consumer'
-            ? new Set(data.map(r => r.visit_id).filter(Boolean))
-            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _fbOutletNames = new Set();
+        data.forEach(r => { if (r.outlet_id != null) _fbOutletNames.add(_fbOutletsById[r.outlet_id]?.outlet_name || String(r.outlet_id)); });
+        const uniqueOutlets = _fbOutletNames;
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
@@ -624,14 +623,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const pct = total ? (buckets[b] / total) * 100 : 0;
             if (pct > 0) {
                 const dash = (pct / 100) * circ;
-                svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[b]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ}" transform="rotate(${cumAngle}, ${cx}, ${cy})" class="fb-pie-seg" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"/>`;
+                svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[b]}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ}" transform="rotate(${cumAngle}, ${cx}, ${cy})" class="fb-pie-seg" data-bucket="${b}" style="cursor:pointer" title="${bucketLabels[b]}: ${buckets[b]} outlets (${pct.toFixed(0)}%)"/>`;
                 cumAngle += (pct / 100) * 360;
             }
         });
         svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
             <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">visits</text>`;
         let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svg}</svg></div><div class="fb-bucket-legend">`;
-        const activeBucket = _bucketFilter[bScope] ? bucketOrder.find(b => outletsByBucket[b] === _bucketFilter[bScope] || [...outletsByBucket[b]].every(id => _bucketFilter[bScope].has(id))) : null;
+        const activeBucket = _bucketFilter[bScope]?.key || null;
         bucketOrder.forEach(b => {
             const pct = total ? ((buckets[b] / total) * 100) : 0;
             if (buckets[b] > 0) {
@@ -649,12 +648,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bFilterFn = bScope === 'g' ? applyGroupFilters : bScope === 'ov' ? applyOverallFilters : applyFeedbackFilters;
         const bRenderFn = bScope === 'g' ? renderGroupDashboard : bScope === 'ov' ? renderOverallDashboard : renderDashboard;
+        const _bucketClick = b => {
+            _bucketFilter[bScope] = _bucketFilter[bScope]?.key === b ? null : { key: b, ids: outletsByBucket[b] };
+            bFilterFn(); bRenderFn();
+        };
         el.querySelectorAll('.fb-bucket-legend-item[data-bucket]').forEach(item => {
-            item.addEventListener('click', () => {
-                const b = item.dataset.bucket;
-                _bucketFilter[bScope] = (_bucketFilter[bScope] && [...outletsByBucket[b]].every(id => _bucketFilter[bScope].has(id))) ? null : outletsByBucket[b];
-                bFilterFn(); bRenderFn();
-            });
+            item.addEventListener('click', () => _bucketClick(item.dataset.bucket));
+        });
+        el.querySelectorAll('.fb-pie-seg[data-bucket]').forEach(seg => {
+            seg.addEventListener('click', () => _bucketClick(seg.dataset.bucket));
         });
     }
 
@@ -1121,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.fb != null) filtered = filtered.filter(r => r.rating === _ratingFilter.fb);
-        if (_bucketFilter.fb) filtered = filtered.filter(r => _bucketFilter.fb.has(String(r.outlet_id)));
+        if (_bucketFilter.fb) filtered = filtered.filter(r => _bucketFilter.fb.ids.has(String(r.outlet_id)));
         _fbFiltered = filtered;
         _tablePages.fb = 1;
 
@@ -1483,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Export CSV (dashboard) ----
     function exportCsv(rows, filename) {
         if (!rows.length) return;
-        const headers = ['visit_id','outlet_code','outlet_name','question_no','question_text','rating','answer_text','voice_text','created_at'];
+        const headers = ['visit_id','outlet_code','outlet_name','channel','question_no','question_text','rating','answer_text','voice_text','created_at'];
         let csv = headers.join(',') + '\n';
         rows.forEach(r => {
             const q = _fbQuestionsById[r.question_id] || {};
@@ -1492,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 visit_id: r.visit_id,
                 outlet_code: o.outlet_code || '',
                 outlet_name: o.outlet_name || '',
+                channel: visitTypeLabel(inferLevel(r.level, r.outlet_id)),
                 question_no: q.question_no || '',
                 question_text: q.question_text || '',
                 rating: r.rating,
@@ -1683,9 +1686,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
         populateQuestionDropdown(levelScoped, 'g');
-        repopulateUserOutletDropdowns(levelScoped, 'gFilterUser', 'gFilterOutlet');
-        // Re-read after cascade repopulation (selection may have been reset)
+        repopulateUserOutletDropdowns(levelScoped, 'gFilterUser', null);
         const user2 = document.getElementById('gFilterUser')?.value || 'all';
+        const userScoped = user2 !== 'all' ? levelScoped.filter(r => String(r.user_id) === user2) : levelScoped;
+        repopulateUserOutletDropdowns(userScoped, null, 'gFilterOutlet');
         const outlet2 = document.getElementById('gFilterOutlet')?.value || 'all';
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
@@ -1706,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.g != null) filtered = filtered.filter(r => r.rating === _ratingFilter.g);
-        if (_bucketFilter.g) filtered = filtered.filter(r => _bucketFilter.g.has(String(r.outlet_id)));
+        if (_bucketFilter.g) filtered = filtered.filter(r => _bucketFilter.g.ids.has(String(r.outlet_id)));
         _gFiltered = filtered;
         _tablePages.g = 1;
 
@@ -1777,10 +1781,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const _gLevel = _getScopeLevel('g');
-        const uniqueOutlets = _gLevel === 'hcp' || _gLevel === 'consumer'
-            ? new Set(data.map(r => r.visit_id).filter(Boolean))
-            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _gOutletNames = new Set();
+        data.forEach(r => { if (r.outlet_id != null) _gOutletNames.add(_fbOutletsById[r.outlet_id]?.outlet_name || String(r.outlet_id)); });
+        const uniqueOutlets = _gOutletNames;
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
@@ -2030,8 +2033,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
         populateQuestionDropdown(levelScoped, 'ov');
-        repopulateUserOutletDropdowns(levelScoped, 'ovFilterUser', 'ovFilterOutlet');
+        repopulateUserOutletDropdowns(levelScoped, 'ovFilterUser', null);
         const user2 = document.getElementById('ovFilterUser')?.value || 'all';
+        const userScoped = user2 !== 'all' ? levelScoped.filter(r => String(r.user_id) === user2) : levelScoped;
+        repopulateUserOutletDropdowns(userScoped, null, 'ovFilterOutlet');
         const outlet2 = document.getElementById('ovFilterOutlet')?.value || 'all';
         if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
@@ -2052,7 +2057,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (_ratingFilter.ov != null) filtered = filtered.filter(r => r.rating === _ratingFilter.ov);
-        if (_bucketFilter.ov) filtered = filtered.filter(r => _bucketFilter.ov.has(String(r.outlet_id)));
+        if (_bucketFilter.ov) filtered = filtered.filter(r => _bucketFilter.ov.ids.has(String(r.outlet_id)));
         _ovFiltered = filtered;
         _tablePages.ov = 1;
 
@@ -2123,10 +2128,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const _ovLevel = _getScopeLevel('ov');
-        const uniqueOutlets = _ovLevel === 'hcp' || _ovLevel === 'consumer'
-            ? new Set(data.map(r => r.visit_id).filter(Boolean))
-            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _ovOutletNames = new Set();
+        data.forEach(r => { if (r.outlet_id != null) _ovOutletNames.add(_fbOutletsById[r.outlet_id]?.outlet_name || String(r.outlet_id)); });
+        const uniqueOutlets = _ovOutletNames;
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 

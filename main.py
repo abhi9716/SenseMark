@@ -333,29 +333,37 @@ QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions
 OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv")
 
 
-# Question ID -> level mapping aligned to the questions table channels:
-#   Pharmacy Store / Grocery Store / MT Store / In-Market Activation / Dcommerce -> trade (retail-side)
-#   HCP                                                                          -> hcp
-#   Consumer / Consumer1                                                         -> consumer
-QID_LEVEL_MAP = {}
-# Legacy question IDs (tbl_market_visit_feedback_questions, IDs 1-38)
-for qid in range(1, 6):   QID_LEVEL_MAP[qid] = "trade"
-for qid in range(8, 13):  QID_LEVEL_MAP[qid] = "trade"
-for qid in range(15, 20): QID_LEVEL_MAP[qid] = "trade"
-for qid in range(22, 29): QID_LEVEL_MAP[qid] = "trade"
-for qid in range(29, 34): QID_LEVEL_MAP[qid] = "hcp"
-for qid in range(36, 41): QID_LEVEL_MAP[qid] = "consumer"
-for qid in range(43, 48): QID_LEVEL_MAP[qid] = "trade"
-for qid in range(50, 55): QID_LEVEL_MAP[qid] = "consumer"
-# New question IDs (tbl_market_visit_feedback_questions_29_05_2026, IDs 51-74)
-for qid in range(51, 69): QID_LEVEL_MAP[qid] = "trade"     # Pharmacy/Grocery/MT/Activation/Dcommerce/Consumer1
-for qid in range(69, 72): QID_LEVEL_MAP[qid] = "hcp"       # HCP
-for qid in range(72, 75): QID_LEVEL_MAP[qid] = "consumer"  # Consumer
+def _channel_to_level(ch):
+    """Derive trade/hcp/consumer level from a channel_type string."""
+    ch = (ch or '').strip().lower()
+    if 'hcp' in ch or 'clinic' in ch or 'doctor' in ch:
+        return 'hcp'
+    if 'consumer' in ch:
+        return 'consumer'
+    if ch:
+        return 'trade'
+    return None
+
+
+def _build_qid_level_map():
+    """Build question-id → level map from the questions CSV (CSV-fallback only)."""
+    qmap = {}
+    for path in [QUESTIONS_CSV_PATH]:
+        if not os.path.exists(path):
+            continue
+        for row in _parse_csv_rows(path):
+            qid = row.get('id')
+            ch = row.get('channel_type') or row.get('channel') or ''
+            level = _channel_to_level(ch)
+            if level and qid:
+                try:
+                    qmap[int(float(qid))] = level
+                except (ValueError, TypeError):
+                    pass
+    return qmap
 
 
 # ---- DB-backed loaders (fall back to CSV on any error) ----
-
-_CHANNEL_TYPE_LEVEL = {'trade': 'trade', 'hcp': 'hcp', 'consumer': 'consumer'}
 
 
 def _db_load_answers():
@@ -363,23 +371,24 @@ def _db_load_answers():
         SELECT a.id, a.visit_id, a.user_id, a.outlet_id, a.visit_type, a.question_id,
                a.rating, a.answer_text, a.answer_number, a.created_at, a.status,
                a.voice_text, a.image_path, a.video_path, a.audio_path,
-               LOWER(COALESCE(q.channel_type, '')) AS _q_level
+               COALESCE(qnew.channel_type, qnew.channel, qold.channel_type, qold.channel, '') AS _q_channel
         FROM tbl_market_visit_feedback_answers a
-        LEFT JOIN tbl_market_visit_feedback_questions_29_05_2026 q ON a.question_id = q.id
+        LEFT JOIN tbl_market_visit_feedback_questions_29_05_2026 qnew ON a.question_id = qnew.id
+        LEFT JOIN tbl_market_visit_feedback_questions qold ON a.question_id = qold.id
         WHERE a.status = 'submitted'
         ORDER BY a.created_at
     """)
     rows = []
     for r in rows_raw:
         row = dict(r)
-        q_level_raw = row.pop('_q_level', '') or ''
+        q_channel = row.pop('_q_channel', '') or ''
         for k in ("id", "visit_id", "user_id", "outlet_id", "question_id", "rating", "answer_number"):
             if row.get(k) is not None:
                 try:
                     row[k] = int(row[k])
                 except (ValueError, TypeError):
                     row[k] = None
-        row["level"] = _CHANNEL_TYPE_LEVEL.get(q_level_raw) or QID_LEVEL_MAP.get(row.get("question_id"))
+        row["level"] = _channel_to_level(q_channel)
         rows.append(row)
     return rows
 
@@ -395,6 +404,9 @@ def _db_load_users():
 
 def _db_load_questions():
     return mysql_db.query("""
+        SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
+        FROM tbl_market_visit_feedback_questions
+        UNION ALL
         SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
@@ -435,6 +447,7 @@ def _load_all_answers():
     rows = []
     if not os.path.exists(CSV_DATA_PATH):
         return rows
+    _qid_level_map = _build_qid_level_map()
     with open(CSV_DATA_PATH, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for r in reader:
@@ -449,7 +462,7 @@ def _load_all_answers():
                         row[k] = None
                 else:
                     row[k] = v
-            row["level"] = QID_LEVEL_MAP.get(row.get("question_id")) if row.get("question_id") else None
+            row["level"] = _qid_level_map.get(row.get("question_id")) if row.get("question_id") else None
             rows.append(row)
     return rows
 
