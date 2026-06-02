@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let _ovFiltered = []; // Overall tab filtered slice
     // Question filter + table page are tracked per scope ('fb' = individual, 'g' = group-2, 'ov' = overall)
     const _qFilter = { fb: 'all', g: 'all', ov: 'all' };
+    const _ratingFilter = { fb: null, g: null, ov: null };
     const _tablePages = { fb: 1, g: 1, ov: 1 };
     const FB_PAGE_SIZE = 10;
     let _fbUsersById = {};
@@ -448,6 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(elId || 'fbRatingDist');
         if (!el) return;
         if (total === 0) { el.innerHTML = '<div class="fbi-empty">No ratings available for this selection</div>'; return; }
+        const scope = elId === 'gRatingDist' ? 'g' : elId === 'ovRatingDist' ? 'ov' : 'fb';
+        const filterFn = scope === 'g' ? applyGroupFilters : scope === 'ov' ? applyOverallFilters : applyFeedbackFilters;
+        const renderFn = scope === 'g' ? renderGroupDashboard : scope === 'ov' ? renderOverallDashboard : renderDashboard;
         const maxCount = Math.max(...Object.values(dist), 1);
         const colors = { 1:'#dc2626', 2:'#f97316', 3:'#eab308', 4:'#84cc16', 5:'#22c55e' };
         const labels = { 1:'Poor', 2:'Fair', 3:'Good', 4:'Very Good', 5:'Excellent' };
@@ -456,58 +460,80 @@ document.addEventListener('DOMContentLoaded', () => {
             const count = dist[i] || 0;
             const pctOfMax = maxCount > 0 ? (count / maxCount) * 100 : 0;
             const pctOfTotal = total > 0 ? (count / total) * 100 : 0;
+            const isActive = _ratingFilter[scope] === i;
             barsHtml += `
-                <div class="fb-rating-bar-wrap">
+                <div class="fb-rating-bar-wrap" data-rating="${i}" style="cursor:pointer;opacity:${_ratingFilter[scope] != null && !isActive ? 0.4 : 1}">
                     <div class="fb-rating-count">${count} <span class="fb-rating-pct">(${pctOfTotal.toFixed(0)}%)</span></div>
-                    <div class="fb-rating-bar" style="height:${Math.max(4, pctOfMax)}%;background:${colors[i]}" title="${labels[i]}: ${count} responses (${pctOfTotal.toFixed(0)}% of total)"></div>
+                    <div class="fb-rating-bar" style="height:${Math.max(4, pctOfMax)}%;background:${colors[i]};${isActive ? 'box-shadow:0 0 0 2px #fff,0 0 0 4px ' + colors[i] : ''}" title="${labels[i]}: ${count} responses (${pctOfTotal.toFixed(0)}% of total)"></div>
                     <div class="fb-rating-label">${i}<br><span style="font-size:0.65rem;font-weight:400;color:var(--text-tertiary)">${labels[i]}</span></div>
                 </div>`;
         }
         el.innerHTML = `
             <div class="fb-rating-dist">${barsHtml}</div>
             <div class="fb-rating-total">${total}</div>
-            <div class="fb-rating-total-label">Total Ratings Collected</div>`;
+            <div class="fb-rating-total-label">Total Ratings Collected${_ratingFilter[scope] != null ? ` · <span style="color:var(--accent);cursor:pointer" id="${elId || 'fbRatingDist'}_clear">Clear filter ×</span>` : ''}</div>`;
+        el.querySelector(`[id$="_clear"]`)?.addEventListener('click', () => {
+            _ratingFilter[scope] = null; filterFn(); renderFn();
+        });
+        el.querySelectorAll('.fb-rating-bar-wrap').forEach(wrap => {
+            wrap.addEventListener('click', () => {
+                const r = parseInt(wrap.dataset.rating);
+                _ratingFilter[scope] = _ratingFilter[scope] === r ? null : r;
+                filterFn(); renderFn();
+            });
+        });
     }
+
+    const _ctPrefix = ct => ({ 'Trade': 'TRA', 'trade': 'TRA', 'HCP': 'HCP', 'hcp': 'HCP', 'Consumer': 'CON', 'consumer': 'CON' })[ct] || (ct || 'Q').substring(0, 3).toUpperCase();
+    const _ctOrder  = ct => ({ 'Trade': 0, 'trade': 0, 'HCP': 1, 'hcp': 1, 'Consumer': 2, 'consumer': 2 })[ct] ?? 3;
 
     function renderQuestionAvgRating(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
-        // Pre-seed all current questions so they always appear even with no answers
-        const textRatings = {};
+        // Group by channel_type + question_no for TRA-Q1 / HCP-Q1 / CON-Q1 segregation
+        const groups = {};
         Object.values(_fbQuestionsById).forEach(q => {
-            if (!q || !q.question_text) return;
-            const key = normaliseQuestionText(q.question_text);
-            if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${q.id}`, text: q.question_text };
+            if (!q || !q.question_text || q.answer_type !== 'star_rating') return;
+            const ct = (q.channel_type || '').trim();
+            const qno = q.question_no || `Q${q.id}`;
+            const key = `${ct}__${qno}`;
+            if (!groups[key]) groups[key] = { ratings: [], ct, qno, text: q.question_text };
         });
-        // Fill in ratings from answer data
         data.forEach(r => {
             if (r.rating == null || r.question_id == null) return;
             const q = _fbQuestionsById[r.question_id];
-            if (!q || !q.question_text) return;
-            const key = normaliseQuestionText(q.question_text);
-            if (!textRatings[key]) textRatings[key] = { ratings: [], qno: q.question_no || `Q${r.question_id}`, text: q.question_text };
-            textRatings[key].ratings.push(r.rating);
+            if (!q || q.answer_type !== 'star_rating') return;
+            const ct = (q.channel_type || '').trim();
+            const qno = q.question_no || `Q${r.question_id}`;
+            const key = `${ct}__${qno}`;
+            if (!groups[key]) groups[key] = { ratings: [], ct, qno, text: q.question_text };
+            groups[key].ratings.push(r.rating);
         });
-        const qAverages = Object.entries(textRatings)
-            .map(([, v]) => {
-                const avg = v.ratings.length ? v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length : null;
-                return { qno: v.qno, text: v.text, avg, count: v.ratings.length };
-            })
+        const qAverages = Object.values(groups)
+            .map(v => ({
+                label: `${_ctPrefix(v.ct)}-${v.qno}`,
+                text: v.text,
+                avg: v.ratings.length ? v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length : null,
+                count: v.ratings.length,
+                ctOrder: _ctOrder(v.ct),
+                qno: v.qno,
+            }))
             .filter(q => q.count > 0)
-            .sort((a, b) => a.avg - b.avg);
+            .sort((a, b) => a.ctOrder - b.ctOrder || a.qno.localeCompare(b.qno, undefined, { numeric: true }));
         if (!qAverages.length) { el.innerHTML = '<div class="fbi-empty">No rating data available</div>'; return; }
         const maxAvg = 5;
         let html = '<div class="fb-hbar-chart">';
         qAverages.forEach(q => {
             const pct = (q.avg / maxAvg) * 100;
             const color = q.avg <= 2 ? '#dc2626' : q.avg <= 3 ? '#f97316' : q.avg <= 4 ? '#84cc16' : '#22c55e';
+            const lbl = q.label || q.qno;
             html += `
                 <div class="fb-hbar-row">
                     <div class="fb-hbar-label">
-                        <span class="fb-hbar-qno">${escapeHtml(q.qno)}</span>
+                        <span class="fb-hbar-qno">${escapeHtml(lbl)}</span>
                         <span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>
                     </div>
-                    <div class="fb-hbar-track" title="${escapeHtml(q.qno)}: ${escapeHtml(q.text)}">
+                    <div class="fb-hbar-track" title="${escapeHtml(lbl)}: ${escapeHtml(q.text)}">
                         <div class="fb-hbar-fill" style="width:${pct}%;background:${color}">
                             <span class="fb-hbar-val">${q.avg.toFixed(1)}</span>
                         </div>
@@ -554,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
-            <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">outlets</text>`;
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">visits</text>`;
         let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svg}</svg></div><div class="fb-bucket-legend">`;
         bucketOrder.forEach(b => {
             const pct = total ? ((buckets[b] / total) * 100) : 0;
@@ -1032,6 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (_ratingFilter.fb != null) filtered = filtered.filter(r => r.rating === _ratingFilter.fb);
         _fbFiltered = filtered;
         _tablePages.fb = 1;
 
@@ -1602,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (_ratingFilter.g != null) filtered = filtered.filter(r => r.rating === _ratingFilter.g);
         _gFiltered = filtered;
         _tablePages.g = 1;
 
@@ -1943,6 +1971,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (_ratingFilter.ov != null) filtered = filtered.filter(r => r.rating === _ratingFilter.ov);
         _ovFiltered = filtered;
         _tablePages.ov = 1;
 
