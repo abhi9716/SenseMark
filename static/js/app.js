@@ -529,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 count: v.ratings.length,
                 ctOrder: _ctOrder(v.ct),
                 qno: v.qno,
+                ct: v.ct,
             }))
             .filter(q => q.count > 0)
             .sort((a, b) => a.ctOrder - b.ctOrder || a.qno.localeCompare(b.qno, undefined, { numeric: true }));
@@ -540,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = q.avg <= 2 ? '#dc2626' : q.avg <= 3 ? '#f97316' : q.avg <= 4 ? '#84cc16' : '#22c55e';
             const lbl = q.label || q.qno;
             html += `
-                <div class="fb-hbar-row" data-qno="${escapeHtml(q.qno)}" style="cursor:pointer" title="Click to filter by ${escapeHtml(lbl)}">
+                <div class="fb-hbar-row" data-qno="${escapeHtml(q.qno)}" data-ct="${escapeHtml(q.ct||'')}" style="cursor:pointer" title="Click to filter by ${escapeHtml(lbl)}">
                     <div class="fb-hbar-label">
                         <span class="fb-hbar-qno">${escapeHtml(lbl)}</span>
                         <span class="fb-hbar-qtext">${escapeHtml(q.text)}</span>
@@ -563,8 +564,9 @@ document.addEventListener('DOMContentLoaded', () => {
         el.querySelectorAll('.fb-hbar-row[data-qno]').forEach(row => {
             row.addEventListener('click', () => {
                 const qno = row.dataset.qno;
+                const ct  = row.dataset.ct || '';
                 const matchIds = Object.values(_fbQuestionsById)
-                    .filter(q => q && (q.question_no || `Q${q.id}`) === qno)
+                    .filter(q => q && (q.question_no || `Q${q.id}`) === qno && (q.channel_type || '').trim() === ct)
                     .map(q => String(q.id));
                 const qSel = document.getElementById(scope === 'g' ? 'gFilterQuestion' : scope === 'ov' ? 'ovFilterQuestion' : 'fbFilterQuestion');
                 if (qSel) {
