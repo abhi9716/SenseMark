@@ -392,7 +392,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _fbLevel = _getScopeLevel('fb');
+        const uniqueOutlets = _fbLevel === 'hcp' || _fbLevel === 'consumer'
+            ? new Set(data.map(r => r.visit_id).filter(Boolean))
+            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
@@ -1774,7 +1777,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _gLevel = _getScopeLevel('g');
+        const uniqueOutlets = _gLevel === 'hcp' || _gLevel === 'consumer'
+            ? new Set(data.map(r => r.visit_id).filter(Boolean))
+            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
@@ -2117,7 +2123,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalRatings = ratings.length;
         const avgRating = totalRatings ? ratings.reduce((a, b) => a + b, 0) / totalRatings : 0;
 
-        const uniqueOutlets = new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
+        const _ovLevel = _getScopeLevel('ov');
+        const uniqueOutlets = _ovLevel === 'hcp' || _ovLevel === 'consumer'
+            ? new Set(data.map(r => r.visit_id).filter(Boolean))
+            : new Set(data.map(r => r.outlet_id != null ? String(r.outlet_id) : null).filter(Boolean));
         const uniqueVisits = new Set(data.map(r => r.visit_id));
         const uniqueUsers = new Set(data.map(r => r.user_id != null ? String(r.user_id) : null).filter(Boolean));
 
