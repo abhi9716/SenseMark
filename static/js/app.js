@@ -583,6 +583,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderOutletBuckets(data, elId) {
         const el = document.getElementById(elId);
         if (!el) return;
+        const bScope = elId === 'gOutletBuckets' ? 'g' : elId === 'ovOutletBuckets' ? 'ov' : 'fb';
+        const eLabel = _entityLabel(_getScopeLevel(bScope));
+        const eLabelPlural = eLabel === 'HCP' ? 'HCPs' : eLabel === 'Consumer' ? 'Consumers' : 'Outlets';
+        const card = el.closest('.fbi-card') || el.parentElement;
+        const h3 = card?.querySelector('h3');
+        const sub = card?.querySelector('.fbi-card-sub');
+        if (h3) h3.textContent = `${eLabel} Rating Buckets`;
+        if (sub) sub.textContent = `% of ${eLabelPlural.toLowerCase()} grouped by average rating band`;
         const outletRatings = {};
         data.forEach(r => {
             if (r.rating == null || r.outlet_id == null) return;
@@ -618,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
         svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="fb-pie-total" font-size="28" font-weight="800">${total}</text>
             <text x="${cx}" y="${cy + 14}" text-anchor="middle" class="fb-pie-label" font-size="11">visits</text>`;
         let html = `<div class="fb-bucket-chart"><div class="fb-bucket-pie-wrap"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svg}</svg></div><div class="fb-bucket-legend">`;
-        const bScope = elId === 'gOutletBuckets' ? 'g' : elId === 'ovOutletBuckets' ? 'ov' : 'fb';
         const activeBucket = _bucketFilter[bScope] ? bucketOrder.find(b => outletsByBucket[b] === _bucketFilter[bScope] || [...outletsByBucket[b]].every(id => _bucketFilter[bScope].has(id))) : null;
         bucketOrder.forEach(b => {
             const pct = total ? ((buckets[b] / total) * 100) : 0;
@@ -1216,9 +1223,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const outletSel = document.getElementById('fbFilterOutlet');
         if (outletSel) {
             outletSel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel('fb'))}s</option>`;
+            const seenFb = new Set();
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
+                const name = outletName(parseInt(o));
+                if (seenFb.has(name)) return;
+                seenFb.add(name);
                 const opt = document.createElement('option');
-                opt.value = o; opt.textContent = outletName(parseInt(o));
+                opt.value = o; opt.textContent = name;
                 outletSel.appendChild(opt);
             });
         }
@@ -1559,9 +1570,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const outletSel = document.getElementById('gFilterOutlet');
         if (outletSel) {
             outletSel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel('g'))}s</option>`;
+            const seenG = new Set();
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
+                const name = outletName(parseInt(o));
+                if (seenG.has(name)) return;
+                seenG.add(name);
                 const opt = document.createElement('option');
-                opt.value = o; opt.textContent = outletName(parseInt(o));
+                opt.value = o; opt.textContent = name;
                 outletSel.appendChild(opt);
             });
         }
@@ -1605,11 +1620,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.forEach(r => { if (r.outlet_id != null) outlets.add(String(r.outlet_id)); });
                 const _s = (outletSelId||'').startsWith('g') ? 'g' : (outletSelId||'').startsWith('ov') ? 'ov' : 'fb';
                 sel.innerHTML = `<option value="all">All ${_entityLabel(_getScopeLevel(_s))}s</option>`;
+                const seenNames = new Set();
                 [...outlets]
                     .sort((a, b) => Number(a) - Number(b))
                     .forEach(o => {
+                        const name = outletName(parseInt(o));
+                        if (seenNames.has(name)) return; // deduplicate by display name
+                        seenNames.add(name);
                         const opt = document.createElement('option');
-                        opt.value = o; opt.textContent = outletName(parseInt(o));
+                        opt.value = o; opt.textContent = name;
                         sel.appendChild(opt);
                     });
                 sel.value = outlets.has(prev) ? prev : 'all';
