@@ -1438,8 +1438,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function mediaUrl(path) {
         if (!path) return null;
-        const p = String(path).trim();
+        let p = String(path).trim();
         if (!p || p === 'NULL') return null;
+        // Some rows store a JSON array e.g. ["/uploads/feedback/file.jpg"]
+        if (p.startsWith('[')) {
+            try { const arr = JSON.parse(p); p = Array.isArray(arr) && arr[0] ? String(arr[0]).trim() : ''; }
+            catch { return null; }
+            if (!p) return null;
+        }
+        // blob: URLs are temporary client-side handles — they can never be served
+        if (p.startsWith('blob:')) return null;
         if (/^https?:\/\//i.test(p)) return p;
         return MEDIA_BASE_URL + (p.startsWith('/') ? p : '/' + p);
     }
