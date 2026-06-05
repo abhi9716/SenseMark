@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
             respondents: uniqueUsers.size,
             outlets: uniqueOutlets.size,
             feedbacks: uniqueVisits.size,
-        });
+        }, 'fbKpiRow', { label: 'Respondents', sub: 'respondents contributing feedback' });
         renderQuestionAvgRating(data, 'fbQuestionAvgRating');
         renderOutletBuckets(data, 'fbOutletBuckets');
         renderRatingDist(ratingsDist, totalRatings);
@@ -1189,9 +1189,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeChannelType && (q.channel_type || '').toLowerCase() !== activeChannelType.toLowerCase()) return;
             const text = q.question_text;
             const qno = q.question_no || `Q${id}`;
+            const ctPfx = _ctPrefix(q.channel_type || '');
             const key = normaliseQuestionText(text);
             if (!groups.has(key)) {
-                groups.set(key, { qids: [], label: `${qno} — ${text}`, qno, text });
+                groups.set(key, { qids: [], label: `[${ctPfx}] ${qno} — ${text}`, qno, text });
             }
             groups.get(key).qids.push(id);
         });

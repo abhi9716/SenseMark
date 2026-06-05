@@ -14,7 +14,7 @@ def _make_pool():
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        connection_timeout=10,
+        connection_timeout=30,
         autocommit=True,
     )
 

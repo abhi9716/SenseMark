@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import subprocess
@@ -159,19 +160,18 @@ async def login_page(request: Request):
 
 
 @app.post("/api/login")
-async def api_login(request: Request, username: str = Form(...), password: str = Form(...)):
+async def api_login(request: Request, username: str = Form(...)):
     username = username.strip().lower()
-    password = password.strip().lower()
 
-    if username == ADMIN_EMAIL.lower() and password == ADMIN_EMAIL.lower():
+    if username == ADMIN_EMAIL.lower():
         request.session["user"] = {"id": 0, "user_name": "Admin", "designation": "Admin", "group": None, "role": "admin"}
         return RedirectResponse("/", status_code=302)
 
-    users_raw = _db_load_users()
+    users_raw = await asyncio.to_thread(_db_load_users)
 
-    matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == username and str(u.get("email") or "").strip().lower() == password), None)
+    matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == username), None)
     if not matched:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid email or password."}, status_code=401)
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Email not found. Please check and try again."}, status_code=401)
 
     try:
         uid = int(matched["id"])
@@ -397,7 +397,7 @@ def _load_all_answers():
 @app.get("/api/feedback-data")
 async def get_feedback_data(request: Request, user_id: int | None = None, current_user: dict = Depends(_require_auth)):
     try:
-        all_rows = _load_all_answers()
+        all_rows = await asyncio.to_thread(_load_all_answers)
         role = current_user["role"]
         my_id = current_user["id"]
 
@@ -424,7 +424,7 @@ async def get_feedback_data_all(current_user: dict = Depends(_require_auth)):
     if current_user["role"] not in ("admin", "manager"):
         raise HTTPException(status_code=403, detail="Access denied")
     try:
-        all_rows = _load_all_answers()
+        all_rows = await asyncio.to_thread(_load_all_answers)
         return {"data": all_rows, "total": len(all_rows)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -440,7 +440,7 @@ async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_r
     if role in ("rep", "manager") and user_group != group_id:
         raise HTTPException(status_code=403, detail="Access denied to this group")
     try:
-        users_raw = _db_load_users()
+        users_raw = await asyncio.to_thread(_db_load_users)
         group_user_ids = set()
         for u in users_raw:
             g = str(u.get("group") or "").strip()
@@ -450,7 +450,7 @@ async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_r
                     group_user_ids.add(uid)
                 except (ValueError, TypeError):
                     pass
-        all_rows = _load_all_answers()
+        all_rows = await asyncio.to_thread(_load_all_answers)
         rows = [r for r in all_rows if r.get("user_id") in group_user_ids]
         return {"data": rows, "total": len(rows), "group_id": group_id, "user_ids": sorted(group_user_ids)}
     except Exception as e:
@@ -459,9 +459,11 @@ async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_r
 
 @app.get("/api/feedback-meta")
 async def get_feedback_meta(current_user: dict = Depends(_require_auth)):
-    users_raw = _db_load_users()
-    questions_raw = _db_load_questions()
-    outlets_raw = _db_load_outlets()
+    users_raw, questions_raw, outlets_raw = await asyncio.gather(
+        asyncio.to_thread(_db_load_users),
+        asyncio.to_thread(_db_load_questions),
+        asyncio.to_thread(_db_load_outlets),
+    )
 
     users = []
     for u in users_raw:
@@ -547,7 +549,7 @@ async def get_feedback_meta(current_user: dict = Depends(_require_auth)):
 @app.get("/api/visit/{visit_id}")
 async def get_visit_detail(visit_id: int, current_user: dict = Depends(_require_auth)):
     session_uid = current_user["id"]
-    all_rows = _load_all_answers()
+    all_rows = await asyncio.to_thread(_load_all_answers)
     visit_rows = [r for r in all_rows if r.get("visit_id") == visit_id and r.get("user_id") == session_uid]
     if not visit_rows:
         raise HTTPException(status_code=404, detail="Visit not found")
