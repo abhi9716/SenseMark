@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderKpis(stats, elId, repCfg) {
         const el = document.getElementById(elId || 'fbKpiRow');
         if (!el) return;
-        repCfg = repCfg || { label: 'Respondents', sub: 'field reps submitting' };
+        repCfg = repCfg || { label: 'Respondents', sub: '' };
         const items = [
             {
                 label: 'Average Rating',

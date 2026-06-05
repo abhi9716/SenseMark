@@ -1,6 +1,5 @@
 import json
 import os
-import csv
 import subprocess
 from pathlib import Path
 from io import BytesIO
@@ -168,10 +167,7 @@ async def api_login(request: Request, username: str = Form(...), password: str =
         request.session["user"] = {"id": 0, "user_name": "Admin", "designation": "Admin", "group": None, "role": "admin"}
         return RedirectResponse("/", status_code=302)
 
-    try:
-        users_raw = _db_load_users()
-    except Exception:
-        users_raw = _parse_csv_rows(USERS_CSV_PATH)
+    users_raw = _db_load_users()
 
     matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == username and str(u.get("email") or "").strip().lower() == password), None)
     if not matched:
@@ -327,12 +323,6 @@ async def get_default_session(current_user: dict = Depends(_require_auth)):
         raise HTTPException(status_code=500, detail=f"Default sample file is corrupt: {e}")
 
 
-CSV_DATA_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_answers.csv")
-USERS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_users.csv")
-QUESTIONS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_questions.csv")
-OUTLETS_CSV_PATH = os.path.join(BASE_DIR, "tbl_market_visit_feedback_outlets.csv")
-
-
 def _channel_to_level(ch):
     """Derive trade/hcp/consumer level from a channel_type string."""
     ch = (ch or '').strip().lower()
@@ -345,25 +335,7 @@ def _channel_to_level(ch):
     return None
 
 
-def _build_qid_level_map():
-    """Build question-id → level map from the questions CSV (CSV-fallback only)."""
-    qmap = {}
-    for path in [QUESTIONS_CSV_PATH]:
-        if not os.path.exists(path):
-            continue
-        for row in _parse_csv_rows(path):
-            qid = row.get('id')
-            ch = row.get('channel_type') or row.get('channel') or ''
-            level = _channel_to_level(ch)
-            if level and qid:
-                try:
-                    qmap[int(float(qid))] = level
-                except (ValueError, TypeError):
-                    pass
-    return qmap
-
-
-# ---- DB-backed loaders (fall back to CSV on any error) ----
+# ---- DB-backed loaders ----
 
 
 def _db_load_answers():
@@ -371,10 +343,9 @@ def _db_load_answers():
         SELECT a.id, a.visit_id, a.user_id, a.outlet_id, a.visit_type, a.question_id,
                a.rating, a.answer_text, a.answer_number, a.created_at, a.status,
                a.voice_text, a.image_path, a.video_path, a.audio_path,
-               COALESCE(qnew.channel_type, qnew.channel, qold.channel_type, qold.channel, '') AS _q_channel
+               COALESCE(q.channel_type, q.channel, '') AS _q_channel
         FROM tbl_market_visit_feedback_answers a
-        LEFT JOIN tbl_market_visit_feedback_questions_29_05_2026 qnew ON a.question_id = qnew.id
-        LEFT JOIN tbl_market_visit_feedback_questions qold ON a.question_id = qold.id
+        LEFT JOIN tbl_market_visit_feedback_questions_29_05_2026 q ON a.question_id = q.id
         WHERE a.status = 'submitted'
         ORDER BY a.created_at
     """)
@@ -405,9 +376,6 @@ def _db_load_users():
 def _db_load_questions():
     return mysql_db.query("""
         SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
-        FROM tbl_market_visit_feedback_questions
-        UNION ALL
-        SELECT id, channel, channel_type, question_no, question_text, answer_type, 1 AS is_current
         FROM tbl_market_visit_feedback_questions_29_05_2026
     """)
 
@@ -422,49 +390,8 @@ def _db_load_outlets():
     """)
 
 
-def _parse_csv_rows(path):
-    rows = []
-    if not os.path.exists(path):
-        return rows
-    with open(path, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for r in reader:
-            cleaned = {}
-            for k, v in r.items():
-                if v == "" or v == "NULL" or v is None:
-                    cleaned[k] = None
-                else:
-                    cleaned[k] = v
-            rows.append(cleaned)
-    return rows
-
-
 def _load_all_answers():
-    try:
-        return _db_load_answers()
-    except Exception as e:
-        print(f"[DB] answers: falling back to CSV ({e})")
-    rows = []
-    if not os.path.exists(CSV_DATA_PATH):
-        return rows
-    _qid_level_map = _build_qid_level_map()
-    with open(CSV_DATA_PATH, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for r in reader:
-            row = {}
-            for k, v in r.items():
-                if v == "" or v == "NULL":
-                    row[k] = None
-                elif k in ("rating", "id", "visit_id", "user_id", "outlet_id", "question_id"):
-                    try:
-                        row[k] = int(float(v)) if v else None
-                    except (ValueError, TypeError):
-                        row[k] = None
-                else:
-                    row[k] = v
-            row["level"] = _qid_level_map.get(row.get("question_id")) if row.get("question_id") else None
-            rows.append(row)
-    return rows
+    return _db_load_answers()
 
 
 @app.get("/api/feedback-data")
@@ -513,10 +440,7 @@ async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_r
     if role in ("rep", "manager") and user_group != group_id:
         raise HTTPException(status_code=403, detail="Access denied to this group")
     try:
-        try:
-            users_raw = _db_load_users()
-        except Exception:
-            users_raw = _parse_csv_rows(USERS_CSV_PATH)
+        users_raw = _db_load_users()
         group_user_ids = set()
         for u in users_raw:
             g = str(u.get("group") or "").strip()
@@ -535,21 +459,9 @@ async def get_feedback_data_group(group_id: str, current_user: dict = Depends(_r
 
 @app.get("/api/feedback-meta")
 async def get_feedback_meta(current_user: dict = Depends(_require_auth)):
-    try:
-        users_raw = _db_load_users()
-    except Exception as e:
-        print(f"[DB] users meta fallback to CSV: {e}")
-        users_raw = _parse_csv_rows(USERS_CSV_PATH)
-    try:
-        questions_raw = _db_load_questions()
-    except Exception as e:
-        print(f"[DB] questions meta fallback to CSV: {e}")
-        questions_raw = _parse_csv_rows(QUESTIONS_CSV_PATH)
-    try:
-        outlets_raw = _db_load_outlets()
-    except Exception as e:
-        print(f"[DB] outlets meta fallback to CSV: {e}")
-        outlets_raw = _parse_csv_rows(OUTLETS_CSV_PATH)
+    users_raw = _db_load_users()
+    questions_raw = _db_load_questions()
+    outlets_raw = _db_load_outlets()
 
     users = []
     for u in users_raw:
