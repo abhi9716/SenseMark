@@ -1108,10 +1108,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Step 2: repopulate outlet from base; re-read selection
         repopulateUserOutletDropdowns(base, null, 'fbFilterOutlet');
-        const outlet = document.getElementById('fbFilterOutlet')?.value || 'all';
+        const outlet2 = document.getElementById('fbFilterOutlet')?.value || 'all';
 
         // Step 3: apply outlet → outletScoped; repopulate question from outletScoped
-        const outletScoped = outlet !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet) : base;
+        const outletScoped = outlet2 !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : base;
         populateQuestionDropdown(outletScoped, 'fb');
 
         // Step 4: apply question + rating + bucket → filtered
