@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function outletName(oid) {
         if (oid == null) return '—';
         const o = _fbOutletsById[oid];
-        return o && o.outlet_name ? o.outlet_name : (oid != null ? `Visit #${oid}` : '—');
+        return o && o.outlet_name ? o.outlet_name : (oid != null ? `Outlet #${oid}` : '—');
     }
 
     function outletCode(oid) {
@@ -1094,34 +1094,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Filter logic ----
     function applyFeedbackFilters() {
         const level = document.querySelector('.fb-level-btn.active')?.dataset?.level || 'all';
-        const outlet = document.getElementById('fbFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('fbFilterDate')?.value || 'all';
 
-        const levelScoped = level !== 'all' ? _fbData.filter(r => inferLevel(r.level, r.outlet_id) === level) : _fbData;
-        populateQuestionDropdown(levelScoped);
-        repopulateUserOutletDropdowns(levelScoped, null, 'fbFilterOutlet');
-        const outlet2 = document.getElementById('fbFilterOutlet')?.value || 'all';
+        // Step 1: level + date → base
+        let base = [..._fbData];
+        if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
+        if (dateRange !== 'all') {
+            const now = new Date(); const cutoff = new Date(now);
+            const days = parseInt(dateRange);
+            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
+            base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
+        }
 
-        let filtered = [..._fbData];
-        if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
+        // Step 2: repopulate outlet from base; re-read selection
+        repopulateUserOutletDropdowns(base, null, 'fbFilterOutlet');
+        const outlet = document.getElementById('fbFilterOutlet')?.value || 'all';
+
+        // Step 3: apply outlet → outletScoped; repopulate question from outletScoped
+        const outletScoped = outlet !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet) : base;
+        populateQuestionDropdown(outletScoped, 'fb');
+
+        // Step 4: apply question + rating + bucket → filtered
+        let filtered = [...outletScoped];
         if (_qFilter.fb !== 'all') {
             const qSet = new Set(String(_qFilter.fb).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
-
-        if (dateRange !== 'all') {
-            const now = new Date();
-            const cutoff = new Date(now);
-            const days = parseInt(dateRange);
-            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
-            filtered = filtered.filter(r => {
-                if (!r.created_at) return true;
-                const d = new Date(r.created_at);
-                return d >= cutoff;
-            });
-        }
-
         if (_ratingFilter.fb != null) filtered = filtered.filter(r => r.rating === _ratingFilter.fb);
         if (_bucketFilter.fb) filtered = filtered.filter(r => _bucketFilter.fb.ids.has(String(r.outlet_id)));
         _fbFiltered = filtered;
@@ -1176,11 +1174,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const levelChannelMap = { trade: 'Trade', hcp: 'HCP', consumer: 'Consumer' };
         const activeChannelType = levelChannelMap[activeLevel] || null;
 
-        // Combine: all is_current=1 questions + any question that has answers in current data
-        const allIds = new Set([
-            ...Object.values(_fbQuestionsById).filter(q => q && q.is_current).map(q => q.id),
-            ...getQuestionIdsInData(scopedData),
-        ]);
+        // Show only questions that have answers in the current scoped data (true cascading)
+        const allIds = new Set(getQuestionIdsInData(scopedData));
+        // Fallback to all current questions when scope is unrestricted (no data yet or full view)
+        if (allIds.size === 0) {
+            Object.values(_fbQuestionsById).filter(q => q && q.is_current).forEach(q => allIds.add(q.id));
+        }
 
         const groups = new Map();
         allIds.forEach(id => {
@@ -1234,6 +1233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const seenFb = new Set();
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
                 const name = outletName(parseInt(o));
+                if (!_fbOutletsById[parseInt(o)]?.outlet_name) return;
                 if (seenFb.has(name)) return;
                 seenFb.add(name);
                 const opt = document.createElement('option');
@@ -1590,6 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const seenG = new Set();
             [...outlets].sort((a, b) => Number(a) - Number(b)).forEach(o => {
                 const name = outletName(parseInt(o));
+                if (!_fbOutletsById[parseInt(o)]?.outlet_name) return;
                 if (seenG.has(name)) return;
                 seenG.add(name);
                 const opt = document.createElement('option');
@@ -1642,6 +1643,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .sort((a, b) => Number(a) - Number(b))
                     .forEach(o => {
                         const name = outletName(parseInt(o));
+                        if (!_fbOutletsById[parseInt(o)]?.outlet_name) return;
                         if (seenNames.has(name)) return; // deduplicate by display name
                         seenNames.add(name);
                         const opt = document.createElement('option');
@@ -1679,45 +1681,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyGroupFilters() {
         const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
         const group = document.getElementById('gFilterGroup')?.value || 'all';
-        const user = document.getElementById('gFilterUser')?.value || 'all';
-        const outlet = document.getElementById('gFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('gFilterDate')?.value || 'all';
 
-        // Group tab always restricts to users who belong to any group
-        let filtered = _gAllData.filter(r => {
-            const u = _fbUsersById[r.user_id];
-            return u && u.group;
-        });
-        if (group !== 'all') filtered = filtered.filter(r => {
-            const u = _fbUsersById[r.user_id];
-            return String(u.group) === group;
-        });
+        // Step 1: group + level + date → base (restrict to users with a group)
+        let base = _gAllData.filter(r => { const u = _fbUsersById[r.user_id]; return u && u.group; });
+        if (group !== 'all') base = base.filter(r => { const u = _fbUsersById[r.user_id]; return u && String(u.group) === group; });
+        if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
+        if (dateRange !== 'all') {
+            const now = new Date(); const cutoff = new Date(now);
+            const days = parseInt(dateRange);
+            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
+            base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
+        }
 
-        const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
-        populateQuestionDropdown(levelScoped, 'g');
-        repopulateUserOutletDropdowns(levelScoped, 'gFilterUser', null);
+        // Step 2: repopulate user from base; re-read
+        repopulateUserOutletDropdowns(base, 'gFilterUser', null);
         const user2 = document.getElementById('gFilterUser')?.value || 'all';
-        const userScoped = user2 !== 'all' ? levelScoped.filter(r => String(r.user_id) === user2) : levelScoped;
+
+        // Step 3: apply user → userScoped; repopulate outlet
+        const userScoped = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : base;
         repopulateUserOutletDropdowns(userScoped, null, 'gFilterOutlet');
         const outlet2 = document.getElementById('gFilterOutlet')?.value || 'all';
-        if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
-        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
+
+        // Step 4: apply outlet → outletScoped; repopulate question
+        const outletScoped = outlet2 !== 'all' ? userScoped.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : userScoped;
+        populateQuestionDropdown(outletScoped, 'g');
+
+        // Step 5: apply question + rating + bucket → filtered
+        let filtered = [...outletScoped];
         if (_qFilter.g !== 'all') {
             const qSet = new Set(String(_qFilter.g).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
-        if (dateRange !== 'all') {
-            const now = new Date();
-            const cutoff = new Date(now);
-            const days = parseInt(dateRange);
-            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
-            filtered = filtered.filter(r => {
-                if (!r.created_at) return true;
-                return new Date(r.created_at) >= cutoff;
-            });
-        }
-
         if (_ratingFilter.g != null) filtered = filtered.filter(r => r.rating === _ratingFilter.g);
         if (_bucketFilter.g) filtered = filtered.filter(r => _bucketFilter.g.ids.has(String(r.outlet_id)));
         _gFiltered = filtered;
@@ -2030,41 +2025,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyOverallFilters() {
         const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
         const group = document.getElementById('ovFilterGroup')?.value || 'all';
-        const user = document.getElementById('ovFilterUser')?.value || 'all';
-        const outlet = document.getElementById('ovFilterOutlet')?.value || 'all';
         const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
 
-        let filtered = [..._gAllData];
-        if (group !== 'all') filtered = filtered.filter(r => {
-            const u = _fbUsersById[r.user_id];
-            return u && String(u.group || '') === group;
-        });
+        // Step 1: group + level + date → base
+        let base = [..._gAllData];
+        if (group !== 'all') base = base.filter(r => { const u = _fbUsersById[r.user_id]; return u && String(u.group || '') === group; });
+        if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
+        if (dateRange !== 'all') {
+            const now = new Date(); const cutoff = new Date(now);
+            const days = parseInt(dateRange);
+            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
+            base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
+        }
 
-        const levelScoped = level !== 'all' ? filtered.filter(r => inferLevel(r.level, r.outlet_id) === level) : filtered;
-        populateQuestionDropdown(levelScoped, 'ov');
-        repopulateUserOutletDropdowns(levelScoped, 'ovFilterUser', null);
+        // Step 2: repopulate user from base; re-read
+        repopulateUserOutletDropdowns(base, 'ovFilterUser', null);
         const user2 = document.getElementById('ovFilterUser')?.value || 'all';
-        const userScoped = user2 !== 'all' ? levelScoped.filter(r => String(r.user_id) === user2) : levelScoped;
+
+        // Step 3: apply user → userScoped; repopulate outlet
+        const userScoped = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : base;
         repopulateUserOutletDropdowns(userScoped, null, 'ovFilterOutlet');
         const outlet2 = document.getElementById('ovFilterOutlet')?.value || 'all';
-        if (level !== 'all') filtered = filtered.filter(r => inferLevel(r.level, r.outlet_id) === level);
-        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
-        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
+
+        // Step 4: apply outlet → outletScoped; repopulate question
+        const outletScoped = outlet2 !== 'all' ? userScoped.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : userScoped;
+        populateQuestionDropdown(outletScoped, 'ov');
+
+        // Step 5: apply question + rating + bucket → filtered
+        let filtered = [...outletScoped];
         if (_qFilter.ov !== 'all') {
             const qSet = new Set(String(_qFilter.ov).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
         }
-        if (dateRange !== 'all') {
-            const now = new Date();
-            const cutoff = new Date(now);
-            const days = parseInt(dateRange);
-            if (!isNaN(days)) cutoff.setDate(now.getDate() - days);
-            filtered = filtered.filter(r => {
-                if (!r.created_at) return true;
-                return new Date(r.created_at) >= cutoff;
-            });
-        }
-
         if (_ratingFilter.ov != null) filtered = filtered.filter(r => r.rating === _ratingFilter.ov);
         if (_bucketFilter.ov) filtered = filtered.filter(r => _bucketFilter.ov.ids.has(String(r.outlet_id)));
         _ovFiltered = filtered;
