@@ -1190,9 +1190,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = q.question_text;
             const qno = q.question_no || `Q${id}`;
             const ctPfx = _ctPrefix(q.channel_type || '');
-            const key = normaliseQuestionText(text);
+            const key = `${(q.channel_type || '').toLowerCase()}||${normaliseQuestionText(text)}`;
             if (!groups.has(key)) {
-                groups.set(key, { qids: [], label: `[${ctPfx}] ${qno} — ${text}`, qno, text });
+                groups.set(key, { qids: [], label: `${ctPfx}-${qno} — ${text}`, qno: `${ctPfx}-${qno}`, text });
             }
             groups.get(key).qids.push(id);
         });
