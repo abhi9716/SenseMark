@@ -1096,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = document.querySelector('.fb-level-btn.active')?.dataset?.level || 'all';
         const dateRange = document.getElementById('fbFilterDate')?.value || 'all';
 
-        // Step 1: level + date → base
+        // Base: level + date applied
         let base = [..._fbData];
         if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
         if (dateRange !== 'all') {
@@ -1106,16 +1106,21 @@ document.addEventListener('DOMContentLoaded', () => {
             base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
         }
 
-        // Step 2: repopulate outlet from base; re-read selection
-        repopulateUserOutletDropdowns(base, null, 'fbFilterOutlet');
+        // Cross-filter: outlet options = base filtered by current question (bidirectional)
+        let forOutletOpts = [...base];
+        if (_qFilter.fb !== 'all') {
+            const qSet = new Set(String(_qFilter.fb).split(',').map(s => s.trim()));
+            forOutletOpts = forOutletOpts.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        }
+        repopulateUserOutletDropdowns(forOutletOpts, null, 'fbFilterOutlet');
         const outlet2 = document.getElementById('fbFilterOutlet')?.value || 'all';
 
-        // Step 3: apply outlet → outletScoped; repopulate question from outletScoped
-        const outletScoped = outlet2 !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : base;
-        populateQuestionDropdown(outletScoped, 'fb');
+        // Question options = base filtered by outlet2
+        const forQOpts = outlet2 !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : base;
+        populateQuestionDropdown(forQOpts, 'fb');
 
-        // Step 4: apply question + rating + bucket → filtered
-        let filtered = [...outletScoped];
+        // Final: base filtered by outlet + question + rating + bucket
+        let filtered = outlet2 !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : [...base];
         if (_qFilter.fb !== 'all') {
             const qSet = new Set(String(_qFilter.fb).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
@@ -1682,8 +1687,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = document.querySelector('.g-level-btn.active')?.dataset?.level || 'all';
         const group = document.getElementById('gFilterGroup')?.value || 'all';
         const dateRange = document.getElementById('gFilterDate')?.value || 'all';
+        // Read current selections BEFORE repopulation (for cross-filter)
+        const prevUser = document.getElementById('gFilterUser')?.value || 'all';
+        const prevOutlet = document.getElementById('gFilterOutlet')?.value || 'all';
 
-        // Step 1: group + level + date → base (restrict to users with a group)
+        // Base: non-dropdown filters (group + level + date)
         let base = _gAllData.filter(r => { const u = _fbUsersById[r.user_id]; return u && u.group; });
         if (group !== 'all') base = base.filter(r => { const u = _fbUsersById[r.user_id]; return u && String(u.group) === group; });
         if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
@@ -1694,21 +1702,34 @@ document.addEventListener('DOMContentLoaded', () => {
             base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
         }
 
-        // Step 2: repopulate user from base; re-read
-        repopulateUserOutletDropdowns(base, 'gFilterUser', null);
+        const _applyQg = (arr) => {
+            if (_qFilter.g === 'all') return arr;
+            const qSet = new Set(String(_qFilter.g).split(',').map(s => s.trim()));
+            return arr.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        };
+
+        // Cross-filter: user options = base filtered by prevOutlet + question (all except user)
+        let forUserOpts = prevOutlet !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === prevOutlet) : [...base];
+        forUserOpts = _applyQg(forUserOpts);
+        repopulateUserOutletDropdowns(forUserOpts, 'gFilterUser', null);
         const user2 = document.getElementById('gFilterUser')?.value || 'all';
 
-        // Step 3: apply user → userScoped; repopulate outlet
-        const userScoped = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : base;
-        repopulateUserOutletDropdowns(userScoped, null, 'gFilterOutlet');
+        // Outlet options = base filtered by user2 + question
+        let forOutletOpts = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : [...base];
+        forOutletOpts = _applyQg(forOutletOpts);
+        repopulateUserOutletDropdowns(forOutletOpts, null, 'gFilterOutlet');
         const outlet2 = document.getElementById('gFilterOutlet')?.value || 'all';
 
-        // Step 4: apply outlet → outletScoped; repopulate question
-        const outletScoped = outlet2 !== 'all' ? userScoped.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : userScoped;
-        populateQuestionDropdown(outletScoped, 'g');
+        // Question options = base filtered by user2 + outlet2
+        let forQOpts = [...base];
+        if (user2 !== 'all') forQOpts = forQOpts.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') forQOpts = forQOpts.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
+        populateQuestionDropdown(forQOpts, 'g');
 
-        // Step 5: apply question + rating + bucket → filtered
-        let filtered = [...outletScoped];
+        // Final filtered data
+        let filtered = [...base];
+        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
         if (_qFilter.g !== 'all') {
             const qSet = new Set(String(_qFilter.g).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
@@ -2026,8 +2047,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = document.querySelector('.ov-level-btn.active')?.dataset?.level || 'all';
         const group = document.getElementById('ovFilterGroup')?.value || 'all';
         const dateRange = document.getElementById('ovFilterDate')?.value || 'all';
+        // Read current selections BEFORE repopulation (for cross-filter)
+        const prevUser = document.getElementById('ovFilterUser')?.value || 'all';
+        const prevOutlet = document.getElementById('ovFilterOutlet')?.value || 'all';
 
-        // Step 1: group + level + date → base
+        // Base: non-dropdown filters (group + level + date)
         let base = [..._gAllData];
         if (group !== 'all') base = base.filter(r => { const u = _fbUsersById[r.user_id]; return u && String(u.group || '') === group; });
         if (level !== 'all') base = base.filter(r => inferLevel(r.level, r.outlet_id) === level);
@@ -2038,21 +2062,34 @@ document.addEventListener('DOMContentLoaded', () => {
             base = base.filter(r => !r.created_at || new Date(r.created_at) >= cutoff);
         }
 
-        // Step 2: repopulate user from base; re-read
-        repopulateUserOutletDropdowns(base, 'ovFilterUser', null);
+        const _applyQov = (arr) => {
+            if (_qFilter.ov === 'all') return arr;
+            const qSet = new Set(String(_qFilter.ov).split(',').map(s => s.trim()));
+            return arr.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
+        };
+
+        // Cross-filter: user options = base filtered by prevOutlet + question (all except user)
+        let forUserOpts = prevOutlet !== 'all' ? base.filter(r => r.outlet_id != null && String(r.outlet_id) === prevOutlet) : [...base];
+        forUserOpts = _applyQov(forUserOpts);
+        repopulateUserOutletDropdowns(forUserOpts, 'ovFilterUser', null);
         const user2 = document.getElementById('ovFilterUser')?.value || 'all';
 
-        // Step 3: apply user → userScoped; repopulate outlet
-        const userScoped = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : base;
-        repopulateUserOutletDropdowns(userScoped, null, 'ovFilterOutlet');
+        // Outlet options = base filtered by user2 + question
+        let forOutletOpts = user2 !== 'all' ? base.filter(r => r.user_id != null && String(r.user_id) === user2) : [...base];
+        forOutletOpts = _applyQov(forOutletOpts);
+        repopulateUserOutletDropdowns(forOutletOpts, null, 'ovFilterOutlet');
         const outlet2 = document.getElementById('ovFilterOutlet')?.value || 'all';
 
-        // Step 4: apply outlet → outletScoped; repopulate question
-        const outletScoped = outlet2 !== 'all' ? userScoped.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2) : userScoped;
-        populateQuestionDropdown(outletScoped, 'ov');
+        // Question options = base filtered by user2 + outlet2
+        let forQOpts = [...base];
+        if (user2 !== 'all') forQOpts = forQOpts.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') forQOpts = forQOpts.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
+        populateQuestionDropdown(forQOpts, 'ov');
 
-        // Step 5: apply question + rating + bucket → filtered
-        let filtered = [...outletScoped];
+        // Final filtered data
+        let filtered = [...base];
+        if (user2 !== 'all') filtered = filtered.filter(r => r.user_id != null && String(r.user_id) === user2);
+        if (outlet2 !== 'all') filtered = filtered.filter(r => r.outlet_id != null && String(r.outlet_id) === outlet2);
         if (_qFilter.ov !== 'all') {
             const qSet = new Set(String(_qFilter.ov).split(',').map(s => s.trim()));
             filtered = filtered.filter(r => r.question_id != null && qSet.has(String(r.question_id)));
