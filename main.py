@@ -35,7 +35,7 @@ app = FastAPI(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 SECRET_KEY    = os.environ.get("SECRET_KEY", "sensemark-uat-secret-change-in-prod")
-ADMIN_EMAIL   = os.environ.get("ADMIN_EMAIL", "admin@sensemark.com")
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="sm_session", max_age=86400 * 7, https_only=False)
 
@@ -163,15 +163,15 @@ async def login_page(request: Request):
 async def api_login(request: Request, username: str = Form(...)):
     username = username.strip().lower()
 
-    if username == ADMIN_EMAIL.lower():
+    if username == ADMIN_USERNAME.lower():
         request.session["user"] = {"id": 0, "user_name": "Admin", "designation": "Admin", "group": None, "role": "admin"}
         return RedirectResponse("/", status_code=302)
 
     users_raw = await asyncio.to_thread(_db_load_users)
 
-    matched = next((u for u in users_raw if str(u.get("email") or "").strip().lower() == username), None)
+    matched = next((u for u in users_raw if str(u.get("user_name") or "").strip().lower() == username), None)
     if not matched:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Email not found. Please check and try again."}, status_code=401)
+        return templates.TemplateResponse("login.html", {"request": request, "error": "User not found. Please check and try again."}, status_code=401)
 
     try:
         uid = int(matched["id"])
